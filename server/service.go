@@ -12,12 +12,12 @@ type Service interface {
 	Prefix() string
 
 	// Middleware is a hook to enable services to add
-	// any additional middleware
+	// any additional middleware.
 	Middleware(http.Handler) http.Handler
 }
 
 // SimpleService is an interface defining a service that
-// is made up of http.HandlerFuncs
+// is made up of http.HandlerFuncs.
 type SimpleService interface {
 	Service
 
@@ -60,5 +60,5 @@ type RPCService interface {
 	JSONMiddleware(JSONEndpoint) JSONEndpoint
 }
 
-// JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc
+// JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc.
 type JSONEndpoint func(*http.Request) (int, interface{}, error)

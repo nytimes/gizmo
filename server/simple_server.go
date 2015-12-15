@@ -142,7 +142,7 @@ func (s *SimpleServer) Start() error {
 }
 
 // Stop initiates the shutdown process and returns when
-// the server completes
+// the server completes.
 func (s *SimpleServer) Stop() error {
 	ch := make(chan error)
 	s.exit <- ch
@@ -186,7 +186,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		for path, epMethods := range ss.Endpoints() {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
-				// set the function handle and register is to metrics
+				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -211,7 +211,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		for path, epMethods := range js.JSONEndpoints() {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
-				// set the function handle and register is to metrics
+				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
 					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
@@ -226,7 +226,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 }
 
 // AddIPToContext will attempt to pull an IP address out of the request and
-// set it into a gorilla context
+// set it into a gorilla context.
 func AddIPToContext(r *http.Request) {
 	ip, err := GetIP(r)
 	if err != nil {
@@ -240,7 +240,7 @@ func AddIPToContext(r *http.Request) {
 	}
 }
 
-// GetForwardedIP returns the "X-Forwarded-For" header value
+// GetForwardedIP returns the "X-Forwarded-For" header value.
 func GetForwardedIP(r *http.Request) string {
 	return r.Header.Get("X-Forwarded-For")
 }

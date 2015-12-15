@@ -68,7 +68,7 @@ func (p *KafkaPublisher) Stop() error {
 
 type (
 	// KafkaSubscriber is an experimental subscriber implementation for Kafka. It is only capable of consuming a
-	// single parition so multiple may be required depending on your setup.
+	// single partition so multiple may be required depending on your setup.
 	KafkaSubscriber struct {
 		cnsmr     sarama.Consumer
 		topic     string
@@ -129,7 +129,7 @@ func NewKafkaSubscriber(cfg *config.Kafka, offsetProvider func() int64, offsetBr
 }
 
 // Start will start consuming message on the Kafka topic
-// parition and emit any messages to the returned channel.
+// partition and emit any messages to the returned channel.
 // On start up, it will call the offset func provider to the subscriber
 // to lookup the offset to start at.
 // If it encounters any issues, it will populate the Err() error
@@ -175,7 +175,7 @@ func (s *KafkaSubscriber) Start() <-chan SubscriberMessage {
 func (s *KafkaSubscriber) Stop() error {
 	exit := make(chan error)
 	s.stop <- exit
-	// close result from the parition consumer
+	// close result from the partition consumer
 	err := <-exit
 	if err != nil {
 		return err

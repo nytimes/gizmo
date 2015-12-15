@@ -11,7 +11,7 @@ type (
 	// TestPublisher is a simple implementation of pubsub.Publisher meant to
 	// help mock out any implementations.
 	TestSubscriber struct {
-		// ProtoMessages will be marshalled into []byte  used to mock out
+		// ProtoMessages will be marshalled into []byte and used to mock out
 		// a feed if it is populated.
 		ProtoMessages []proto.Message
 

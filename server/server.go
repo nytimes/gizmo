@@ -23,7 +23,7 @@ import (
 
 	"github.com/nytimes/gizmo/config"
 	"github.com/nytimes/gizmo/web"
-	"github.com/nytimes/go-common/logrotate"
+	"github.com/nytimes/logrotate"
 )
 
 // Version is meant to be set with the current package version at build time.

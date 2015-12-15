@@ -16,7 +16,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/nytimes/gizmo/config"
 	"github.com/nytimes/gizmo/pubsub"
-	"github.com/nytimes/go-common/logrotate"
+	"github.com/nytimes/logrotate"
 	"github.com/rcrowley/go-metrics"
 
 	"github.com/nytimes/gizmo/examples/nyt"

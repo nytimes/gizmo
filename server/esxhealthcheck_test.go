@@ -9,7 +9,7 @@ import (
 )
 
 func TestESXHealthCheckDeployer(t *testing.T) {
-	// changing so the tests dont take forevers, but long enough so tests fail
+	// changing so the tests dont take forever, but long enough so tests fail
 	ESXLoadBalancerNotReadyDuration = 10 * time.Second
 
 	hc := NewESXHealthCheck()
@@ -32,7 +32,7 @@ func TestESXHealthCheckDeployer(t *testing.T) {
 		t.Errorf("ESXHealthCheck expected response body to start with 'ok-', got %s", gotBody)
 	}
 
-	// gorountine to make sure Stop actucally stops on time
+	// gorountine to make sure Stop actually stops on time
 	done := make(chan bool)
 	go func() {
 		stopped := make(chan bool)
@@ -68,7 +68,7 @@ func TestESXHealthCheckDeployer(t *testing.T) {
 func TestESXHealthCheckLB(t *testing.T) {
 	hc := NewESXHealthCheck()
 	am := NewActivityMonitor()
-	// changing so the tests dont take forevers
+	// changing so the tests dont take forever
 	ESXLoadBalancerNotReadyDuration = 1 * time.Second
 
 	hc.Start(am)
@@ -89,7 +89,7 @@ func TestESXHealthCheckLB(t *testing.T) {
 		t.Errorf("ESXHealthCheck expected response body to start with 'ok-', got %s", gotBody)
 	}
 
-	// gorountine to make sure Stop actucally stops on time
+	// gorountine to make sure Stop actually stops on time
 	done := make(chan bool)
 	go func() {
 		stopped := make(chan bool)
@@ -124,7 +124,7 @@ func TestESXHealthCheckLB(t *testing.T) {
 }
 
 func TestESXHealthCheckActiveRequests(t *testing.T) {
-	// changing so the tests dont take forevers, but long enough so tests fail
+	// changing so the tests don't take forever, but long enough so tests fail
 	ESXLoadBalancerNotReadyDuration = 5 * time.Second
 	ESXShutdownTimeout = 5 * time.Second
 
@@ -151,7 +151,7 @@ func TestESXHealthCheckActiveRequests(t *testing.T) {
 	// WHOA, AN ACTIVE REQUEST ENTERS THE SCENE FROM STAGE LEFT!
 	am.CountRequest()
 
-	// gorountine to make sure Stop actucally stops on time
+	// gorountine to make sure Stop actually stops on time
 	done := make(chan bool)
 	go func() {
 		stopped := make(chan bool)
@@ -187,7 +187,7 @@ func TestESXHealthCheckActiveRequests(t *testing.T) {
 	<-done
 }
 func TestESXHealthCheckBadIP(t *testing.T) {
-	// changing so the tests dont take forevers, but long enough so tests fail
+	// changing so the tests dont take forever, but long enough so tests fail
 	ESXLoadBalancerNotReadyDuration = 10 * time.Second
 
 	hc := NewESXHealthCheck()
@@ -208,7 +208,7 @@ func TestESXHealthCheckBadIP(t *testing.T) {
 		t.Errorf("ESXHealthCheck expected response body to start with 'ok-', got %s", gotBody)
 	}
 
-	// gorountine to make sure Stop actucally stops on time
+	// gorountine to make sure Stop actually stops on time
 	done := make(chan bool)
 	go func() {
 		stopped := make(chan bool)

@@ -12,7 +12,7 @@ import (
 
 type (
 	// Config is a generic struct to hold information for applications that
-	// need to connect to databases, handle cookies, log events or emit metircs.
+	// need to connect to databases, handle cookies, log events or emit metrics.
 	// If you have a use case that does not fit this struct, you can
 	// make a struct containing just the types that suit your needs and use
 	// some of the helper functions in this package to load it from the environment.
@@ -113,7 +113,7 @@ func LoadJSONFile(fileName string, cfg interface{}) {
 
 // LoadJSONFromConsulKV is a helper function to read a JSON string found
 // in a path defined by configKey inside Consul's Key Value storage then
-// unmarshaled into a config struct, like LoadJSONFile does.
+// unmarshalled into a config struct, like LoadJSONFile does.
 // It assumes that the Consul agent is running with the default setup,
 // where the HTTP API is found via 127.0.0.1:8500
 func LoadJSONFromConsulKV(configKeyParameter string, cfg interface{}) interface{} {

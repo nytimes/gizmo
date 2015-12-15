@@ -236,7 +236,7 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 				if err != nil {
 					// we've encountered a major error
 					// this will set the error value and close the channel
-					// so the user will stop iterating and check the err.
+					// so the user will stop iterating and check the err
 					s.sqsErr = err
 					return
 				}

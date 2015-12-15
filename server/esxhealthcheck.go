@@ -26,7 +26,7 @@ var (
 // until all LBs have received a 'bad' status.
 type ESXHealthCheck struct {
 	// ready flag health checks and graceful shutdown
-	//uint32 so we can use sync/atomic and no defers
+	// uint32 so we can use sync/atomic and no defers
 	ready uint32
 
 	// last LB status to know if LB knows we're inactive
@@ -43,12 +43,12 @@ func NewESXHealthCheck() *ESXHealthCheck {
 	}
 }
 
-// Path returns the default ESX health path
+// Path returns the default ESX health path.
 func (e *ESXHealthCheck) Path() string {
 	return "/status.txt"
 }
 
-// Start will set the monitor and flib the ready flag to 'True'
+// Start will set the monitor and flip the ready flag to 'True'.
 func (e *ESXHealthCheck) Start(monitor *ActivityMonitor) error {
 	e.monitor = monitor
 	atomic.StoreUint32(&e.ready, 1)
@@ -56,9 +56,9 @@ func (e *ESXHealthCheck) Start(monitor *ActivityMonitor) error {
 }
 
 // Stop will set the flip the 'ready' flag and wait block until the server has removed itself
-// from all load balanacers.
+// from all load balancers.
 func (e *ESXHealthCheck) Stop() error {
-	// fil the flag and wait
+	// fill the flag and wait
 	atomic.StoreUint32(&e.ready, 0)
 	if err := e.waitForZero(); err != nil {
 		Log.Errorf("server still active after %s, this will not be a graceful shutdown: %s", ESXShutdownTimeout, err)
@@ -115,7 +115,7 @@ func (e *ESXHealthCheck) lbActive() (active bool) {
 	return false
 }
 
-// waitForZero will continously query Active and  NumActiveRequests at the ShutdownPollInterval until the
+// waitForZero will continously query Active and NumActiveRequests at the ShutdownPollInterval until the
 // LB has seen a bad status, the server is not Actve and NumActiveRequests returns 0 or the timeout
 // is reached. It will return error in case of timeout.
 func (e *ESXHealthCheck) waitForZero() error {
@@ -144,6 +144,6 @@ func (e *ESXHealthCheck) waitForZero() error {
 		Log.Info("server is no longer receiving traffic")
 		return nil
 	case <-to:
-		return fmt.Errorf("server is stil active after %s", ESXShutdownTimeout)
+		return fmt.Errorf("server is still active after %s", ESXShutdownTimeout)
 	}
 }

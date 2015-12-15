@@ -64,14 +64,14 @@ func NoCacheHandler(f http.Handler) http.Handler {
 // JSONPHandler is a middleware func for wrapping response body with JSONP
 func JSONPHandler(f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// using a custom resposnewriter so we can
+		// using a custom ResponseWriter so we can
 		// capture the response of the main request,
-		// wrap or JSONP stuff around it
+		// wrap our JSONP stuff around it
 		// and only write to the actual response once
 		jw := &jsonpResponseWriter{w: w}
 		f.ServeHTTP(jw, r)
 
-		// add the JSONP ugly if the callback exists
+		// add the JSONP only if the callback exists
 		callbackLabel := r.FormValue("callback")
 		if callbackLabel != "" {
 			var result []byte
@@ -81,7 +81,7 @@ func JSONPHandler(f http.Handler) http.Handler {
 			result = append(result, jsonpEnd...)
 			w.Write(result)
 		} else {
-			// if no callback, just write da bytes
+			// if no callback, just write the bytes
 			w.Write(jw.buf.Bytes())
 		}
 	})

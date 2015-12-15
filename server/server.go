@@ -29,7 +29,7 @@ import (
 // Version is meant to be set with the current package version at build time.
 var Version string
 
-// Server is the basic interface that defines what expect from any server.
+// Server is the basic interface that defines what to expect from any server.
 type Server interface {
 	Register(Service) error
 	Start() error
@@ -141,7 +141,7 @@ func ContextFields(r *http.Request) map[string]interface{} {
 		if strK == "1" {
 			continue
 		}
-		// gorilla puts mux vars here. we want to give a better label
+		// gorilla puts mux vars here, we want to give a better label
 		if strK == "0" {
 			strK = "muxvars"
 		}
@@ -153,7 +153,7 @@ func ContextFields(r *http.Request) map[string]interface{} {
 	return fields
 }
 
-// NewServer will inspect the cofig and generate
+// NewServer will inspect the config and generate
 // the appropriate Server implementation.
 func NewServer(cfg *config.Server) Server {
 	switch cfg.ServerType {
@@ -246,7 +246,7 @@ func MetricsRegistryName() string {
 	name = strings.SplitN(name, ".", 2)[0]
 	// set it up to be paperboy.servername
 	name = strings.Replace(name, "-", ".", 1)
-	// add the 'apps' prefix  to keep things neat
+	// add the 'apps' prefix to keep things neat
 	return "apps." + name
 }
 

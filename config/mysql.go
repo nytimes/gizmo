@@ -32,7 +32,7 @@ var (
 // the credentials and the current MySQLMaxOpenConns
 // and MySQLMaxIdleConns values.
 // Users must import a mysql driver in their
-// main to user this.
+// main to use this.
 func (m *MySQL) DB() (*sql.DB, error) {
 	db, err := sql.Open("mysql", m.String())
 	if err != nil {

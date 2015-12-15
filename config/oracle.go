@@ -18,7 +18,7 @@ type Oracle struct {
 
 // DB will attempt to open a sql connection.
 // Users must import an oci8 driver in their
-// main to user this.
+// main to use this.
 func (o *Oracle) DB() (*sql.DB, error) {
 	return sql.Open("oci8", o.String())
 }

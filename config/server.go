@@ -11,7 +11,7 @@ type Server struct {
 	// If empty, this will default to 'simple'.
 	HealthCheckType string `envconfig:"GIZMO_HEALTH_CHECK_TYPE"`
 	// HealthCheckPath is used by server to init the proper HealthCheckHandler.
-	// If empty, this will default to  '/status.txt'.
+	// If empty, this will default to '/status.txt'.
 	HealthCheckPath string `envconfig:"GIZMO_HEALTH_CHECK_PATH"`
 	// JSONContentType can be used to override the default JSONContentType
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
@@ -25,9 +25,9 @@ type Server struct {
 	// RPCAccessLog is the location of the RPC access log. If it is empty,
 	// no access logging will be done.
 	RPCAccessLog string `envconfig:"RPC_ACCESS_LOG"`
-	// HTTPPort is the port the server implementation will server HTTP over.
+	// HTTPPort is the port the server implementation will serve HTTP over.
 	HTTPPort int `envconfig:"HTTP_PORT"`
-	// RPCPort is the port the server implementation will server RPC over.
+	// RPCPort is the port the server implementation will serve RPC over.
 	RPCPort int `envconfig:"RPC_PORT"`
 	// Log is the path to the application log.
 	Log string `envconfig:"APP_LOG"`
@@ -46,7 +46,7 @@ type Server struct {
 	NotFoundHandler http.Handler
 }
 
-// LoadServerFromEnv will attempt to load an Server object
+// LoadServerFromEnv will attempt to load a Server object
 // from environment variables. If not populated, nil
 // is returned.
 func LoadServerFromEnv() *Server {

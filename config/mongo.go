@@ -6,7 +6,7 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// MongoDB holds the information require for connecting
+// MongoDB holds the information required for connecting
 // to a MongoDB replicaset.
 type MongoDB struct {
 	User       string `envconfig:"MONGODB_USER"`
@@ -46,7 +46,7 @@ func (m *MongoDB) must(host string) *mgo.Session {
 	return s
 }
 
-// LoadMongoDBFromEnv will attempt to load an MongoCreds object
+// LoadMongoDBFromEnv will attempt to load a MongoCreds object
 // from environment variables. If not populated, nil
 // is returned.
 func LoadMongoDBFromEnv() *MongoDB {

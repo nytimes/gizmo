@@ -98,7 +98,7 @@ func (r *RPCServer) Start() error {
 
 	StartServerMetrics(r.cfg)
 
-	// SETUP RPC
+	// setup RPC
 	registerRPCAccessLogger(r.cfg)
 	rl, err := net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.RPCPort))
 	if err != nil {
@@ -107,7 +107,7 @@ func (r *RPCServer) Start() error {
 	go r.srvr.Serve(rl)
 	Log.Infof("RPC listening on %s", rl.Addr().String())
 
-	// SETUP HTTP
+	// setup HTTP
 	healthHandler := RegisterHealthHandler(r.cfg, r.monitor, r.mux)
 	r.cfg.HealthCheckPath = healthHandler.Path()
 	srv := http.Server{
@@ -185,7 +185,7 @@ func LogRPCWithFields(log *logrus.Logger, ctx context.Context) *logrus.Entry {
 	return log.WithFields(MetadataToFields(md))
 }
 
-// MetadataToFields will accempt take all values from a metadata.MD and
+// MetadataToFields will accept all values from a metadata.MD and
 // create logrus.Fields with the same set.
 func MetadataToFields(md metadata.MD) logrus.Fields {
 	f := logrus.Fields{}
@@ -195,7 +195,7 @@ func MetadataToFields(md metadata.MD) logrus.Fields {
 	return f
 }
 
-// MonitorRPCRequest should be defered by any RPC method that would like to have
+// MonitorRPCRequest should be deferred by any RPC method that would like to have
 // metrics and access logging, participate in graceful shutdowns and safely recover from panics.
 func MonitorRPCRequest() func(ctx context.Context, methodName string, err error) {
 	start := time.Now()

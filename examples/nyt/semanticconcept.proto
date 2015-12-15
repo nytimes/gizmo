@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package nyt;
+
+message SemanticConceptResponse  {
+    string status = 1;
+    string copyright = 2;
+    uint32 num_results = 3;
+    repeated SemanticConceptResult results = 4;
+}
+
+message SemanticConceptResult {
+    SemanticConceptArticleList article_list = 1;
+}
+
+message SemanticConceptArticleList {
+    repeated SemanticConceptArticle results = 1;
+    uint32 total = 2;
+}
+
+message SemanticConceptArticle {
+    string body = 1;
+    string byline = 2;
+    string title = 3;
+    string url = 4;
+}

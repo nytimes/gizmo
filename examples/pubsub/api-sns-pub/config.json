@@ -1,0 +1,13 @@
+{
+    "Server": {
+        "HTTPPort":8080,
+        "HTTPAccessLog": "/var/nyt/logs/cats-publisher/access.log",
+        "Log": "/var/nyt/logs/cats-publisher/app.log"
+    },
+    "SNS": {
+        "AccessKey":"",
+        "SecretKey":"",
+        "Region":"us-east-1",
+        "Topic":"published-cat-articles"
+    }
+}

@@ -1,0 +1,9 @@
+{
+    "Log": "/var/nyt/logs/cats-subscriber/app.log",
+    "SQS": {
+        "AccessKey":"",
+        "SecretKey":"",
+        "Region":"us-east-1",
+        "QueueName":"published-cat-articles"
+    }
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package regi;
+
+message SessionMessage{
+
+    /**
+     * Encrypted using the RSA public key corresponding to the decalred version
+     */
+    bytes encrypted_material = 1;
+    repeated bytes encrypted_messages = 2;
+}
+

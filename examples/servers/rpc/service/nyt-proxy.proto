@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package service;
+
+import "nyt/mostpopular.proto";
+import "nyt/semanticconcept.proto";
+
+message MostPopularRequest {
+    string resourceType = 1;
+    string section = 2;
+    uint32 timePeriodDays = 3;
+}
+
+message MostPopularResponse {
+    repeated nyt.MostPopularResult results = 1;
+}
+
+message CatsRequest {
+}
+
+message CatsResponse {
+    repeated nyt.SemanticConceptArticle results = 1;
+}
+
+service NYTProxyService {
+    rpc GetMostPopular(MostPopularRequest) returns (MostPopularResponse);
+    rpc GetCats(CatsRequest) returns (CatsResponse);
+}

@@ -17,6 +17,8 @@ It has these top-level messages:
 package service
 
 import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 import nyt "github.com/nytimes/gizmo/examples/nyt"
 
 import (
@@ -25,11 +27,9 @@ import (
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConn
-
-// Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
+var _ = fmt.Errorf
+var _ = math.Inf
 
 type MostPopularRequest struct {
 	ResourceType   string `protobuf:"bytes,1,opt,name=resourceType" json:"resourceType,omitempty"`
@@ -37,17 +37,19 @@ type MostPopularRequest struct {
 	TimePeriodDays uint32 `protobuf:"varint,3,opt,name=timePeriodDays" json:"timePeriodDays,omitempty"`
 }
 
-func (m *MostPopularRequest) Reset()         { *m = MostPopularRequest{} }
-func (m *MostPopularRequest) String() string { return proto.CompactTextString(m) }
-func (*MostPopularRequest) ProtoMessage()    {}
+func (m *MostPopularRequest) Reset()                    { *m = MostPopularRequest{} }
+func (m *MostPopularRequest) String() string            { return proto.CompactTextString(m) }
+func (*MostPopularRequest) ProtoMessage()               {}
+func (*MostPopularRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type MostPopularResponse struct {
 	Results []*nyt.MostPopularResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 }
 
-func (m *MostPopularResponse) Reset()         { *m = MostPopularResponse{} }
-func (m *MostPopularResponse) String() string { return proto.CompactTextString(m) }
-func (*MostPopularResponse) ProtoMessage()    {}
+func (m *MostPopularResponse) Reset()                    { *m = MostPopularResponse{} }
+func (m *MostPopularResponse) String() string            { return proto.CompactTextString(m) }
+func (*MostPopularResponse) ProtoMessage()               {}
+func (*MostPopularResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 func (m *MostPopularResponse) GetResults() []*nyt.MostPopularResult {
 	if m != nil {
@@ -59,17 +61,19 @@ func (m *MostPopularResponse) GetResults() []*nyt.MostPopularResult {
 type CatsRequest struct {
 }
 
-func (m *CatsRequest) Reset()         { *m = CatsRequest{} }
-func (m *CatsRequest) String() string { return proto.CompactTextString(m) }
-func (*CatsRequest) ProtoMessage()    {}
+func (m *CatsRequest) Reset()                    { *m = CatsRequest{} }
+func (m *CatsRequest) String() string            { return proto.CompactTextString(m) }
+func (*CatsRequest) ProtoMessage()               {}
+func (*CatsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
 type CatsResponse struct {
 	Results []*nyt.SemanticConceptArticle `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 }
 
-func (m *CatsResponse) Reset()         { *m = CatsResponse{} }
-func (m *CatsResponse) String() string { return proto.CompactTextString(m) }
-func (*CatsResponse) ProtoMessage()    {}
+func (m *CatsResponse) Reset()                    { *m = CatsResponse{} }
+func (m *CatsResponse) String() string            { return proto.CompactTextString(m) }
+func (*CatsResponse) ProtoMessage()               {}
+func (*CatsResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
 func (m *CatsResponse) GetResults() []*nyt.SemanticConceptArticle {
 	if m != nil {
@@ -79,7 +83,15 @@ func (m *CatsResponse) GetResults() []*nyt.SemanticConceptArticle {
 }
 
 func init() {
+	proto.RegisterType((*MostPopularRequest)(nil), "service.MostPopularRequest")
+	proto.RegisterType((*MostPopularResponse)(nil), "service.MostPopularResponse")
+	proto.RegisterType((*CatsRequest)(nil), "service.CatsRequest")
+	proto.RegisterType((*CatsResponse)(nil), "service.CatsResponse")
 }
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
 
 // Client API for NYTProxyService service
 
@@ -125,9 +137,9 @@ func RegisterNYTProxyServiceServer(s *grpc.Server, srv NYTProxyServiceServer) {
 	s.RegisterService(&NYTProxyService_serviceDesc, srv)
 }
 
-func _NYTProxyService_GetMostPopular_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _NYTProxyService_GetMostPopular_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(MostPopularRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(NYTProxyServiceServer).GetMostPopular(ctx, in)
@@ -137,9 +149,9 @@ func _NYTProxyService_GetMostPopular_Handler(srv interface{}, ctx context.Contex
 	return out, nil
 }
 
-func _NYTProxyService_GetCats_Handler(srv interface{}, ctx context.Context, codec grpc.Codec, buf []byte) (interface{}, error) {
+func _NYTProxyService_GetCats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error) (interface{}, error) {
 	in := new(CatsRequest)
-	if err := codec.Unmarshal(buf, in); err != nil {
+	if err := dec(in); err != nil {
 		return nil, err
 	}
 	out, err := srv.(NYTProxyServiceServer).GetCats(ctx, in)
@@ -163,4 +175,27 @@ var NYTProxyService_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams: []grpc.StreamDesc{},
+}
+
+var fileDescriptor0 = []byte{
+	// 294 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x6c, 0x51, 0x4f, 0x4b, 0xfb, 0x40,
+	0x10, 0xa5, 0xbf, 0xc2, 0xaf, 0x38, 0xfd, 0x13, 0x58, 0xdb, 0x12, 0x53, 0x0f, 0x92, 0x8b, 0x3d,
+	0x68, 0x84, 0x0a, 0x9e, 0x44, 0x90, 0x0a, 0x1e, 0x44, 0x09, 0xa6, 0x17, 0x8f, 0x71, 0x9d, 0x43,
+	0x20, 0xc9, 0xae, 0xbb, 0x13, 0x31, 0x5f, 0xc4, 0xcf, 0xeb, 0x24, 0x1b, 0xa4, 0xad, 0x5e, 0x42,
+	0xf6, 0xbd, 0xb7, 0x6f, 0xde, 0xbc, 0x05, 0xaf, 0xac, 0xe9, 0x5c, 0x1b, 0xf5, 0x59, 0x47, 0xfc,
+	0x25, 0x25, 0x06, 0x16, 0xcd, 0x47, 0x26, 0x31, 0x98, 0x31, 0x73, 0x51, 0x28, 0x4b, 0x5a, 0xe9,
+	0x2a, 0x4f, 0x8d, 0xe3, 0x83, 0xa3, 0x06, 0xb6, 0x58, 0xa4, 0x25, 0x65, 0x52, 0xaa, 0x52, 0xa2,
+	0x26, 0x47, 0x85, 0x09, 0x88, 0x47, 0xd6, 0xc7, 0x4e, 0xff, 0x8c, 0xef, 0x15, 0x5a, 0x12, 0x53,
+	0x18, 0x19, 0xb4, 0xaa, 0x32, 0x12, 0x37, 0xb5, 0x46, 0xbf, 0x77, 0xd2, 0x5b, 0x1e, 0x08, 0x0f,
+	0x78, 0x90, 0xa4, 0x4c, 0x95, 0xfe, 0xbf, 0x16, 0x98, 0xc3, 0x84, 0xb2, 0x02, 0x63, 0x34, 0x99,
+	0x7a, 0xbb, 0x4b, 0x6b, 0xeb, 0xf7, 0x19, 0x1f, 0x87, 0x37, 0x70, 0xb8, 0x63, 0x6a, 0xb5, 0x2a,
+	0x2d, 0x8a, 0x53, 0x18, 0xb0, 0x6b, 0x95, 0x93, 0x65, 0xc3, 0xfe, 0x72, 0xb8, 0x9a, 0x47, 0x1c,
+	0x2c, 0xda, 0x95, 0x32, 0x1d, 0x8e, 0x61, 0xb8, 0x4e, 0xc9, 0x76, 0x69, 0xc2, 0x6b, 0x18, 0xb9,
+	0x63, 0xe7, 0x73, 0xb6, 0xef, 0xb3, 0x68, 0x7d, 0x92, 0x6e, 0xc1, 0xb5, 0x5b, 0xf0, 0xd6, 0xf0,
+	0x7f, 0x8e, 0xab, 0xaf, 0x1e, 0x78, 0x4f, 0x2f, 0x9b, 0xb8, 0xe9, 0x2b, 0x71, 0x3d, 0x89, 0x07,
+	0x98, 0xdc, 0x23, 0x6d, 0x0d, 0x16, 0x8b, 0xa8, 0xeb, 0x30, 0xfa, 0x5d, 0x47, 0x70, 0xfc, 0x37,
+	0xd9, 0xc5, 0xb9, 0x82, 0x01, 0x9b, 0x35, 0x09, 0xc5, 0xf4, 0x47, 0xb8, 0x95, 0x3f, 0x98, 0xed,
+	0xa1, 0xee, 0xde, 0xeb, 0xff, 0xf6, 0x05, 0x2e, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xed, 0x47,
+	0x7d, 0x57, 0xcf, 0x01, 0x00, 0x00,
 }

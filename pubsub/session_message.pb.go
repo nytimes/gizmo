@@ -22,7 +22,7 @@ var _ = proto.Marshal
 // SessionMessage is used for encrypting messages in our pubsub queues.
 type SessionMessage struct {
 	// *
-	// Encrypted using the RSA public key corresponding to the decalred version.
+	// Encrypted using the RSA public key corresponding to the decalred version
 	EncryptedMaterial []byte   `protobuf:"bytes,1,opt,name=encrypted_material,proto3" json:"encrypted_material,omitempty"`
 	EncryptedMessages [][]byte `protobuf:"bytes,2,rep,name=encrypted_messages,proto3" json:"encrypted_messages,omitempty"`
 }

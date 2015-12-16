@@ -14,7 +14,7 @@ var (
 	// for the server to be inactive.
 	ESXShutdownTimeout = 180 * time.Second
 	// ESXShutdownPollInterval sets the duration for how long ESXHealthCheck will wait between
-	// each NumActiveRequests poll in WaitForZero
+	// each NumActiveRequests poll in WaitForZero.
 	ESXShutdownPollInterval = 1 * time.Second
 	// ESXLoadBalancerNotReadyDuration is the amount of time ESXHealthCheck will wait after
 	// sending a 'bad' status to the LB during a graceful shutdown.

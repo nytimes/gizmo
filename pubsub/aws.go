@@ -124,7 +124,7 @@ type (
 		sqsErr error
 	}
 
-	// SQSMessage is the SQS implementation of `SubscriberMessage`
+	// SQSMessage is the SQS implementation of `SubscriberMessage`.
 	SQSMessage struct {
 		sub     *SQSSubscriber
 		message *sqs.Message

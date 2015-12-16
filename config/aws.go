@@ -3,9 +3,9 @@ package config
 import "time"
 
 const (
-	// AWSRegionUSEast1 is a helper constant for AWS configs
+	// AWSRegionUSEast1 is a helper constant for AWS configs.
 	AWSRegionUSEast1 = "us-east-1"
-	// AWSRegionUSWest is a helper constant for AWS configs
+	// AWSRegionUSWest is a helper constant for AWS configs.
 	AWSRegionUSWest = "us-west-1"
 )
 
@@ -35,13 +35,13 @@ type (
 		ConsumeProtobuf bool `envconfig:"AWS_SQS_CONSUME_PROTOBUF"`
 	}
 
-	// SNS holds the info required to work with Amazon SNS
+	// SNS holds the info required to work with Amazon SNS.
 	SNS struct {
 		AWS
 		Topic string `envconfig:"AWS_SNS_TOPIC"`
 	}
 
-	// S3 holds the info required to work with Amazon S3
+	// S3 holds the info required to work with Amazon S3.
 	S3 struct {
 		AWS
 		Bucket string `envconfig:"AWS_S3_BUCKET_NAME"`

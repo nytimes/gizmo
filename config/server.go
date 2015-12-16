@@ -2,7 +2,7 @@ package config
 
 import "net/http"
 
-// Server holds info required to configure a gizmo server.Server
+// Server holds info required to configure a gizmo server.Server.
 type Server struct {
 	// Server will tell the server package which type of server to init. If
 	// empty, this will default to 'simple'.
@@ -13,11 +13,11 @@ type Server struct {
 	// HealthCheckPath is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to '/status.txt'.
 	HealthCheckPath string `envconfig:"GIZMO_HEALTH_CHECK_PATH"`
-	// JSONContentType can be used to override the default JSONContentType
+	// JSONContentType can be used to override the default JSONContentType.
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
-	//	MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20)
+	//	MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).
 	MaxHeaderBytes *int `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
-	// GOMAXPROCS can be used to override the default GOMAXPROCS (runtime.NumCPU)
+	// GOMAXPROCS can be used to override the default GOMAXPROCS (runtime.NumCPU).
 	GOMAXPROCS *int `envconfig:"GIZMO_SERVER_GOMAXPROCS"`
 	// HTTPAccessLog is the location of the http access log. If it is empty,
 	// no access logging will be done.

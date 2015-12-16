@@ -23,11 +23,11 @@ type Publisher interface {
 // a user encounters a closed channel, they should check the Err() method to see
 // what happened.
 type Subscriber interface {
-	// Start will return a channel of raw messages
+	// Start will return a channel of raw messages.
 	Start() <-chan SubscriberMessage
 	// Err will contain any errors returned from the consumer connection.
 	Err() error
-	// Stop will initiate a graceful shutdown of the subscriber connection
+	// Stop will initiate a graceful shutdown of the subscriber connection.
 	Stop() error
 }
 

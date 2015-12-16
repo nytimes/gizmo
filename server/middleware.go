@@ -8,7 +8,7 @@ import (
 )
 
 // JSONToHTTP is the middleware func to convert a JSONEndpoint to
-// an http.HandlerFunc
+// an http.HandlerFunc.
 func JSONToHTTP(ep JSONEndpoint) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
@@ -61,7 +61,7 @@ func NoCacheHandler(f http.Handler) http.Handler {
 	})
 }
 
-// JSONPHandler is a middleware func for wrapping response body with JSONP
+// JSONPHandler is a middleware func for wrapping response body with JSONP.
 func JSONPHandler(f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// using a custom ResponseWriter so we can

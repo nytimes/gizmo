@@ -9,7 +9,7 @@ import (
 )
 
 func TestESXHealthCheckDeployer(t *testing.T) {
-	// changing so the tests dont take forever, but long enough so tests fail
+	// changing so the tests don't take forever, but long enough so tests fail
 	ESXLoadBalancerNotReadyDuration = 10 * time.Second
 
 	hc := NewESXHealthCheck()
@@ -68,7 +68,7 @@ func TestESXHealthCheckDeployer(t *testing.T) {
 func TestESXHealthCheckLB(t *testing.T) {
 	hc := NewESXHealthCheck()
 	am := NewActivityMonitor()
-	// changing so the tests dont take forever
+	// changing so the tests don't take forever
 	ESXLoadBalancerNotReadyDuration = 1 * time.Second
 
 	hc.Start(am)
@@ -187,7 +187,7 @@ func TestESXHealthCheckActiveRequests(t *testing.T) {
 	<-done
 }
 func TestESXHealthCheckBadIP(t *testing.T) {
-	// changing so the tests dont take forever, but long enough so tests fail
+	// changing so the tests don't take forever, but long enough so tests fail
 	ESXLoadBalancerNotReadyDuration = 10 * time.Second
 
 	hc := NewESXHealthCheck()

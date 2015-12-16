@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/nytimes/gizmo/config"
-	"github.com/nytimes/go-common/logrotate"
+	"github.com/nytimes/logrotate"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"

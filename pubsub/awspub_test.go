@@ -53,9 +53,9 @@ func TestSNSPublisher(t *testing.T) {
 }
 
 type TestSNSAPI struct {
-	// Error will be returned by the API when Publish() is called
+	// Error will be returned by the API when Publish() is called.
 	Error error
-	// Published allows users to inspect which values have been published
+	// Published allows users to inspect which values have been published.
 	Published []*sns.PublishInput
 }
 

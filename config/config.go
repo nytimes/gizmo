@@ -115,7 +115,7 @@ func LoadJSONFile(fileName string, cfg interface{}) {
 // in a path defined by configKey inside Consul's Key Value storage then
 // unmarshalled into a config struct, like LoadJSONFile does.
 // It assumes that the Consul agent is running with the default setup,
-// where the HTTP API is found via 127.0.0.1:8500
+// where the HTTP API is found via 127.0.0.1:8500.
 func LoadJSONFromConsulKV(configKeyParameter string, cfg interface{}) interface{} {
 	configKeyParameterValue := strings.SplitN(configKeyParameter, ":", 2)
 	if len(configKeyParameterValue) < 2 {

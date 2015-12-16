@@ -37,10 +37,10 @@ type Server interface {
 }
 
 var (
-	// Name is used for status and logging
+	// Name is used for status and logging.
 	Name = "nyt-awesome-go-server"
 	// Log is the global logger for the server. It will take care of logrotate
-	// and it can accept 'fields' to include with each log line: see LogWithFields(r)
+	// and it can accept 'fields' to include with each log line: see LogWithFields(r).
 	Log = logrus.New()
 	// server is what's used in the global server funcs in the package.
 	server Server
@@ -100,7 +100,7 @@ func Init(name string, scfg *config.Server) {
 	server = NewServer(scfg)
 }
 
-// Register will add a new Service to the DefaultServer
+// Register will add a new Service to the DefaultServer.
 func Register(svc Service) error {
 	return server.Register(svc)
 }
@@ -120,7 +120,7 @@ func Run() error {
 	return Stop()
 }
 
-// Stop will stop the default server
+// Stop will stop the default server.
 func Stop() error {
 	Log.Infof("Stopping %s server", Name)
 	return server.Stop()
@@ -131,7 +131,7 @@ func LogWithFields(r *http.Request) *logrus.Entry {
 	return Log.WithFields(ContextFields(r))
 }
 
-// ContextFields will take a request and convert a context map to logrus Fields
+// ContextFields will take a request and convert a context map to logrus Fields.
 func ContextFields(r *http.Request) map[string]interface{} {
 	fields := map[string]interface{}{}
 	for k, v := range context.GetAll(r) {
@@ -167,7 +167,7 @@ func NewServer(cfg *config.Server) Server {
 }
 
 // NewHealthCheckHandler will inspect the config to generate
-// the appropriate HealthCheckHandler
+// the appropriate HealthCheckHandler.
 func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
 	switch cfg.HealthCheckType {
 	case "simple":

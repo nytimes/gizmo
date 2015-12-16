@@ -61,7 +61,7 @@ func (p *KafkaPublisher) PublishRaw(key string, m []byte) error {
 	return err
 }
 
-// Stop will close the pub connection
+// Stop will close the pub connection.
 func (p *KafkaPublisher) Stop() error {
 	return p.producer.Close()
 }

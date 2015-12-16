@@ -11,7 +11,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
-// for grabbing the StatusCode
+// metricsResponseWriter grabs the StatusCode.
 type metricsResponseWriter struct {
 	w          http.ResponseWriter
 	StatusCode int

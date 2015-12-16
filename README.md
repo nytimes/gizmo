@@ -45,7 +45,7 @@ type Server interface {
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implentations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implementations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -54,7 +54,7 @@ The `Service` interface is minimal to allow for maximum flexibility:
 type Service interface {
     Prefix() string
 
-    // Middleware provides a hook for service-wide middleware
+    // Middleware provides a hook for service-wide middleware.
     Middleware(http.Handler) http.Handler
 }
 ```
@@ -112,7 +112,7 @@ type RPCService interface {
 }
 ```
 
-The `Middleware(..)` functions offer each sevice a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)
+The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)
 
 ## The `pubsub` package
 
@@ -120,7 +120,7 @@ This package contains two generic interfaces for publishing data to queues and s
 
 ```
 // Publisher is a generic interface to encapsulate how we want our publishers
-// to behave. Until we find reason to change, we're forcing all pubslishers
+// to behave. Until we find reason to change, we're forcing all publishers
 // to emit protobufs.
 type Publisher interface {
     // Publish will publish a message.
@@ -134,11 +134,11 @@ type Publisher interface {
 // a user encounters a closed channel, they should check the Err() method to see
 // what happened.
 type Subscriber interface {
-    // Start will return a channel of raw messages
+    // Start will return a channel of raw messages.
     Start() <-chan SubscriberMessage
     // Err will contain any errors returned from the consumer connection.
     Err() error
-    // Stop will initiate a graceful shutdown of the subscriber connection
+    // Stop will initiate a graceful shutdown of the subscriber connection.
     Stop() error
 }
 ```

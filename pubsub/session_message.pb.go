@@ -10,8 +10,8 @@ Package regi is a generated protocol buffer package.
 It is generated from these files:
 	session_message.proto
 
-It has these top-level messages:
-	SessionMessage
+	It has these top-level messages:
+		SessionMessage
 */
 
 import proto "github.com/golang/protobuf/proto"

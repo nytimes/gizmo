@@ -38,7 +38,7 @@ This package is the bulk of the toolkit and relies on `config` for any managing 
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implentations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implenetations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -98,14 +98,14 @@ Also, the one service type that works with an `RPCServer`:
 		JSONMiddlware(JSONEndpoint) JSONEndpoint
 	}
 
-The `Middleware(..)` functions offer each sevice a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)
+The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)
 
 The `pubsub` package
 
 This package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 
 	// Publisher is a generic interface to encapsulate how we want our publishers
-	// to behave. Until we find reason to change, we're forcing all pubslishers
+	// to behave. Until we find reason to change, we're forcing all publishers
 	// to emit protobufs.
 	type Publisher interface {
 		// Publish will publish a message.
@@ -127,7 +127,7 @@ This package contains two generic interfaces for publishing data to queues and s
 		Stop() error
 	}
 
-Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implmentation in `pubsub` to see how they behave.
+Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implementation in `pubsub` to see how they behave.
 
 There are currently 2 implementations of each type of `pubsub` interfaces:
 
@@ -180,7 +180,7 @@ This package contains a handful of very useful functions for parsing types from 
 
 Examples
 
-For examples of how to use the gizmo `server` and `pubsub` packages, take a look at the 'examples' sub directory.
+For examples of how to use the gizmo `server` and `pubsub` packages, take a look at the 'examples' subdirectory.
 
 The Gizmo logo was based on the Go mascot designed by Renée French and copyrighted under the Creative Commons Attribution 3.0 license.
 */

@@ -20,12 +20,12 @@ General questions should go to the [#gizmo](https://gophers.slack.com/messages/g
 
 Before submitting changes, please follow these guidelines:
 
-1. Check the open issues and pull requests for existing disuccsions.
+1. Check the open issues and pull requests for existing discussions.
 2. Open an issue to discuss a new feature.
 3. Write tests.
 4. Make sure code follows the ['Go Code Review Comments'](https://github.com/golang/go/wiki/CodeReviewComments).
 5. Make sure your changes pass `golint` and `vet` checks.
-6. Make sure the entiere test suites passes locally and on Travis CI.
+6. Make sure the entire test suite passes locally and on Travis CI.
 7. Open a Pull Request.
 8. [Squash your commits](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html) after receiving feedback and add a [great commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
 

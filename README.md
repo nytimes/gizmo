@@ -1,4 +1,5 @@
-# Gizmo Microservice Toolkit
+# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo)
+
 ![Gizmo!](http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png)
 
 This toolkit provides packages to put together server and pubsub daemons with the following features:

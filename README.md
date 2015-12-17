@@ -34,7 +34,7 @@ The package also has a generic `Config` type that contains all of the above type
 
 This package is the bulk of the toolkit and relies on `config` for any managing `Server` implementations. A server must implement the following interface:
 
-```
+```go
 // Server is the basic interface that defines what expect from any server.
 type Server interface {
     Register(Service) error
@@ -50,7 +50,7 @@ The package offers 2 server implementations:
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
 The `Service` interface is minimal to allow for maximum flexibility:
-```
+```go
 type Service interface {
     Prefix() string
 
@@ -61,7 +61,7 @@ type Service interface {
 
 The 3 service types that are accepted and hostable on the `SimpleServer`:
 
-```
+```go
 type SimpleService interface {
     Service
 
@@ -99,7 +99,7 @@ type JSONEndpoint func(*http.Request) (int, interface{}, error)
 
 Also, the one service type that works with an `RPCServer`:
 
-```
+```go
 type RPCService interface {
     Service
 
@@ -118,7 +118,7 @@ The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's 
 
 This package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 
-```
+```go
 // Publisher is a generic interface to encapsulate how we want our publishers
 // to behave. Until we find reason to change, we're forcing all publishers
 // to emit protobufs.
@@ -155,7 +155,7 @@ For pubsub via Kafka topics, you can use the `KakfaPublisher` and the `KafkaSubs
 
 This package contains 'test' implementations of the `pubsub.Publisher` and `pubsub.Subscriber` interfaces that will allow developers to easily mock out and test their `pubsub` implementations:
 
-```
+```go
 type TestPublisher struct {
     // Published will contain a list of all messages that have been published.
     Published []TestPublishMsg

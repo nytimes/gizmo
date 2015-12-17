@@ -69,9 +69,9 @@ func TestGetMostPopular(t *testing.T) {
 				},
 			},
 
-			http.StatusInternalServerError,
+			http.StatusServiceUnavailable,
 			map[string]interface{}{
-				"error": "unacceptable!!!",
+				"error": "sorry, this service is unavailable",
 			},
 		},
 	}

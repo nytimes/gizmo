@@ -1,5 +1,4 @@
-# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master)
-[![Code Climate](https://codeclimate.com/github/NYTimes/gizmo/badges/gpa.svg)](https://codeclimate.com/github/NYTimes/gizmo) [![Test Coverage](https://codeclimate.com/github/NYTimes/gizmo/badges/coverage.svg)](https://codeclimate.com/github/NYTimes/gizmo/coverage)
+# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master) [![Code Climate](https://codeclimate.com/github/NYTimes/gizmo/badges/gpa.svg)](https://codeclimate.com/github/NYTimes/gizmo) 
 
 ![Gizmo!](http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png)
 

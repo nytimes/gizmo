@@ -15,7 +15,6 @@ generate_cover_data() {
             then
                 f="$workdir/$(echo $pkg | tr / -)"
                 go test -covermode="$mode" -coverprofile="$f.cover" "$pkg"
-                go test -covermode="$mode" -coverpkg "$pkg" -coverprofile="$f.e2e.cover"
         fi
     done
 

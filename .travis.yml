@@ -5,6 +5,10 @@ before_install:
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
 
+install:
+  - mkdir -p "$GOPATH/src/github.com/nytimes/gizmo"
+  - mv "$TRAVIS_BUILD_DIR" "$GOPATH/src/github.com/nytimes/gizmo"
+
 script:
   - make test
   - make coverage

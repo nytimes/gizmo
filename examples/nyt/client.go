@@ -82,6 +82,6 @@ func (c *ClientImpl) do(uri string) ([]byte, error) {
 
 	var bod []byte
 	bod, err = ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	err = res.Body.Close()
 	return bod, err
 }

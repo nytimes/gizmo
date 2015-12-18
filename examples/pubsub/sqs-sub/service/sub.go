@@ -74,17 +74,17 @@ func Init() {
 func Run() error {
 	stream := sub.Start()
 
-	go func() {
-		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-		Log.Infof("received kill signal %s", <-ch)
-		sub.Stop()
-	}()
-
 	var (
 		err     error
 		article nyt.SemanticConceptArticle
 	)
+
+	go func(err error) {
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+		Log.Infof("received kill signal %s", <-ch)
+		err = sub.Stop()
+	}(err)
 
 	for msg := range stream {
 		totalMsgsConsumed.Inc(1)
@@ -111,7 +111,7 @@ func Run() error {
 		}
 	}
 
-	return nil
+	return err
 }
 
 var (

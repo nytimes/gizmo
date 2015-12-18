@@ -73,7 +73,9 @@ func (e *ESXHealthCheck) Stop() error {
 // as a load balancer.
 func (e *ESXHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if atomic.LoadUint32(&e.ready) == 1 {
-		io.WriteString(w, fmt.Sprint("ok-", Name))
+		if _, err := io.WriteString(w, "ok-"+Name); err != nil {
+			LogWithFields(r).Warn("unable to write healthcheck response: ", err)
+		}
 		e.updateReadyTime(r, true)
 	} else {
 		http.Error(w, "service unavailable", http.StatusServiceUnavailable)

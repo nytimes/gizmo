@@ -32,11 +32,9 @@ vet: testdeps
 
 errcheck: testdeps
 	go get -v github.com/kisielk/errcheck
-	errcheck ./...
+	errcheck -ignoretests ./...
 
-#TODO: add errcheck back when everything actually has errors checked or ignored
-#pretest: lint vet errcheck
-pretest: lint vet
+pretest: lint vet errcheck
 
 test: testdeps pretest
 	go test ./...

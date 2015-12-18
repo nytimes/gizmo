@@ -45,5 +45,7 @@ func (s *SimpleHealthCheck) Stop() error {
 
 // ServeHTTP will always respond with "ok-"+server.Name.
 func (s *SimpleHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "ok-"+Name)
+	if _, err := io.WriteString(w, "ok-"+Name); err != nil {
+		LogWithFields(r).Warn("unable to write healthcheck response: ", err)
+	}
 }

@@ -104,7 +104,13 @@ func (r *RPCServer) Start() error {
 	if err != nil {
 		return err
 	}
-	go r.srvr.Serve(rl)
+
+	func() {
+		if err := r.srvr.Serve(rl); err != nil {
+			Log.Error("encountered an error while serving RPC listener: ", err)
+		}
+	}()
+
 	Log.Infof("RPC listening on %s", rl.Addr().String())
 
 	// setup HTTP
@@ -119,14 +125,22 @@ func (r *RPCServer) Start() error {
 	if err != nil {
 		return err
 	}
-	go srv.Serve(hl)
+
+	func() {
+		if err := srv.Serve(rl); err != nil {
+			Log.Error("encountered an error while serving listener: ", err)
+		}
+	}()
+
 	Log.Infof("HTTP listening on %s", hl.Addr().String())
 
 	// join the LB
 	go func() {
 		exit := <-r.exit
 
-		healthHandler.Stop()
+		if err := healthHandler.Stop(); err != nil {
+			Log.Warn("health check Stop returned with error: ", err)
+		}
 
 		r.srvr.Stop()
 		exit <- hl.Close()
@@ -168,7 +182,10 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 
 			// give the users our deepest regrets
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(UnexpectedServerError)
+			if _, err := w.Write(UnexpectedServerError); err != nil {
+				LogWithFields(req).Warn("unable to write response: ", err)
+			}
+
 		}
 	}()
 

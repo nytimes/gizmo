@@ -12,7 +12,11 @@ import (
 func JSONToHTTP(ep JSONEndpoint) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
-			defer r.Body.Close()
+			defer func() {
+				if err := r.Body.Close(); err != nil {
+					Log.Warn("unable to close request body: ", err)
+				}
+			}()
 		}
 		// it's JSON, so always set that content type
 		w.Header().Set("Content-Type", jsonContentType)
@@ -26,9 +30,15 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 		if err != nil {
 			res = err
 		}
-		encoder.Encode(res)
 
-		w.Write(b.Bytes())
+		err = encoder.Encode(res)
+		if err != nil {
+			LogWithFields(r).Error("unable to JSON encode response: ", err)
+		}
+
+		if _, err := w.Write(b.Bytes()); err != nil {
+			LogWithFields(r).Warn("unable to write response: ", err)
+		}
 	})
 }
 
@@ -79,10 +89,14 @@ func JSONPHandler(f http.Handler) http.Handler {
 			result = append(result, jsonpSecond...)
 			result = append(result, jw.buf.Bytes()...)
 			result = append(result, jsonpEnd...)
-			w.Write(result)
+			if _, err := w.Write(result); err != nil {
+				LogWithFields(r).Warn("unable to write JSONP response: ", err)
+			}
 		} else {
 			// if no callback, just write the bytes
-			w.Write(jw.buf.Bytes())
+			if _, err := w.Write(jw.buf.Bytes()); err != nil {
+				LogWithFields(r).Warn("unable to write response: ", err)
+			}
 		}
 	})
 }

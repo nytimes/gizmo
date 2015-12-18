@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 
 	"github.com/nytimes/gizmo/examples/servers/rpc/service"
+	"github.com/nytm/gizmo/server"
 )
 
 var (
@@ -26,7 +27,12 @@ func main() {
 	if err != nil {
 		grpclog.Fatalf("fail to dial: %v", err)
 	}
-	defer conn.Close()
+	defer func() {
+		err := conn.Close()
+		if err != nil {
+			server.Log.Warn("unable to close gRPC connection: ", err)
+		}
+	}()
 
 	nytClient := service.NewNYTProxyServiceClient(conn)
 

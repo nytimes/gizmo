@@ -80,7 +80,9 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 
 			// give the users our deepest regrets
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(UnexpectedServerError)
+			if _, err := w.Write(UnexpectedServerError); err != nil {
+				LogWithFields(r).Warn("unable to write response: ", err)
+			}
 		}
 	}()
 
@@ -124,7 +126,11 @@ func (s *SimpleServer) Start() error {
 		l = tls.NewListener(l, srv.TLSConfig)
 	}
 
-	go srv.Serve(l)
+	go func() {
+		if err := srv.Serve(l); err != nil {
+			Log.Error("encountered an error while serving listener: ", err)
+		}
+	}()
 	Log.Infof("Listening on %s", l.Addr().String())
 
 	// join the LB
@@ -132,7 +138,9 @@ func (s *SimpleServer) Start() error {
 		exit := <-s.exit
 
 		// let the health check clean up if it needs to
-		healthHandler.Stop()
+		if err := healthHandler.Stop(); err != nil {
+			Log.Warn("health check Stop returned with error: ", err)
+		}
 
 		// stop the listener
 		exit <- l.Close()
@@ -192,7 +200,11 @@ func (s *SimpleServer) Register(svcI Service) error {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
 							if r.Body != nil {
-								defer r.Body.Close()
+								defer func() {
+									if err := r.Body.Close(); err != nil {
+										Log.Warn("unable to close request body: ", err)
+									}
+								}()
 							}
 
 							// call the func and return err or not

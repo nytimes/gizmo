@@ -42,6 +42,9 @@ test: testdeps pretest
 clean:
 	go clean -i ./...
 
+coverage: testdeps
+	./coverage.sh --coveralls
+
 .PHONY: \
 	all \
 	deps \
@@ -55,4 +58,5 @@ clean:
 	errcheck \
 	pretest \
 	test \
-	clean
+	clean \
+	coverage

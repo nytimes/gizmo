@@ -46,7 +46,6 @@ clean:
 
 .PHONY: \
 	all \
-	version \
 	deps \
 	updatedeps \
 	testdeps \

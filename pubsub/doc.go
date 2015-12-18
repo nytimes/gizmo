@@ -1,5 +1,5 @@
 /*
-The pubsub package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
+Package pubsub contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 
     // Publisher is a generic interface to encapsulate how we want our publishers
     // to behave. Until we find reason to change, we're forcing all publishers

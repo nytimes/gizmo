@@ -1,5 +1,5 @@
 /*
-The config package contains a handful of structs meant for managing common configuration options and credentials. There are currently configs for:
+Package config contains a handful of structs meant for managing common configuration options and credentials. There are currently configs for:
 
     * MySQL
     * MongoDB

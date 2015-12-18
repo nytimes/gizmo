@@ -24,7 +24,7 @@ Before submitting changes, please follow these guidelines:
 2. Open an issue to discuss a new feature.
 3. Write tests.
 4. Make sure code follows the ['Go Code Review Comments'](https://github.com/golang/go/wiki/CodeReviewComments).
-5. Make sure your changes pass `golint` and `vet` checks.
+5. Make sure your changes pass `make test`.
 6. Make sure the entire test suite passes locally and on Travis CI.
 7. Open a Pull Request.
 8. [Squash your commits](http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html) after receiving feedback and add a [great commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).

@@ -1,4 +1,4 @@
-# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo)
+# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master)
 
 ![Gizmo!](http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png)
 

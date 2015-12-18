@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/grpclog"
 
 	"github.com/nytimes/gizmo/examples/servers/rpc/service"
-	"github.com/nytimes/gmo/server"
+	"github.com/nytimes/gizmo/server"
 )
 
 var (

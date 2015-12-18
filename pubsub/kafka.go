@@ -49,7 +49,7 @@ func (p *KafkaPublisher) Publish(key string, m proto.Message) error {
 	return p.PublishRaw(key, mb)
 }
 
-// Publish will emit the byte array to the Kafka topic.
+// PublishRaw will emit the byte array to the Kafka topic.
 func (p *KafkaPublisher) PublishRaw(key string, m []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,

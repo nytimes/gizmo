@@ -207,11 +207,11 @@ func TestParseDateRange(t *testing.T) {
 		}
 
 		if !gotStart.Equal(test.wantStart) {
-			t.Error("got start date of %#v, expected %#v: ", gotStart, test.wantStart)
+			t.Errorf("got start date of %#v, expected %#v: ", gotStart, test.wantStart)
 		}
 
 		if !gotEnd.Equal(test.wantEnd) {
-			t.Error("got end date of %#v, expected %#v: ", gotStart, test.wantStart)
+			t.Errorf("got end date of %#v, expected %#v: ", gotStart, test.wantStart)
 		}
 	}
 }
@@ -383,11 +383,11 @@ func TestParseTruthyFalsy(t *testing.T) {
 		got, gotErr := web.ParseTruthyFalsy(test.given)
 
 		if test.wantErr != (gotErr != nil) {
-			t.Errorf("wantErr is %b, but got %s", test.wantErr, gotErr)
+			t.Errorf("wantErr is %v, but got %s", test.wantErr, gotErr)
 		}
 
 		if test.want != got {
-			t.Errorf("expected %b, got %b", test.want, got)
+			t.Errorf("expected %v, got %v", test.want, got)
 
 		}
 

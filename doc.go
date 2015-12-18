@@ -1,5 +1,5 @@
 /*
-This toolkit provides packages to put together server and pubsub daemons with the following features:
+Package gizmo is a toolkit that provides packages to put together server and pubsub daemons with the following features:
 
 	* standardized configuration and logging
 	* health check endpoints with configurable strategies

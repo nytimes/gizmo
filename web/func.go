@@ -94,7 +94,7 @@ func ParseDateRangeFullDay(vars map[string]string) (startDate time.Time, endDate
 	return
 }
 
-// ParseThruthyFalsy is a helper method to attempt to parse booleans in
+// ParseTruthyFalsy is a helper method to attempt to parse booleans in
 // APIs that have no set contract on what a boolean should look like.
 func ParseTruthyFalsy(flag interface{}) (result bool, err error) {
 	err = errors.New("unable to parse input as truthy/falsey")

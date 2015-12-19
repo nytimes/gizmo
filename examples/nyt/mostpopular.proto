@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-import "google/type/date.proto"
+import "google/type/date.proto";
 
 package nyt;
 

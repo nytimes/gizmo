@@ -44,7 +44,7 @@ func (s *RPCService) Prefix() string {
 // Service provides the RPCService with a description of the
 // service to serve and the implementation.
 func (s *RPCService) Service() (*grpc.ServiceDesc, interface{}) {
-	return &NYTProxyService_serviceDesc, s
+	return &_NYTProxyService_serviceDesc, s
 }
 
 // Middleware provides an http.Handler hook wrapped around all requests.

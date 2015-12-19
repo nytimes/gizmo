@@ -2,27 +2,25 @@ syntax = "proto3";
 
 package service;
 
+import "google/protobuf/empty.proto";
 import "nyt/mostpopular.proto";
 import "nyt/semanticconcept.proto";
 
 message MostPopularRequest {
-    string resourceType = 1;
+    string resource_type = 1;
     string section = 2;
-    uint32 timePeriodDays = 3;
+    uint32 time_period_days = 3;
 }
 
 message MostPopularResponse {
-    repeated nyt.MostPopularResult results = 1;
-}
-
-message CatsRequest {
+    repeated nyt.MostPopularResult result = 1;
 }
 
 message CatsResponse {
-    repeated nyt.SemanticConceptArticle results = 1;
+    repeated nyt.SemanticConceptArticle result = 1;
 }
 
 service NYTProxyService {
-    rpc GetMostPopular(MostPopularRequest) returns (MostPopularResponse);
-    rpc GetCats(CatsRequest) returns (CatsResponse);
+    rpc GetMostPopular(MostPopularRequest) returns (MostPopularResponse) {}
+    rpc GetCats(google.protobuf.Empty) returns (CatsResponse) {}
 }

@@ -19,8 +19,8 @@ package service
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import nyt "github.com/NYTimes/gizmo/examples/nyt"
-import nyt1 "github.com/NYTimes/gizmo/examples/nyt"
+import nyt "github.com/nytimes/gizmo/examples/nyt"
+import nyt1 "github.com/nytimes/gizmo/examples/nyt"
 
 import (
 	context "golang.org/x/net/context"

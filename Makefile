@@ -24,7 +24,7 @@ install: deps
 #   export PROTOEASY_ADDRESS=0.0.0.0:6789 # or whatever your docker host address is
 proto:
 	go get -v go.pedge.io/protoeasy/cmd/protoeasy
-	protoeasy --grpc --go --go-import-path github.com/NYTimes/gizmo .
+	protoeasy --grpc --go --go-import-path github.com/nytimes/gizmo .
 
 lint: testdeps
 	go get -v github.com/golang/lint/golint

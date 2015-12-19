@@ -1,0 +1,11 @@
+{
+    "Server": {
+        "Log":"",
+        "HTTPPort":8080
+    },
+    "Kafka":{
+        "BrokerHosts":["localhost:9092"],
+        "Partition":0,
+        "MaxRetry":1
+    }
+}

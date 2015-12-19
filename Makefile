@@ -18,6 +18,14 @@ build: deps
 install: deps
 	go install github.com/nytimes/gizmo/...
 
+# to compile without installing protoc:
+#   docker pull quay.io/pedge/protoeasy
+#   docker run -d -p 6789:6789 quay.io/pedge/protoeasy
+#   export PROTOEASY_ADDRESS=0.0.0.0:6789 # or whatever your docker host address is
+proto:
+	go get -v go.pedge.io/protoeasy/cmd/protoeasy
+	protoeasy --grpc --go --go-import-path github.com/NYTimes/gizmo .
+
 lint: testdeps
 	go get -v github.com/golang/lint/golint
 	for file in $$(find . -name '*.go' | grep -v '\.pb\.go\|\.pb\.gw\.go\|examples\|pubsub\/awssub_test\.go\|pubsub\/pubsubtest'); do \
@@ -53,6 +61,7 @@ coverage: testdeps
 	updatetestdeps \
 	build \
 	install \
+	proto \
 	lint \
 	vet \
 	errcheck \

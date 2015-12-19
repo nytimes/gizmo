@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package service;
 
-import "nyt/mostpopular.proto";
-import "nyt/semanticconcept.proto";
+import "examples/nyt/mostpopular.proto";
+import "examples/nyt/semanticconcept.proto";
 
 message MostPopularRequest {
     string resourceType = 1;

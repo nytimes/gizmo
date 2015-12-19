@@ -112,7 +112,7 @@ type RPCService interface {
 }
 ```
 
-The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)
+The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
 ## The `pubsub` package
 
@@ -143,7 +143,7 @@ type Subscriber interface {
 }
 ```
 
-Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implmentation in `pubsub` to see how they behave.
+Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implementation in `pubsub` to see how they behave.
 
 There are currently 2 implementations of each type of `pubsub` interfaces:
 
@@ -198,6 +198,6 @@ This package contains a handful of very useful functions for parsing types from 
 
 ## Examples
 
-* Several reference implementations utilizing `server` and `pubsub` are available in the ['examples'](https://github.com/nytimes/gizmo/tree/master/examples) subdirectory. 
+* Several reference implementations utilizing `server` and `pubsub` are available in the ['examples'](https://github.com/nytimes/gizmo/tree/master/examples) subdirectory.
 
 <sub>The Gizmo logo was based on the Go mascot designed by Renée French and copyrighted under the Creative Commons Attribution 3.0 license.</sub>

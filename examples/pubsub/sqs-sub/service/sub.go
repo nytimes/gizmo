@@ -76,7 +76,7 @@ func Run() (err error) {
 
 	go func() {
 		ch := make(chan os.Signal, 1)
-		signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+		signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
 		Log.Infof("received kill signal %s", <-ch)
 		err = sub.Stop()
 	}()

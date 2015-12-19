@@ -65,7 +65,7 @@ func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*Sema
 	return res.Results[0].ArticleList.Results, nil
 }
 
-func (c *ClientImpl) do(uri string) ([]byte, error) {
+func (c *ClientImpl) do(uri string) (body []byte, err error) {
 	hc := http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -80,8 +80,10 @@ func (c *ClientImpl) do(uri string) ([]byte, error) {
 		return nil, err
 	}
 
-	var bod []byte
-	bod, err = ioutil.ReadAll(res.Body)
-	err = res.Body.Close()
-	return bod, err
+	defer func() {
+		if cerr := res.Body.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+	return ioutil.ReadAll(res.Body)
 }

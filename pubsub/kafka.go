@@ -207,9 +207,9 @@ func GetKafkaPartitions(brokerHosts []string, topic string) (partitions []int32,
 		return partitions, err
 	}
 
-	defer func(err error) {
+	defer func() {
 		err = cnsmr.Close()
-	}(err)
+	}()
 
 	return cnsmr.Partitions(topic)
 }

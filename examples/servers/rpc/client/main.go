@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 
+	"go.pedge.io/google-protobuf"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
@@ -53,7 +55,7 @@ func main() {
 	}
 
 	if *catsFlag {
-		cats, err := nytClient.GetCats(context.Background(), &service.CatsRequest{})
+		cats, err := nytClient.GetCats(context.Background(), google_protobuf.EmptyInstance)
 		if err != nil {
 			log.Fatal("get cats list: ", err)
 		}

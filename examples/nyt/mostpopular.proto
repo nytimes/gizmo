@@ -1,12 +1,14 @@
 syntax = "proto3";
 
+import "google/type/date.proto";
+
 package nyt;
 
 message MostPopularResponse  {
     string status = 1;
     string copyright = 2;
     uint32 num_results = 3;
-    repeated MostPopularResult results = 4;
+    repeated MostPopularResult result = 4;
 }
 
 message MostPopularResult  {
@@ -20,7 +22,7 @@ message MostPopularResult  {
     string type = 8;
     string title = 9;
     string abstract = 10;
-    string published_date = 11;
+    google.type.Date published_date = 11;
     string source = 12;
     uint32 views = 13;
     repeated Media media = 14;

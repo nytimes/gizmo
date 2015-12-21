@@ -8,8 +8,8 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/nytimes/gizmo/config"
-	"github.com/nytimes/logrotate"
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/logrotate"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"

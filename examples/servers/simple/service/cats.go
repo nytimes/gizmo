@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"text/template"
 
+	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/NYTimes/gizmo/server"
 	"github.com/Sirupsen/logrus"
-	"github.com/nytimes/gizmo/examples/nyt"
-	"github.com/nytimes/gizmo/server"
 )
 
 func (s *SimpleService) GetCats(w http.ResponseWriter, r *http.Request) {

@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
+	"github.com/NYTimes/gizmo/web"
 	"github.com/gorilla/mux"
-	"github.com/nytimes/gizmo/web"
 )
 
 func (s *JSONService) GetMostPopular(r *http.Request) (int, interface{}, error) {

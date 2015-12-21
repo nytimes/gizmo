@@ -21,9 +21,9 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/rcrowley/go-metrics"
 
-	"github.com/nytimes/gizmo/config"
-	"github.com/nytimes/gizmo/web"
-	"github.com/nytimes/logrotate"
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/web"
+	"github.com/NYTimes/logrotate"
 )
 
 // Version is meant to be set with the current package version at build time.

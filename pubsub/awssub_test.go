@@ -6,10 +6,10 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/NYTimes/gizmo/config"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/golang/protobuf/proto"
-	"github.com/nytimes/gizmo/config"
 )
 
 func TestSQSSubscriber(t *testing.T) {

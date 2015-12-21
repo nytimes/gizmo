@@ -3,8 +3,8 @@ package pubsubtest
 import (
 	"encoding/json"
 
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
-	"github.com/nytimes/gizmo/pubsub"
 )
 
 type (

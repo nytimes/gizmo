@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/nytimes/gizmo/server"
+	"github.com/NYTimes/gizmo/server"
 )
 
 // CreateStream is a JSON endpoint for creating a new topic in Kafka.

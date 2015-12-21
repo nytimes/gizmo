@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/Sirupsen/logrus"
-	"github.com/nytimes/gizmo/config"
-	"github.com/nytimes/gizmo/examples/nyt"
-	"github.com/nytimes/gizmo/pubsub"
 )
 
 func main() {

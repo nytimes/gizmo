@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/nytimes/gizmo/examples/servers/rpc/service"
+	"github.com/NYTimes/gizmo/examples/servers/rpc/service"
 
-	"github.com/nytimes/gizmo/config"
-	"github.com/nytimes/gizmo/server"
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/server"
 )
 
 func main() {

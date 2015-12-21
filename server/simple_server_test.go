@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/NYTimes/gizmo/config"
 	"github.com/gorilla/mux"
-	"github.com/nytimes/gizmo/config"
 	"github.com/rcrowley/go-metrics"
 )
 

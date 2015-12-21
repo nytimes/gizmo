@@ -4,7 +4,7 @@ import (
 	"errors"
 	"log"
 
-	"github.com/nytimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config"
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"

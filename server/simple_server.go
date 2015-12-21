@@ -9,9 +9,9 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/NYTimes/gizmo/config"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/nytimes/gizmo/config"
 	"github.com/rcrowley/go-metrics"
 )
 

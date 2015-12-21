@@ -1,4 +1,4 @@
-# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/nytimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master)
+# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/NYTimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master)
 
 ![Gizmo!](http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png)
 
@@ -198,6 +198,6 @@ This package contains a handful of very useful functions for parsing types from 
 
 ## Examples
 
-* Several reference implementations utilizing `server` and `pubsub` are available in the ['examples'](https://github.com/nytimes/gizmo/tree/master/examples) subdirectory.
+* Several reference implementations utilizing `server` and `pubsub` are available in the ['examples'](https://github.com/NYTimes/gizmo/tree/master/examples) subdirectory.
 
 <sub>The Gizmo logo was based on the Go mascot designed by Renée French and copyrighted under the Creative Commons Attribution 3.0 license.</sub>

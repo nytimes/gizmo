@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/nytimes/gizmo/examples/nyt"
-	"github.com/nytimes/gizmo/examples/nyt/nyttest"
-	"github.com/nytimes/gizmo/server"
+	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/NYTimes/gizmo/examples/nyt/nyttest"
+	"github.com/NYTimes/gizmo/server"
 
 	"github.com/rcrowley/go-metrics"
 )

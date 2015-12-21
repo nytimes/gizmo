@@ -3,10 +3,10 @@ package service
 import (
 	"net/http"
 
+	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/NYTimes/gizmo/server"
+	"github.com/NYTimes/gizmo/web"
 	"github.com/gorilla/mux"
-	"github.com/nytimes/gizmo/examples/nyt"
-	"github.com/nytimes/gizmo/server"
-	"github.com/nytimes/gizmo/web"
 	"golang.org/x/net/context"
 )
 

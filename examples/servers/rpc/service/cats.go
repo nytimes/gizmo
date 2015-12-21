@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"github.com/nytimes/gizmo/examples/nyt"
-	"github.com/nytimes/gizmo/server"
+	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/NYTimes/gizmo/server"
 	"golang.org/x/net/context"
 )
 

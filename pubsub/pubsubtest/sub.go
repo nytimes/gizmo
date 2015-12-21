@@ -74,7 +74,7 @@ func (t *TestSubscriber) Start() <-chan pubsub.SubscriberMessage {
 	return msgs
 }
 
-// Err ertuens the GivenErrError value.
+// Err returns the GivenErrError value.
 func (t *TestSubscriber) Err() error {
 	return t.GivenErrError
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	// TestPublisher is a simple implementation of pubsub.Publisher meant to
+	// TestSubscriber is a simple implementation of pubsub.Publisher meant to
 	// help mock out any implementations.
 	TestSubscriber struct {
 		// ProtoMessages will be marshalled into []byte and used to mock out
@@ -31,17 +31,19 @@ type (
 		// the JSON and protobuf struct.
 		FoundError error
 	}
-
+	// TestSubsMessage represents a test subscriber message.
 	TestSubsMessage struct {
 		Msg   []byte
 		Doned bool
 	}
 )
 
+// Message returns the subscriber message.
 func (m *TestSubsMessage) Message() []byte {
 	return m.Msg
 }
 
+// Done sets the Doned field to true.
 func (m *TestSubsMessage) Done() error {
 	m.Doned = true
 	return nil
@@ -72,10 +74,12 @@ func (t *TestSubscriber) Start() <-chan pubsub.SubscriberMessage {
 	return msgs
 }
 
+// Err ertuens the GivenErrError value.
 func (t *TestSubscriber) Err() error {
 	return t.GivenErrError
 }
 
+// Stop returns the GivenStopError value.
 func (t *TestSubscriber) Stop() error {
 	return t.GivenStopError
 }

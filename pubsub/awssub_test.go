@@ -234,10 +234,10 @@ func (s *TestSQSAPI) GetQueueAttributesRequest(*sqs.GetQueueAttributesInput) (*r
 func (s *TestSQSAPI) GetQueueAttributes(*sqs.GetQueueAttributesInput) (*sqs.GetQueueAttributesOutput, error) {
 	return nil, errNotImpl
 }
-func (s *TestSQSAPI) GetQueueUrlRequest(*sqs.GetQueueUrlInput) (*request.Request, *sqs.GetQueueUrlOutput) {
+func (s *TestSQSAPI) GetQueueURLRequest(*sqs.GetQueueURLInput) (*request.Request, *sqs.GetQueueUrlOutput) {
 	return nil, nil
 }
-func (s *TestSQSAPI) GetQueueUrl(*sqs.GetQueueUrlInput) (*sqs.GetQueueUrlOutput, error) {
+func (s *TestSQSAPI) GetQueueURL(*sqs.GetQueueURLInput) (*sqs.GetQueueURLOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) ListDeadLetterSourceQueuesRequest(*sqs.ListDeadLetterSourceQueuesInput) (*request.Request, *sqs.ListDeadLetterSourceQueuesOutput) {

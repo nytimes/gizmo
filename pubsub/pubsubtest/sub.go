@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	// TestSubscriber is a simple implementation of pubsub.Publisher meant to
+	// TestSubscriber is a simple implementation of pubsub.Subscriber meant to
 	// help mock out any implementations.
 	TestSubscriber struct {
 		// ProtoMessages will be marshalled into []byte and used to mock out

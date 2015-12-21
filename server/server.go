@@ -95,7 +95,11 @@ func Init(name string, scfg *config.Server) {
 	} else {
 		Log.Out = os.Stderr
 	}
-	SetLogLevel(scfg)
+	level, err := logrus.ParseLevel(scfg.LogLevel)
+	if err != nil {
+		Log.Fatalf("unable to set log level: %s", err)
+	}
+	Log.Level = level
 
 	server = NewServer(scfg)
 }
@@ -248,19 +252,4 @@ func MetricsRegistryName() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
-}
-
-// SetLogLevel will set the appropriate logrus log level
-// given the server config.
-func SetLogLevel(scfg *config.Server) {
-	switch scfg.LogLevel {
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "warn":
-		logrus.SetLevel(logrus.WarnLevel)
-	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
-	default:
-		logrus.SetLevel(logrus.InfoLevel)
-	}
 }

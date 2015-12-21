@@ -17,18 +17,23 @@ type (
 		// the protobuf struct.
 		FoundError error
 	}
+	// TestPublishMsg is a test publish message.
 	TestPublishMsg struct {
-		Key  string
+		// Key represents the message key.
+		Key string
+		// Body represents the message body.
 		Body []byte
 	}
 )
 
+// Publish publishes the message, delegating to PublishRaw.
 func (t *TestPublisher) Publish(key string, msg proto.Message) error {
 	data, err := proto.Marshal(msg)
 	t.FoundError = err
 	return t.PublishRaw(key, data)
 }
 
+// PublishRaw publishes the raw message byte slice.
 func (t *TestPublisher) PublishRaw(key string, msg []byte) error {
 	t.Published = append(t.Published, TestPublishMsg{key, msg})
 	return t.GivenError

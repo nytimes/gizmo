@@ -25,13 +25,20 @@ type SNSPublisher struct {
 }
 
 // NewSNSPublisher will initiate the SNS client.
+// If no credentials are passed in with the config,
+// the publisher is instantiated with the AWS_ACCESS_KEY
+// and the AWS_SECRET_KEY environment variables.
 func NewSNSPublisher(cfg *config.SNS) (*SNSPublisher, error) {
 	p := &SNSPublisher{}
 
-	if len(cfg.Topic) == 0 {
-		return p, errors.New("sns topic name is required")
+	if cfg.Topic == "" {
+		return p, errors.New("SNS topic name is required")
 	}
 	p.topic = cfg.Topic
+
+	if cfg.Region == "" {
+		return p, errors.New("SNS region is required")
+	}
 
 	var creds *credentials.Credentials
 	if cfg.AccessKey != "" {

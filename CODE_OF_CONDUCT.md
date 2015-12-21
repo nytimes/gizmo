@@ -71,3 +71,5 @@ We all stand on the shoulders of giants across many open source communities.  We
 * [Contributor Covenant](http://contributor-covenant.org/)
 * [Geek Feminism](http://geekfeminism.org/about/code-of-conduct/)
 * [Citizen Code of Conduct](http://citizencodeofconduct.org/)
+
+This Code of Conduct was based on https://github.com/todogroup/opencodeofconduct

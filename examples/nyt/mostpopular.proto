@@ -6,7 +6,7 @@ message MostPopularResponse  {
     string status = 1;
     string copyright = 2;
     uint32 num_results = 3;
-    repeated MostPopularResult results = 4;
+    repeated MostPopularResult result = 4;
 }
 
 message MostPopularResult  {

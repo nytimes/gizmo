@@ -6,7 +6,7 @@ message SemanticConceptResponse  {
     string status = 1;
     string copyright = 2;
     uint32 num_results = 3;
-    repeated SemanticConceptResult results = 4;
+    repeated SemanticConceptResult result = 4;
 }
 
 message SemanticConceptResult {
@@ -14,7 +14,7 @@ message SemanticConceptResult {
 }
 
 message SemanticConceptArticleList {
-    repeated SemanticConceptArticle results = 1;
+    repeated SemanticConceptArticle result = 1;
     uint32 total = 2;
 }
 

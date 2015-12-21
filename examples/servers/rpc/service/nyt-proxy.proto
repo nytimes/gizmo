@@ -12,7 +12,7 @@ message MostPopularRequest {
 }
 
 message MostPopularResponse {
-    repeated nyt.MostPopularResult results = 1;
+    repeated nyt.MostPopularResult result = 1;
 }
 
 message CatsRequest {

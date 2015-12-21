@@ -35,5 +35,5 @@ func (s *RPCService) GetMostPopularJSON(r *http.Request) (int, interface{}, erro
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
-	return http.StatusOK, res.Results, nil
+	return http.StatusOK, res.Result, nil
 }

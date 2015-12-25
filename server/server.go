@@ -29,12 +29,17 @@ import (
 // Version is meant to be set with the current package version at build time.
 var Version string
 
-// Server is the basic interface that defines what to expect from any server.
-type Server interface {
-	Register(Service) error
-	Start() error
-	Stop() error
-}
+type (
+	// Server is the basic interface that defines what to expect from any server.
+	Server interface {
+		Register(Service) error
+		Start() error
+		Stop() error
+	}
+	// middlewareFunc is used by `RegisterMiddleware` to register a list of
+	// server level middlewares.
+	middlewareFunc func(http.Handler) http.Handler
+)
 
 var (
 	// Name is used for status and logging.
@@ -50,6 +55,9 @@ var (
 	// JSONContentType is the content type that will be used for JSONEndpoints.
 	// It will default to the web.JSONContentType value.
 	jsonContentType = web.JSONContentType
+	// registeredMiddlewares are the middlewares that are registered on the
+	// server level and that will be used across multiple services.
+	registeredMiddlewares []middlewareFunc
 )
 
 // Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
@@ -248,6 +256,12 @@ func MetricsRegistryName() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
+}
+
+// RegisterMiddleware will register a middleware on the server level. This
+// middleware will be executed across all services.
+func RegisterMiddleware(mw middlewareFunc) {
+	registeredMiddlewares = append(registeredMiddlewares, mw)
 }
 
 // SetLogLevel will set the appropriate logrus log level

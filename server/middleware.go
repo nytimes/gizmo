@@ -101,6 +101,19 @@ func JSONPHandler(f http.Handler) http.Handler {
 	})
 }
 
+// RegisteredMiddlewareHandler goes over all the registered Middleware on the
+// server level and applies the handler to it.
+func RegisteredMiddlewareHandler(f http.Handler) http.Handler {
+	var handler http.Handler
+	handler = f
+
+	for _, f := range registeredMiddlewares {
+		handler = f(handler)
+	}
+
+	return handler
+}
+
 var (
 	jsonpStart  = []byte("/**/")
 	jsonpSecond = []byte("(")

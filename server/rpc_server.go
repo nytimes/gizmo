@@ -80,11 +80,11 @@ func (r *RPCServer) Register(svc Service) error {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)
 			// set the function handle and register is to metrics
-			sr.Handle(path, Timed(CountedByStatusXX(
+			sr.Handle(path, RegisteredMiddlewareHandler(Timed(CountedByStatusXX(
 				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
 				endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
 				endpointName+".DURATION", metrics.DefaultRegistry),
-			).Methods(method)
+			)).Methods(method)
 		}
 	}
 

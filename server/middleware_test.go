@@ -160,9 +160,7 @@ func TestNoCacheHandler(t *testing.T) {
 	r, _ := http.NewRequest("GET", "", nil)
 	w := httptest.NewRecorder()
 
-	NoCacheHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})).ServeHTTP(w, r)
+	doSimpleRequest(NoCacheHandler, w, r)
 
 	want := "no-cache, no-store, must-revalidate"
 	if got := w.Header().Get("Cache-Control"); got != want {
@@ -176,4 +174,37 @@ func TestNoCacheHandler(t *testing.T) {
 	if got := w.Header().Get("Expires"); got != want {
 		t.Errorf("expected no-cache Expires header to be '%#v', got '%#v'", want, got)
 	}
+}
+
+func TestRegisteredMiddlewareHandler(t *testing.T) {
+	r, _ := http.NewRequest("GET", "", nil)
+	w := httptest.NewRecorder()
+
+	doSimpleRequest(RegisteredMiddlewareHandler, w, r)
+
+	want := ""
+	if got := w.Header().Get("ExampleMiddleware"); got != want {
+		t.Errorf("expected ExampleMiddleware header to be '%#v', got '%#v'", want, got)
+	}
+
+	RegisterMiddleware(exampleMiddleware)
+	doSimpleRequest(RegisteredMiddlewareHandler, w, r)
+
+	want = "isSet"
+	if got := w.Header().Get("ExampleMiddleware"); got != want {
+		t.Errorf("expected ExampleMiddleware header to be '%#v', got '%#v'", want, got)
+	}
+}
+
+func exampleMiddleware(f http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("ExampleMiddleware", "isSet")
+		f.ServeHTTP(w, r)
+	})
+}
+
+func doSimpleRequest(mf middlewareFunc, w http.ResponseWriter, r *http.Request) {
+	mf(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})).ServeHTTP(w, r)
 }

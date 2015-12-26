@@ -195,7 +195,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				sr.Handle(path, RegisteredMiddlewareHandler(Timed(CountedByStatusXX(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -213,7 +213,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 					}(ep, ss),
 					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
 					endpointName+".DURATION", metrics.DefaultRegistry),
-				).Methods(method)
+				)).Methods(method)
 			}
 		}
 	}
@@ -224,11 +224,11 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				sr.Handle(path, RegisteredMiddlewareHandler(Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
 					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
 					endpointName+".DURATION", metrics.DefaultRegistry),
-				).Methods(method)
+				)).Methods(method)
 			}
 		}
 	}

@@ -108,6 +108,8 @@ func ParseTruthyFalsy(flag interface{}) (result bool, err error) {
 			result = true
 		case "false", "0":
 			result = false
+		case "":
+			result = false
 		default:
 			return false, err
 		}

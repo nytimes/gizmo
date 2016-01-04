@@ -106,9 +106,7 @@ func ParseTruthyFalsy(flag interface{}) (result bool, err error) {
 		switch flag {
 		case "true", "1":
 			result = true
-		case "false", "0":
-			result = false
-		case "":
+		case "false", "0", "":
 			result = false
 		default:
 			return false, err

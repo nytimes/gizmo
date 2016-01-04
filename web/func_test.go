@@ -332,6 +332,11 @@ func TestParseTruthyFalsy(t *testing.T) {
 			false,
 		},
 		{
+			"",
+			false,
+			false,
+		},
+		{
 			"nope!",
 			false,
 			true,

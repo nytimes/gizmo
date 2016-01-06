@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
+	netContext "golang.org/x/net/context"
 )
 
 // SimpleServer is a basic http Server implementation for
@@ -28,6 +29,9 @@ type SimpleServer struct {
 
 	// tracks active requests
 	monitor *ActivityMonitor
+
+	// root context
+	ctx netContext.Context
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -46,6 +50,7 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		cfg:     cfg,
 		exit:    make(chan chan error),
 		monitor: NewActivityMonitor(),
+		ctx:     netContext.Background(),
 	}
 }
 
@@ -175,6 +180,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 	var (
 		js JSONService
 		ss SimpleService
+		cs ContextService
 	)
 
 	switch svc := svcI.(type) {
@@ -185,6 +191,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 		ss = svc
 	case JSONService:
 		js = svc
+	case ContextService:
+		cs = svc
 	default:
 		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")
 	}
@@ -226,6 +234,20 @@ func (s *SimpleServer) Register(svcI Service) error {
 				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
+					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
+					endpointName+".DURATION", metrics.DefaultRegistry),
+				).Methods(method)
+			}
+		}
+	}
+
+	if cs != nil {
+		// register all context endpoints with our wrapper
+		for path, epMethods := range cs.ContextEndpoints() {
+			for method, ep := range epMethods {
+				endpointName := metricName(prefix, path, method)
+				// set the function handle and register it to metrics
+				sr.Handle(path, Timed(CountedByStatusXX(cs.Middleware(ContextToHTTP(s.ctx, cs.ContextMiddleware(ep))),
 					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
 					endpointName+".DURATION", metrics.DefaultRegistry),
 				).Methods(method)
@@ -282,4 +304,37 @@ func GetIP(r *http.Request) (string, error) {
 		return "", fmt.Errorf("%q is not IP:port", r.RemoteAddr)
 	}
 	return userIP.String(), nil
+}
+
+// ContextKey used to create context keys.
+type ContextKey int
+
+const (
+	// UserIPKey is key to set/retrieve value from context.
+	UserIPKey ContextKey = 0
+
+	// UserForwardForIPKey is key to set/retrieve value from context.
+	UserForwardForIPKey ContextKey = 1
+)
+
+// ContextWithUserIP returns new context with user ip address.
+func ContextWithUserIP(ctx netContext.Context, r *http.Request) netContext.Context {
+	ip, err := GetIP(r)
+	if err != nil {
+		LogWithFields(r).Warningf("unable to get IP: %s", err)
+	} else {
+		ctx = netContext.WithValue(ctx, UserIPKey, ip)
+	}
+
+	return ctx
+}
+
+// ContextWithForwardForIP returns new context with forward for ip.
+func ContextWithForwardForIP(ctx netContext.Context, r *http.Request) netContext.Context {
+	ip := GetForwardedIP(r)
+	if len(ip) > 0 {
+		ctx = netContext.WithValue(ctx, UserForwardForIPKey, ip)
+	}
+
+	return ctx
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/NYTimes/gizmo/config"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
+	"golang.org/x/net/context"
 )
 
 func BenchmarkSimpleServer_NoParam(b *testing.B) {
@@ -172,6 +173,75 @@ func (s *benchmarkJSONService) GetJSONParam(r *http.Request) (int, interface{}, 
 	return http.StatusOK, &testJSON{"hi", something}, nil
 }
 
+func BenchmarkContextSimpleServer_NoParam(b *testing.B) {
+	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	srvr := NewSimpleServer(cfg)
+	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
+	srvr.Register(&benchmarkContextService{})
+
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest("GET", "/svc/v1/ctx/2", nil)
+	r.RemoteAddr = "0.0.0.0:8080"
+
+	for i := 0; i < b.N; i++ {
+		srvr.ServeHTTP(w, r)
+	}
+
+	metrics.DefaultRegistry.UnregisterAll()
+}
+
+func BenchmarkContextSimpleServer_WithParam(b *testing.B) {
+	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	srvr := NewSimpleServer(cfg)
+	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
+	srvr.Register(&benchmarkContextService{})
+
+	w := httptest.NewRecorder()
+	r, _ := http.NewRequest("GET", "/svc/v1/ctx/1/blah", nil)
+	r.RemoteAddr = "0.0.0.0:8080"
+
+	for i := 0; i < b.N; i++ {
+		srvr.ServeHTTP(w, r)
+	}
+
+	metrics.DefaultRegistry.UnregisterAll()
+}
+
+type benchmarkContextService struct {
+}
+
+func (s *benchmarkContextService) Prefix() string {
+	return "/svc/v1"
+}
+
+func (s *benchmarkContextService) ContextEndpoints() map[string]map[string]ContextHandlerFunc {
+	return map[string]map[string]ContextHandlerFunc{
+		"/ctx/1/{something}": map[string]ContextHandlerFunc{
+			"GET": s.GetSimple,
+		},
+		"/ctx/2": map[string]ContextHandlerFunc{
+			"GET": s.GetSimpleNoParam,
+		},
+	}
+}
+
+func (s *benchmarkContextService) ContextMiddleware(h ContextHandler) ContextHandler {
+	return h
+}
+
+func (s *benchmarkContextService) Middleware(h http.Handler) http.Handler {
+	return h
+}
+
+func (s *benchmarkContextService) GetSimple(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	something := mux.Vars(r)["something"]
+	fmt.Fprint(w, something)
+}
+
+func (s *benchmarkContextService) GetSimpleNoParam(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "ok")
+}
+
 type testJSON struct {
 	Hello string `json:"hello"`
 	Howdy string `json:"howdy"`
@@ -242,6 +312,7 @@ func TestBasicRegistration(t *testing.T) {
 		&benchmarkSimpleService{},
 		&benchmarkJSONService{},
 		&testMixedService{},
+		&benchmarkContextService{},
 	}
 	for _, svc := range services {
 		if err := s.Register(svc); err != nil {

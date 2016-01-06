@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
 // JSONToHTTP is the middleware func to convert a JSONEndpoint to
@@ -39,6 +41,30 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 		if _, err := w.Write(b.Bytes()); err != nil {
 			LogWithFields(r).Warn("unable to write response: ", err)
 		}
+	})
+}
+
+// ContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
+func ContextToHTTP(ctx context.Context, ep ContextHandler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Body != nil {
+			defer func() {
+				if err := r.Body.Close(); err != nil {
+					Log.Warn("unable to close request body: ", err)
+				}
+			}()
+		}
+
+		var cancel context.CancelFunc
+
+		ctx, cancel = context.WithCancel(ctx)
+
+		defer cancel()
+
+		ctx = ContextWithUserIP(ctx, r)
+		ctx = ContextWithForwardForIP(ctx, r)
+
+		ep.ServeHTTPContext(ctx, w, r)
 	})
 }
 

@@ -2,9 +2,9 @@ package web
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -97,44 +97,9 @@ func ParseDateRangeFullDay(vars map[string]string) (startDate time.Time, endDate
 // ParseTruthyFalsy is a helper method to attempt to parse booleans in
 // APIs that have no set contract on what a boolean should look like.
 func ParseTruthyFalsy(flag interface{}) (result bool, err error) {
-	err = errors.New("unable to parse input as truthy/falsey")
-
-	switch flag.(type) {
-	case string:
-		flag, _ := flag.(string)
-		flag = strings.ToLower(flag)
-		switch flag {
-		case "true", "1":
-			result = true
-		case "false", "0", "":
-			result = false
-		default:
-			return false, err
-		}
-	case int:
-		flag, _ := flag.(int)
-		switch flag {
-		case 0:
-			result = false
-		case 1:
-			result = true
-		default:
-			return false, err
-		}
-	case float64:
-		flag, _ := flag.(float64)
-		newFlag := int(flag)
-		switch newFlag {
-		case 0:
-			result = false
-		case 1:
-			result = true
-		default:
-			return false, err
-		}
-	case bool:
-		result, _ = flag.(bool)
+	s := fmt.Sprintf("%v", flag)
+	if s == "" {
+		return false, nil
 	}
-
-	return result, nil
+	return strconv.ParseBool(s)
 }

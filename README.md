@@ -102,7 +102,7 @@ type MixedService interface {
 
 Where a `JSONEndpoint`, `ContextHandler` and `ContextHandlerFunc` are defined as:
 
-```
+```go
 type JSONEndpoint func(*http.Request) (int, interface{}, error)
 
 type ContextHandler interface {

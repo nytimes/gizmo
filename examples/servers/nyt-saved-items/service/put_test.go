@@ -15,16 +15,16 @@ import (
 func TestPut(t *testing.T) {
 
 	tests := []struct {
-		givenHeaders http.Header
-		givenURL     string
-		givenRepo    func(uint64, string) error
+		givenID   string
+		givenURL  string
+		givenRepo func(uint64, string) error
 
 		wantCode  int
 		wantError *jsonErr
 		wantResp  *jsonResponse
 	}{
 		{
-			http.Header{"USER_ID": []string{"123456"}},
+			"123456",
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
 				if id != 123456 {
@@ -41,7 +41,7 @@ func TestPut(t *testing.T) {
 			&jsonResponse{"successfully saved item"},
 		},
 		{
-			http.Header{"USER_ID": []string{"123456"}},
+			"123456",
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
 				if id != 123456 {
@@ -58,7 +58,7 @@ func TestPut(t *testing.T) {
 			&jsonResponse{},
 		},
 		{
-			http.Header{},
+			"",
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
 				t.Error("MockPut should not have been called in this scenario!")
@@ -80,7 +80,9 @@ func TestPut(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("PUT", "/svc/saved-items/user?url="+test.givenURL, nil)
-		r.Header = test.givenHeaders
+		if test.givenID != "" {
+			r.Header.Set("USER_ID", test.givenID)
+		}
 
 		ss.ServeHTTP(w, r)
 

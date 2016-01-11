@@ -39,15 +39,15 @@ func TestGet(t *testing.T) {
 	testDate := time.Date(2015, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		givenHeaders http.Header
-		givenRepo    func(uint64) ([]*SavedItem, error)
+		givenID   string
+		givenRepo func(uint64) ([]*SavedItem, error)
 
 		wantCode  int
 		wantError *jsonErr
 		wantItems []*SavedItem
 	}{
 		{
-			http.Header{"USER_ID": []string{"123456"}},
+			"123456",
 			func(id uint64) ([]*SavedItem, error) {
 				if id != 123456 {
 					t.Errorf("mockget expected id of 123456; got %d", id)
@@ -72,7 +72,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			http.Header{},
+			"",
 			func(id uint64) ([]*SavedItem, error) {
 				if id != 123456 {
 					t.Errorf("mockget expected id of 123456; got %d", id)
@@ -91,7 +91,7 @@ func TestGet(t *testing.T) {
 			[]*SavedItem(nil),
 		},
 		{
-			http.Header{"USER_ID": []string{"123456"}},
+			"123456",
 			func(id uint64) ([]*SavedItem, error) {
 				if id != 123456 {
 					t.Errorf("mockget expected id of 123456; got %d", id)
@@ -105,7 +105,7 @@ func TestGet(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for testnum, test := range tests {
 
 		ss := server.NewSimpleServer(nil)
 		testRepo := &testSavedItemsRepo{MockGet: test.givenRepo}
@@ -114,12 +114,14 @@ func TestGet(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "/svc/saved-items/user", nil)
-		r.Header = test.givenHeaders
+		if test.givenID != "" {
+			r.Header.Set("USER_ID", test.givenID)
+		}
 
 		ss.ServeHTTP(w, r)
 
 		if w.Code != test.wantCode {
-			t.Errorf("expected status code of %d; got %d", test.wantCode, w.Code)
+			t.Errorf("TEST[%d] expected status code of %d; got %d", testnum, test.wantCode, w.Code)
 		}
 
 		bod := w.Body.Bytes()
@@ -127,14 +129,14 @@ func TestGet(t *testing.T) {
 			var gotErr *jsonErr
 			json.Unmarshal(bod, &gotErr)
 			if !reflect.DeepEqual(gotErr, test.wantError) {
-				t.Errorf("expected status response of '%#v'; got '%#v'", test.wantError, gotErr)
+				t.Errorf("TEST[%d] expected status response of '%#v'; got '%#v'", testnum, test.wantError, gotErr)
 			}
 		}
 
 		var got []*SavedItem
 		json.Unmarshal(bod, &got)
 		if !reflect.DeepEqual(got, test.wantItems) {
-			t.Errorf("expected items of \n%#v; got \n%#v", test.wantItems, got)
+			t.Errorf("TEST[%d] expected items of \n%#v; got \n%#v", testnum, test.wantItems, got)
 		}
 
 		// ** THIS IS REQUIRED in order to run the test multiple times.

@@ -31,19 +31,11 @@ func (s *SavedItemsService) Prefix() string {
 	return "/svc/saved-items"
 }
 
-type idKey int
-
-const userIDKey idKey = 0
-
 // Middleware provides a hook to add service-wide middleware to the service. In this example
 // we are using it to add GZIP compression to our responses.
 func (s *SavedItemsService) Middleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// wrap the response with our GZIP Middleware
-		h = gziphandler.GzipHandler(h)
-		// and call the endpoint
-		h.ServeHTTP(w, r)
-	})
+	// wrap the response with our GZIP Middleware
+	return gziphandler.GzipHandler(h)
 }
 
 // JSONMiddleware provides a hook to add service-wide middleware for how JSONEndpoints
@@ -65,6 +57,10 @@ func (s *SavedItemsService) JSONMiddleware(j server.JSONEndpoint) server.JSONEnd
 		return code, res, err
 	}
 }
+
+type idKey int
+
+const userIDKey idKey = 0
 
 func authCheck(j server.JSONEndpoint) server.JSONEndpoint {
 	return func(r *http.Request) (code int, res interface{}, err error) {

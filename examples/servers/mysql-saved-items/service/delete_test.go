@@ -12,7 +12,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 )
 
-func TestPut(t *testing.T) {
+func TestDelete(t *testing.T) {
 
 	tests := []struct {
 		givenID   string
@@ -28,29 +28,29 @@ func TestPut(t *testing.T) {
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
 				if id != 123456 {
-					t.Errorf("MockPut expected id of 123456; got %d", id)
+					t.Errorf("MockDelete expected id of 123456; got %d", id)
 				}
 				if url != "http://nytimes.com/article" {
-					t.Errorf("MockPut expected url of `http://nytimes.com/aritcle'; got %s", url)
+					t.Errorf("MockDelete expected url of `http://nytimes.com/aritcle'; got %s", url)
 				}
 				return nil
 			},
 
 			http.StatusOK,
 			nil,
-			&jsonResponse{"successfully saved item"},
+			&jsonResponse{"successfully deleted saved item"},
 		},
 		{
 			"123456",
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
 				if id != 123456 {
-					t.Errorf("MockPut expected id of 123456; got %d", id)
+					t.Errorf("MockDelete expected id of 123456; got %d", id)
 				}
 				if url != "http://nytimes.com/article" {
-					t.Errorf("MockPut expected url of `http://nytimes.com/aritcle'; got %s", url)
+					t.Errorf("MockDelete expected url of `http://nytimes.com/aritcle'; got %s", url)
 				}
-				return errors.New("nope!")
+				return errors.New("nope")
 			},
 
 			http.StatusServiceUnavailable,
@@ -61,7 +61,7 @@ func TestPut(t *testing.T) {
 			"",
 			"http://nytimes.com/article",
 			func(id uint64, url string) error {
-				t.Error("MockPut should not have been called in this scenario!")
+				t.Error("MockDelete should not have been called in this scenario!")
 				return nil
 			},
 
@@ -74,12 +74,12 @@ func TestPut(t *testing.T) {
 	for _, test := range tests {
 
 		ss := server.NewSimpleServer(nil)
-		testRepo := &testSavedItemsRepo{MockPut: test.givenRepo}
+		testRepo := &testSavedItemsRepo{MockDelete: test.givenRepo}
 		sis := &SavedItemsService{testRepo}
 		ss.Register(sis)
 
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("PUT", "/svc/saved-items/user?url="+test.givenURL, nil)
+		r, _ := http.NewRequest("DELETE", "/svc/saved-items/user?url="+test.givenURL, nil)
 		if test.givenID != "" {
 			r.Header.Set("USER_ID", test.givenID)
 		}

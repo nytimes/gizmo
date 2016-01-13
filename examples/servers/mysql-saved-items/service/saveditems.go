@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/sqliface"
 )
 
 type (
-	// SavedITemsRepo is an interface layer between
+	// SavedItemsRepo is an interface layer between
 	// our service and our database. Abstracting these methods
 	// out of a pure implementation helps with testing.
 	SavedItemsRepo interface {
@@ -23,7 +24,7 @@ type (
 		db *sql.DB
 	}
 
-	// A saved item represents an article, blog, interactive, etc.
+	// SavedItem represents an article, blog, interactive, etc.
 	// that a user wants to save for reading later.
 	SavedItem struct {
 		UserID    uint64    `json:"user_id"`
@@ -32,7 +33,7 @@ type (
 	}
 )
 
-// NewSavedITemsRepo will attempt to connect to to MySQL and
+// NewSavedItemsRepo will attempt to connect to to MySQL and
 // return a SavedItemsRepo implementation.
 func NewSavedItemsRepo(cfg *config.MySQL) (SavedItemsRepo, error) {
 	db, err := cfg.DB()
@@ -57,6 +58,12 @@ func (r *MySQLSavedItemsRepo) Get(userID uint64) ([]*SavedItem, error) {
 	}
 	defer rows.Close()
 
+	return scanItems(rows)
+}
+
+func scanItems(rows sqliface.Rows) ([]*SavedItem, error) {
+	var err error
+	// intializing so we return an empty array in case of 0
 	items := []*SavedItem{}
 	for rows.Next() {
 		item := &SavedItem{}

@@ -96,7 +96,7 @@ func TestGet(t *testing.T) {
 				if id != 123456 {
 					t.Errorf("mockget expected id of 123456; got %d", id)
 				}
-				return []*SavedItem{}, errors.New("nope!")
+				return []*SavedItem{}, errors.New("nope")
 			},
 
 			http.StatusServiceUnavailable,

@@ -7,8 +7,9 @@ import (
 	"github.com/gorilla/context"
 )
 
+// Delete is JSONEndpoint for deleting a saved item from a user's list.
 func (s *SavedItemsService) Delete(r *http.Request) (int, interface{}, error) {
-	// gather the inputs
+	// gather the inputs from request
 	id := context.Get(r, userIDKey).(uint64)
 	url := r.URL.Query().Get("url")
 

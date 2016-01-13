@@ -113,7 +113,7 @@ func TestGet(t *testing.T) {
 		ss.Register(sis)
 
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("GET", "/svc/saved-items/user", nil)
+		r, _ := http.NewRequest("GET", "/svc/saved-items", nil)
 		if test.givenID != "" {
 			r.Header.Set("USER_ID", test.givenID)
 		}

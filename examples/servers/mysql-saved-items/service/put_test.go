@@ -79,7 +79,7 @@ func TestPut(t *testing.T) {
 		ss.Register(sis)
 
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("PUT", "/svc/saved-items/user?url="+test.givenURL, nil)
+		r, _ := http.NewRequest("PUT", "/svc/saved-items?url="+test.givenURL, nil)
 		if test.givenID != "" {
 			r.Header.Set("USER_ID", test.givenID)
 		}

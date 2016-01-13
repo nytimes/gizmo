@@ -28,24 +28,28 @@ func NewSavedItemsService(cfg *config.MySQL) (*SavedItemsService, error) {
 // Prefix is to implement gizmo/server.Service interface. The string will be prefixed to all endpoint
 // routes.
 func (s *SavedItemsService) Prefix() string {
-	return "/svc/saved-items"
+	return "/svc"
 }
 
-// Middleware provides a hook to add service-wide middleware to the service. In this example
-// we are using it to add GZIP compression to our responses.
+// Middleware provides a hook to add service-wide http.Handler middleware to the service.
+// In this example we are using it to add GZIP compression to our responses.
+// This method helps satisfy the server.Service interface.
 func (s *SavedItemsService) Middleware(h http.Handler) http.Handler {
 	// wrap the response with our GZIP Middleware
 	return gziphandler.GzipHandler(h)
 }
 
 // JSONMiddleware provides a hook to add service-wide middleware for how JSONEndpoints
-// should behave. In this example, we’re catching all errors and providing a generic JSON
-// response.
+// should behave. In this example, we’re using the hook to check for a header to
+// identify and authorize the user. This method helps satisfy the server.JSONService interface.
 func (s *SavedItemsService) JSONMiddleware(j server.JSONEndpoint) server.JSONEndpoint {
 	return func(r *http.Request) (code int, res interface{}, err error) {
 
 		// wrap our endpoint with an auth check
-		code, res, err = authCheck(j)(r)
+		j = authCheck(j)
+
+		// call the endpoint
+		code, res, err = j(r)
 
 		// if the endpoint returns an unexpected error, return a generic message
 		// and log it.
@@ -58,10 +62,15 @@ func (s *SavedItemsService) JSONMiddleware(j server.JSONEndpoint) server.JSONEnd
 	}
 }
 
+// idKey is a type to use as a key for storing data in the request context.
 type idKey int
 
+// userIDKey can be used to store/retrieve a user ID in a request context.
 const userIDKey idKey = 0
 
+// authCheck is a JSON middleware to check the request for a valid USER_ID
+// header and set it into the request context. If the header is invalid
+// or does not exist, a 401 response will be returned.
 func authCheck(j server.JSONEndpoint) server.JSONEndpoint {
 	return func(r *http.Request) (code int, res interface{}, err error) {
 		// check for User ID header injected by API Gateway
@@ -81,9 +90,10 @@ func authCheck(j server.JSONEndpoint) server.JSONEndpoint {
 
 // JSONEndpoints is the most important method of the Service implementation. It provides a
 // listing of all endpoints available in the service with their routes and HTTP methods.
+// This method helps satisfy the server.JSONService interface.
 func (s *SavedItemsService) JSONEndpoints() map[string]map[string]server.JSONEndpoint {
 	return map[string]map[string]server.JSONEndpoint{
-		"/user": map[string]server.JSONEndpoint{
+		"/saved-items": map[string]server.JSONEndpoint{
 			"GET":    s.Get,
 			"PUT":    s.Put,
 			"DELETE": s.Delete,

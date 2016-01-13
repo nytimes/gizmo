@@ -14,6 +14,8 @@ func main() {
 	// load from the local JSON file into a config.Config struct
 	cfg := config.NewConfig("./config.json")
 	flag.Parse()
+	// SetServerOverrides will allow us to override some of the values in
+	// the JSON file with CLI flags.
 	config.SetServerOverrides(cfg.Server)
 
 	// initialize Gizmo’s server with given configs
@@ -31,7 +33,7 @@ func main() {
 		server.Log.Fatal("unable to register saved items service: ", err)
 	}
 
-	// run the Gizmo server, return on any error
+	// run the Gizmo server
 	err = server.Run()
 	if err != nil {
 		server.Log.Fatal("unable to run saved items service: ", err)

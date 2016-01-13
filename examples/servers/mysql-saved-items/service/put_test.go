@@ -36,7 +36,7 @@ func TestPut(t *testing.T) {
 				return nil
 			},
 
-			http.StatusOK,
+			http.StatusCreated,
 			&jsonErr{},
 			&jsonResponse{"successfully saved item"},
 		},

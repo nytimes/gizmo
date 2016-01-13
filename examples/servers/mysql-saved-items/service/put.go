@@ -20,5 +20,5 @@ func (s *SavedItemsService) Put(r *http.Request) (int, interface{}, error) {
 	}
 
 	server.LogWithFields(r).Info("successfully saved item")
-	return http.StatusOK, jsonResponse{"successfully saved item"}, nil
+	return http.StatusCreated, jsonResponse{"successfully saved item"}, nil
 }

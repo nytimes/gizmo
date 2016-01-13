@@ -7,7 +7,7 @@ import (
 	"github.com/NYTimes/gizmo/server"
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/NYTimes/gizmo/examples/servers/nyt-saved-items/service"
+	"github.com/NYTimes/gizmo/examples/servers/mysql-saved-items/service"
 )
 
 func main() {

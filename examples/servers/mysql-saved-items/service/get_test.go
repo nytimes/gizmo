@@ -62,7 +62,7 @@ func TestGet(t *testing.T) {
 			},
 
 			http.StatusOK,
-			nil,
+			&jsonErr{},
 			[]*SavedItem{
 				&SavedItem{
 					123456,
@@ -125,12 +125,11 @@ func TestGet(t *testing.T) {
 		}
 
 		bod := w.Body.Bytes()
-		if test.wantCode >= 300 {
-			var gotErr *jsonErr
-			json.Unmarshal(bod, &gotErr)
-			if !reflect.DeepEqual(gotErr, test.wantError) {
-				t.Errorf("TEST[%d] expected status response of '%#v'; got '%#v'", testnum, test.wantError, gotErr)
-			}
+
+		var gotErr *jsonErr
+		json.Unmarshal(bod, &gotErr)
+		if !reflect.DeepEqual(gotErr, test.wantError) {
+			t.Errorf("TEST[%d] expected status response of '%#v'; got '%#v'", testnum, test.wantError, gotErr)
 		}
 
 		var got []*SavedItem

@@ -37,7 +37,7 @@ func TestPut(t *testing.T) {
 			},
 
 			http.StatusOK,
-			nil,
+			&jsonErr{},
 			&jsonResponse{"successfully saved item"},
 		},
 		{
@@ -55,7 +55,7 @@ func TestPut(t *testing.T) {
 
 			http.StatusServiceUnavailable,
 			ServiceUnavailableErr,
-			&jsonResponse{},
+			&jsonResponse{""},
 		},
 		{
 			"",
@@ -67,38 +67,49 @@ func TestPut(t *testing.T) {
 
 			http.StatusUnauthorized,
 			UnauthErr,
-			&jsonResponse{},
+			&jsonResponse{""},
 		},
 	}
 
 	for _, test := range tests {
 
+		// create a new Gizmo simple server
 		ss := server.NewSimpleServer(nil)
+		// create our test repo implementation
 		testRepo := &testSavedItemsRepo{MockPut: test.givenRepo}
+		// inject the test repo into a new SavedItemsService
 		sis := &SavedItemsService{testRepo}
+		// register the service with our simple server
 		ss.Register(sis)
 
+		// set up the w and r to pass into our server
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("PUT", "/svc/saved-items?url="+test.givenURL, nil)
 		if test.givenID != "" {
 			r.Header.Set("USER_ID", test.givenID)
 		}
 
+		// run the test by passing a request we expect to hit our endpoint
+		// into the simple server's ServeHTTP method.
 		ss.ServeHTTP(w, r)
 
+		// first test validation: check the HTTP response code
 		if w.Code != test.wantCode {
 			t.Errorf("expected status code of %d; got %d", test.wantCode, w.Code)
 		}
 
+		// get the body of the response to inspect
 		bod := w.Body.Bytes()
-		if test.wantCode >= 300 {
-			var gotErr *jsonErr
-			json.Unmarshal(bod, &gotErr)
-			if !reflect.DeepEqual(gotErr, test.wantError) {
-				t.Errorf("expected status response of '%#v'; got '%#v'", test.wantError, gotErr)
-			}
+
+		// if we were expecting an error scenario, marshal the response
+		// JSON into an error to compare with what we want.
+		var gotErr *jsonErr
+		json.Unmarshal(bod, &gotErr)
+		if !reflect.DeepEqual(gotErr, test.wantError) {
+			t.Errorf("expected status response of '%#v'; got '%#v'", test.wantError, gotErr)
 		}
 
+		// if we expect a normal response, compare it to our wanted response struct
 		var got *jsonResponse
 		json.Unmarshal(bod, &got)
 		if !reflect.DeepEqual(got, test.wantResp) {

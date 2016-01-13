@@ -107,31 +107,43 @@ func TestGet(t *testing.T) {
 
 	for testnum, test := range tests {
 
+		// create a new Gizmo simple server
 		ss := server.NewSimpleServer(nil)
+		// create our test repo implementation
 		testRepo := &testSavedItemsRepo{MockGet: test.givenRepo}
+		// inject the test repo into a new SavedItemsService
 		sis := &SavedItemsService{testRepo}
+		// register the service with our simple server
 		ss.Register(sis)
 
+		// set up the w and r to pass into our server
 		w := httptest.NewRecorder()
 		r, _ := http.NewRequest("GET", "/svc/saved-items", nil)
 		if test.givenID != "" {
 			r.Header.Set("USER_ID", test.givenID)
 		}
 
+		// run the test by passing a request we expect to hit our endpoint
+		// into the simple server's ServeHTTP method.
 		ss.ServeHTTP(w, r)
 
+		// first test validation: check the HTTP response code
 		if w.Code != test.wantCode {
-			t.Errorf("TEST[%d] expected status code of %d; got %d", testnum, test.wantCode, w.Code)
+			t.Errorf("expected status code of %d; got %d", test.wantCode, w.Code)
 		}
 
+		// get the body of the response to inspect
 		bod := w.Body.Bytes()
 
+		// if we were expecting an error scenario, marshal the response
+		// JSON into an error to compare with what we want.
 		var gotErr *jsonErr
 		json.Unmarshal(bod, &gotErr)
 		if !reflect.DeepEqual(gotErr, test.wantError) {
-			t.Errorf("TEST[%d] expected status response of '%#v'; got '%#v'", testnum, test.wantError, gotErr)
+			t.Errorf("expected status response of '%#v'; got '%#v'", test.wantError, gotErr)
 		}
 
+		// if we expect a normal response, compare it to our wanted response struct
 		var got []*SavedItem
 		json.Unmarshal(bod, &got)
 		if !reflect.DeepEqual(got, test.wantItems) {

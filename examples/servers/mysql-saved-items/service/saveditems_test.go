@@ -76,7 +76,10 @@ func TestScanItems(t *testing.T) {
 
 	for _, test := range tests {
 
+		// run the test, passing in the MockRows implementation.
 		got, err := scanItems(test.given)
+
+		// verify the test's results
 
 		if !reflect.DeepEqual(got, test.want) {
 			t.Errorf("expected \n%#v\ngot,\n%#v", test.want, got)

@@ -43,7 +43,8 @@ func NewSavedItemsRepo(cfg *config.MySQL) (SavedItemsRepo, error) {
 	return &MySQLSavedItemsRepo{db}, nil
 }
 
-// Get will attempt to query the underlying MySQL database for
+// Get will attempt to query the underlying MySQL database for saved items
+// for a single user.
 func (r *MySQLSavedItemsRepo) Get(userID uint64) ([]*SavedItem, error) {
 	query := `SELECT 
 				user_id, 
@@ -85,7 +86,7 @@ func (r *MySQLSavedItemsRepo) Put(userID uint64, url string) error {
 	return err
 }
 
-// Delete will remove an item from a user's saved items.
+// Delete will attempt to remove an item from a user's saved items.
 func (r *MySQLSavedItemsRepo) Delete(userID uint64, url string) error {
 	query := `DELETE FROM saved_items
 			  WHERE user_id = ? AND url = ?`

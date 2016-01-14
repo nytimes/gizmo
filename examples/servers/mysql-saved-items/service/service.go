@@ -54,7 +54,9 @@ func (s *SavedItemsService) JSONMiddleware(j server.JSONEndpoint) server.JSONEnd
 		// if the endpoint returns an unexpected error, return a generic message
 		// and log it.
 		if err != nil && code != http.StatusUnauthorized {
-			server.Log.WithField("error", err).Error("unexpected service error")
+			// LogWithFields will add all the request context values
+			// to the structured log entry along some other request info
+			server.LogWithFields(r).WithField("error", err).Error("unexpected service error")
 			return http.StatusServiceUnavailable, nil, ServiceUnavailableErr
 		}
 

@@ -127,7 +127,7 @@ type RPCService interface {
 }
 ```
 
-The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (i.e. oauth, tracing, metrics, logging, etc.)
+The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
 ## The `pubsub` package
 

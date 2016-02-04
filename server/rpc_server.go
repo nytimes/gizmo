@@ -35,6 +35,9 @@ type RPCServer struct {
 
 	// tracks active requests
 	monitor *ActivityMonitor
+
+	// registry for collecting metrics
+	registry metrics.Registry
 }
 
 // NewRPCServer will instantiate a new experimental RPCServer with the given config.
@@ -47,11 +50,12 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
 	return &RPCServer{
-		cfg:     cfg,
-		srvr:    grpc.NewServer(),
-		mux:     mx,
-		exit:    make(chan chan error),
-		monitor: NewActivityMonitor(),
+		cfg:      cfg,
+		srvr:     grpc.NewServer(),
+		mux:      mx,
+		exit:     make(chan chan error),
+		monitor:  NewActivityMonitor(),
+		registry: metrics.NewRegistry(),
 	}
 }
 
@@ -68,7 +72,7 @@ func (r *RPCServer) Register(svc Service) error {
 	r.srvr.RegisterService(desc, grpcSvc)
 	// register endpoints
 	for _, mthd := range desc.Methods {
-		registerRPCMetrics(mthd.MethodName)
+		registerRPCMetrics(mthd.MethodName, r.registry)
 	}
 
 	// register HTTP
@@ -82,8 +86,8 @@ func (r *RPCServer) Register(svc Service) error {
 			// set the function handle and register is to metrics
 			sr.Handle(path, Timed(CountedByStatusXX(
 				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
-				endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-				endpointName+".DURATION", metrics.DefaultRegistry),
+				endpointName+".STATUS-COUNT", r.registry),
+				endpointName+".DURATION", r.registry),
 			).Methods(method)
 		}
 	}
@@ -96,7 +100,7 @@ func (r *RPCServer) Register(svc Service) error {
 // Start start the RPC server.
 func (r *RPCServer) Start() error {
 
-	StartServerMetrics(r.cfg)
+	StartServerMetrics(r.cfg, r.registry)
 
 	// setup RPC
 	registerRPCAccessLogger(r.cfg)
@@ -174,7 +178,7 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("PANIC", metrics.DefaultRegistry)
+			errCntr := metrics.GetOrRegisterCounter("PANIC", r.registry)
 			errCntr.Inc(1)
 
 			// log the panic for all the details later
@@ -255,12 +259,7 @@ type rpcMetrics struct {
 	ErrorCounter   metrics.Counter
 }
 
-func registerRPCMetrics(name string) {
-	registry := metrics.DefaultRegistry
-	if nil != metrics.DefaultRegistry {
-		registry = metrics.DefaultRegistry
-	}
-
+func registerRPCMetrics(name string, registry metrics.Registry) {
 	name = "rpc." + name
 	m := &rpcMetrics{}
 	m.Timer = metrics.NewTimer()

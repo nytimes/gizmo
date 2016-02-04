@@ -12,8 +12,6 @@ import (
 	"github.com/NYTimes/gizmo/pubsub/pubsubtest"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/golang/protobuf/proto"
-
-	"github.com/rcrowley/go-metrics"
 )
 
 func TestGetCats(t *testing.T) {
@@ -82,9 +80,6 @@ func TestGetCats(t *testing.T) {
 				t.Errorf("expected response body of\n%#v;\ngot\n%#v", wantPub, got)
 			}
 		}
-
-		// ** THIS IS REQUIRED in order to run the test multiple times.
-		metrics.DefaultRegistry.UnregisterAll()
 	}
 
 }

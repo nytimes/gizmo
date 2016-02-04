@@ -210,9 +210,13 @@ func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux
 	return hch
 }
 
-// StartServerMetrics will start emitting metrics to the DefaultRegistry
-// if a Graphite host name is given in the config.
-func StartServerMetrics(cfg *config.Server) {
+// StartServerMetrics will start emitting metrics to the provided
+// registry (nil means the DefaultRegistry) if a Graphite host name
+// is given in the config.
+func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
+	if registry == nil {
+		registry = metrics.DefaultRegistry
+	}
 	if cfg.GraphiteHost == "" {
 		return
 	}
@@ -221,7 +225,7 @@ func StartServerMetrics(cfg *config.Server) {
 	if err != nil {
 		Log.Warnf("unable to resolve graphite host: %s", err)
 	}
-	go graphite.Graphite(metrics.DefaultRegistry, 30*time.Second, MetricsRegistryName(), addr)
+	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
 }
 
 // RegisterAccessLogger will wrap a logrotate-aware Apache-style access log handler

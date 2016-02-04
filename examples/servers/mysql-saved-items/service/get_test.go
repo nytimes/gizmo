@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gizmo/server"
-	"github.com/rcrowley/go-metrics"
 )
 
 // testSavedItemsRepo is a mock implementation of the SavedItemsRepo interface.
@@ -149,8 +148,5 @@ func TestGet(t *testing.T) {
 		if !reflect.DeepEqual(got, test.wantItems) {
 			t.Errorf("TEST[%d] expected items of \n%#v; got \n%#v", testnum, test.wantItems, got)
 		}
-
-		// ** THIS IS REQUIRED in order to run the test multiple times.
-		metrics.DefaultRegistry.UnregisterAll()
 	}
 }

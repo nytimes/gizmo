@@ -32,6 +32,9 @@ type SimpleServer struct {
 
 	// root context
 	ctx netContext.Context
+
+	// registry for collecting metrics
+	registry metrics.Registry
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -46,11 +49,12 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
 	return &SimpleServer{
-		mux:     mx,
-		cfg:     cfg,
-		exit:    make(chan chan error),
-		monitor: NewActivityMonitor(),
-		ctx:     netContext.Background(),
+		mux:      mx,
+		cfg:      cfg,
+		exit:     make(chan chan error),
+		monitor:  NewActivityMonitor(),
+		ctx:      netContext.Background(),
+		registry: metrics.NewRegistry(),
 	}
 }
 
@@ -77,7 +81,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("PANIC", metrics.DefaultRegistry)
+			errCntr := metrics.GetOrRegisterCounter("PANIC", s.registry)
 			errCntr.Inc(1)
 
 			// log the panic for all the details later
@@ -100,7 +104,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 // register profiling, health checks and access logging.
 func (s *SimpleServer) Start() error {
 
-	StartServerMetrics(s.cfg)
+	StartServerMetrics(s.cfg, s.registry)
 
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
@@ -219,8 +223,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 							ss.Middleware(ep).ServeHTTP(w, r)
 						})
 					}(ep, ss),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}
@@ -234,8 +238,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}
@@ -248,8 +252,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(cs.Middleware(ContextToHTTP(s.ctx, cs.ContextMiddleware(ep))),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}

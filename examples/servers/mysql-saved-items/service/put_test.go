@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/NYTimes/gizmo/server"
-	"github.com/rcrowley/go-metrics"
 )
 
 func TestPut(t *testing.T) {
@@ -115,8 +114,5 @@ func TestPut(t *testing.T) {
 		if !reflect.DeepEqual(got, test.wantResp) {
 			t.Errorf("expected response of \n%#v; got \n%#v", test.wantResp, got)
 		}
-
-		// ** THIS IS REQUIRED in order to run the test multiple times.
-		metrics.DefaultRegistry.UnregisterAll()
 	}
 }

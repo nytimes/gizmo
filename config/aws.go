@@ -30,9 +30,10 @@ type (
 		SleepInterval *time.Duration `envconfig:"AWS_SQS_SLEEP_INTERVAL"`
 		// DeleteBufferSize will override the DefaultSQSDeleteBufferSize.
 		DeleteBufferSize *int `envconfig:"AWS_SQS_DELETE_BUFFER_SIZE"`
-		// ConsumeProtobuf is a flag to signal the subscriber to base64 decode the payload.
-		// before returning it.
-		ConsumeProtobuf bool `envconfig:"AWS_SQS_CONSUME_PROTOBUF"`
+		// ConsumeBase64 is a flag to signal the subscriber to base64 decode the payload
+		// before returning it. If it is not set in the config, the flag will default
+		// to 'true'.
+		ConsumeBase64 *bool `envconfig:"AWS_SQS_CONSUME_BASE64"`
 	}
 
 	// SNS holds the info required to work with Amazon SNS.

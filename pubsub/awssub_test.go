@@ -12,7 +12,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func TestSQSSubscriber(t *testing.T) {
+func TestSQSSubscriberNoBase64(t *testing.T) {
 	test1 := "hey hey hey!"
 	test2 := "ho ho ho!"
 	test3 := "yessir!"
@@ -42,7 +42,8 @@ func TestSQSSubscriber(t *testing.T) {
 		},
 	}
 
-	cfg := &config.SQS{}
+	fals := false
+	cfg := &config.SQS{ConsumeBase64: &fals}
 	defaultSQSConfig(cfg)
 	sub := &SQSSubscriber{
 		sqs:        sqstest,
@@ -79,7 +80,7 @@ func verifySQSSub(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQS
 	}
 }
 
-func TestSQSSubscriberProto(t *testing.T) {
+func TestSQSSubscriber(t *testing.T) {
 	test1 := &TestProto{"hey hey hey!"}
 	test2 := &TestProto{"ho ho ho!"}
 	test3 := &TestProto{"yessir!"}
@@ -108,7 +109,8 @@ func TestSQSSubscriberProto(t *testing.T) {
 			},
 		},
 	}
-	cfg := &config.SQS{ConsumeProtobuf: true}
+
+	cfg := &config.SQS{}
 	defaultSQSConfig(cfg)
 	sub := &SQSSubscriber{
 		sqs:        sqstest,

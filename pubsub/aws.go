@@ -86,15 +86,17 @@ var (
 	// defaultSQSTimeoutSeconds is the default number of seconds the
 	// SQS client will wait before timing out.
 	defaultSQSTimeoutSeconds int64 = 2
-	// SQSSleepInterval is the default time.Duration the
+	// defaultSQSSleepInterval is the default time.Duration the
 	// SQSSubscriber will wait if it sees no messages
 	// on the queue.
 	defaultSQSSleepInterval = 2 * time.Second
 
-	// SQSDeleteBufferSize is the default limit of messages
+	// defaultSQSDeleteBufferSize is the default limit of messages
 	// allowed in the delete buffer before
 	// executing a 'delete batch' request.
 	defaultSQSDeleteBufferSize = 0
+
+	defaultSQSConsumeBase64 = true
 )
 
 func defaultSQSConfig(cfg *config.SQS) {
@@ -112,6 +114,10 @@ func defaultSQSConfig(cfg *config.SQS) {
 
 	if cfg.DeleteBufferSize == nil {
 		cfg.DeleteBufferSize = &defaultSQSDeleteBufferSize
+	}
+
+	if cfg.ConsumeBase64 == nil {
+		cfg.ConsumeBase64 = &defaultSQSConsumeBase64
 	}
 }
 
@@ -187,14 +193,15 @@ func NewSQSSubscriber(cfg *config.SQS) (*SQSSubscriber, error) {
 // Message will decode protobufed message bodies and simply return
 // a byte slice containing the message body for all others types.
 func (m *SQSMessage) Message() []byte {
-	if m.sub.cfg.ConsumeProtobuf {
-		msgBody, err := base64.StdEncoding.DecodeString(*m.message.Body)
-		if err != nil {
-			Log.Warnf("unable to parse message body: %s", err)
-		}
-		return msgBody
+	if !*m.sub.cfg.ConsumeBase64 {
+		return []byte(*m.message.Body)
 	}
-	return []byte(*m.message.Body)
+
+	msgBody, err := base64.StdEncoding.DecodeString(*m.message.Body)
+	if err != nil {
+		Log.Warnf("unable to parse message body: %s", err)
+	}
+	return msgBody
 }
 
 // Done will queue up a message to be deleted. By default,

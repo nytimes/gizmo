@@ -47,17 +47,25 @@ type (
 		AWS
 		Bucket string `envconfig:"AWS_S3_BUCKET_NAME"`
 	}
+
+	// DynamoDB holds some basic info required to work with Amazon DynamoDB.
+	DynamoDB struct {
+		AWS
+
+		TableName string `envconfig:"AWS_DYNAMODB_TABLE_NAME"`
+	}
 )
 
 // LoadAWSFromEnv will attempt to load the AWS structs
 // from environment variables. If not populated, nil
 // is returned.
-func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3) {
+func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB) {
 	var (
 		aws = &AWS{}
 		sns = &SNS{}
 		sqs = &SQS{}
 		s3  = &S3{}
+		ddb = &DynamoDB{}
 	)
 	LoadEnvConfig(aws)
 	if aws.AccessKey == "" {
@@ -75,5 +83,9 @@ func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3) {
 	if s3.Bucket == "" {
 		s3 = nil
 	}
-	return aws, sns, sqs, s3
+	LoadEnvConfig(&ddb)
+	if ddb.TableName == "" {
+		ddb = nil
+	}
+	return aws, sns, sqs, s3, ddb
 }

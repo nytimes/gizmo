@@ -51,7 +51,6 @@ type (
 	// DynamoDB holds some basic info required to work with Amazon DynamoDB.
 	DynamoDB struct {
 		AWS
-
 		TableName string `envconfig:"AWS_DYNAMODB_TABLE_NAME"`
 	}
 )

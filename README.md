@@ -21,7 +21,7 @@ This package contains a handful of structs meant for managing common configurati
 * MySQL
 * MongoDB
 * Oracle
-* AWS (SNS, SQS, S3)
+* AWS (SNS, SQS, S3, DynamoDB)
 * Kafka
 * Gorilla's `securecookie`
 * Gizmo Servers

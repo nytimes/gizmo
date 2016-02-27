@@ -67,7 +67,7 @@ func Init() {
 	var err error
 	sub, err = pubsub.NewSQSSubscriber(cfg.SQS)
 	if err != nil {
-		Log.Fatal("unable to init pb subs SQS: ", err)
+		Log.Fatal("unable to init SQS: ", err)
 	}
 }
 

@@ -235,9 +235,9 @@ func makeProto(b []byte) *TestProto {
 }
 
 /*
-  500000	     14178 ns/op	    1494 B/op	      31 allocs/op
- 1000000	     14242 ns/op	    1491 B/op	      31 allocs/op
- 2000000	     14378 ns/op	    1489 B/op	      31 allocs/op
+  500000	     13969 ns/op	    1494 B/op	      31 allocs/op
+ 1000000	     14248 ns/op	    1491 B/op	      31 allocs/op
+ 2000000	     14138 ns/op	    1489 B/op	      31 allocs/op
 */
 func BenchmarkSQSSubscriber_Proto(b *testing.B) {
 	test1 := &TestProto{"hey hey hey!"}
@@ -269,11 +269,10 @@ func BenchmarkSQSSubscriber_Proto(b *testing.B) {
 	cfg := &config.SQS{}
 	defaultSQSConfig(cfg)
 	sub := &SQSSubscriber{
-		sqs:        sqstest,
-		cfg:        cfg,
-		toDelete:   make(chan *deleteRequest),
-		deleteDone: make(chan bool),
-		stop:       make(chan chan error, 1),
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
 	}
 	queue := sub.Start()
 	for i := 0; i < b.N; i++ {

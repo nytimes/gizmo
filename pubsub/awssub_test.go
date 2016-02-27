@@ -234,6 +234,58 @@ func makeProto(b []byte) *TestProto {
 	return t
 }
 
+/*
+  500000	     14178 ns/op	    1494 B/op	      31 allocs/op
+ 1000000	     14242 ns/op	    1491 B/op	      31 allocs/op
+ 2000000	     14378 ns/op	    1489 B/op	      31 allocs/op
+*/
+func BenchmarkSQSSubscriber_Proto(b *testing.B) {
+	test1 := &TestProto{"hey hey hey!"}
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			[]*sqs.Message{
+				&sqs.Message{
+					Body:          makeB64String(test1),
+					ReceiptHandle: &test1.Value,
+				},
+			},
+		},
+	}
+
+	for i := 0; i < b.N/2; i++ {
+		sqstest.Messages = append(sqstest.Messages, []*sqs.Message{
+			&sqs.Message{
+				Body:          makeB64String(test1),
+				ReceiptHandle: &test1.Value,
+			},
+			&sqs.Message{
+				Body:          makeB64String(test1),
+				ReceiptHandle: &test1.Value,
+			},
+		})
+
+	}
+
+	cfg := &config.SQS{}
+	defaultSQSConfig(cfg)
+	sub := &SQSSubscriber{
+		sqs:        sqstest,
+		cfg:        cfg,
+		toDelete:   make(chan *deleteRequest),
+		deleteDone: make(chan bool),
+		stop:       make(chan chan error, 1),
+	}
+	queue := sub.Start()
+	for i := 0; i < b.N; i++ {
+		gotRaw := <-queue
+		// get message, forcing base64 decode
+		gotRaw.Message()
+		// send delete message
+		gotRaw.Done()
+	}
+	go sub.Stop()
+}
+
 type TestSQSAPI struct {
 	Offset   int
 	Messages [][]*sqs.Message

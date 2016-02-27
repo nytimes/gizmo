@@ -78,7 +78,6 @@ func TestSQSReceiveError(t *testing.T) {
 	}
 
 	queue := sub.Start()
-	// verify we can receive a message, stop and still mark the message as 'done'
 	_, ok := <-queue
 	if ok {
 		t.Error("no message should've gotten to us, the channel should be closed")

@@ -3,6 +3,7 @@ package pubsub
 import (
 	"encoding/base64"
 	"errors"
+	"sync/atomic"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -130,8 +131,11 @@ type (
 		cfg      *config.SQS
 		queueURL *string
 
-		toDelete   chan *deleteRequest
-		deleteDone chan bool
+		toDelete chan *deleteRequest
+		// inFlight and stopped are signals to manage delete requests
+		// at shutdown.
+		inFlight uint64
+		stopped  uint32
 
 		stop   chan chan error
 		sqsErr error
@@ -149,6 +153,22 @@ type (
 	}
 )
 
+// incrementInflight will increment the add in flight count.
+func (s *SQSSubscriber) incrementInFlight() {
+	atomic.AddUint64(&s.inFlight, 1)
+}
+
+// removeInfFlight will decrement the in flight count.
+func (s *SQSSubscriber) decrementInFlight() {
+	atomic.AddUint64(&s.inFlight, ^uint64(0))
+}
+
+// inFlightCount returns the number of in-flight requests currently
+// running on this server.
+func (s *SQSSubscriber) inFlightCount() uint64 {
+	return atomic.LoadUint64(&s.inFlight)
+}
+
 // NewSQSSubscriber will initiate a new Decrypter for the subscriber
 // if a key file is provided. It will also fetch the SQS Queue Url
 // and set up the SQS client.
@@ -156,10 +176,9 @@ func NewSQSSubscriber(cfg *config.SQS) (*SQSSubscriber, error) {
 	var err error
 	defaultSQSConfig(cfg)
 	s := &SQSSubscriber{
-		cfg:        cfg,
-		toDelete:   make(chan *deleteRequest),
-		deleteDone: make(chan bool),
-		stop:       make(chan chan error, 1),
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
 	}
 
 	if len(cfg.QueueName) == 0 {
@@ -208,6 +227,7 @@ func (m *SQSMessage) Message() []byte {
 // the `SQSDeleteBufferSize` will be 0, so this will block until the
 // message has been deleted.
 func (m *SQSMessage) Done() error {
+	defer m.sub.decrementInFlight()
 	receipt := make(chan error)
 	m.sub.toDelete <- &deleteRequest{
 		entry: &sqs.DeleteMessageBatchRequestEntry{
@@ -235,8 +255,6 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 		for {
 			select {
 			case exit := <-s.stop:
-				close(s.toDelete)
-				<-s.deleteDone
 				exit <- nil
 				return
 			default:
@@ -252,7 +270,8 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 					// this will set the error value and close the channel
 					// so the user will stop iterating and check the err
 					s.sqsErr = err
-					return
+					go s.Stop()
+					continue
 				}
 
 				// if we didn't get any messages, lets chill out for a sec
@@ -270,6 +289,7 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 						sub:     s,
 						message: msg,
 					}
+					s.incrementInFlight()
 				}
 			}
 		}
@@ -284,10 +304,15 @@ func (s *SQSSubscriber) handleDeletes() {
 	var (
 		err           error
 		entriesBuffer []*sqs.DeleteMessageBatchRequestEntry
+		delRequest    *deleteRequest
 	)
-	for deleteRequest := range s.toDelete {
-		entriesBuffer = append(entriesBuffer, deleteRequest.entry)
-
+	for delRequest = range s.toDelete {
+		entriesBuffer = append(entriesBuffer, delRequest.entry)
+		// if the subber is stopped and this is the last request,
+		// flush quit!
+		if s.isStopped() && s.inFlightCount() == 1 {
+			break
+		}
 		// if buffer is full, send the request
 		if len(entriesBuffer) > *s.cfg.DeleteBufferSize {
 			batchInput.Entries = entriesBuffer
@@ -296,21 +321,29 @@ func (s *SQSSubscriber) handleDeletes() {
 			entriesBuffer = []*sqs.DeleteMessageBatchRequestEntry{}
 		}
 
-		deleteRequest.receipt <- err
+		delRequest.receipt <- err
 	}
 	// clear any remainders before shutdown
 	if len(entriesBuffer) > 0 {
 		batchInput.Entries = entriesBuffer
-		_, s.sqsErr = s.sqs.DeleteMessageBatch(batchInput)
+		_, err = s.sqs.DeleteMessageBatch(batchInput)
+		delRequest.receipt <- err
 	}
-	s.deleteDone <- true
+}
+
+func (s *SQSSubscriber) isStopped() bool {
+	return atomic.LoadUint32(&s.stopped) == 1
 }
 
 // Stop will block until the consumer has stopped consuming
 // messages.
 func (s *SQSSubscriber) Stop() error {
+	if s.isStopped() {
+		return errors.New("sqs subscriber is already stopped")
+	}
 	exit := make(chan error)
 	s.stop <- exit
+	atomic.SwapUint32(&s.stopped, uint32(1))
 	return <-exit
 }
 

@@ -6,26 +6,28 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
+
+	"golang.org/x/net/context"
+	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/urlfetch"
 )
 
 type (
-	Client interface {
-		GetMostPopular(string, string, uint) ([]*MostPopularResult, error)
-		SemanticConceptSearch(string, string) ([]*SemanticConceptArticle, error)
+	ContextClient interface {
+		GetMostPopular(context.Context, string, string, uint) ([]*MostPopularResult, error)
+		SemanticConceptSearch(context.Context, string, string) ([]*SemanticConceptArticle, error)
 	}
-
-	ClientImpl struct {
+	ContextClientImpl struct {
 		mostPopularToken string
 		semanticToken    string
 	}
 )
 
-func NewClient(mostPopToken, semanticToken string) Client {
-	return &ClientImpl{mostPopToken, semanticToken}
+func NewContextClient(mostPopToken, semanticToken string) ContextClient {
+	return &ContextClientImpl{mostPopToken, semanticToken}
 }
 
-func (c *ClientImpl) GetMostPopular(resourceType string, section string, timePeriodDays uint) ([]*MostPopularResult, error) {
+func (c *ContextClientImpl) GetMostPopular(ctx context.Context, resourceType string, section string, timePeriodDays uint) ([]*MostPopularResult, error) {
 	var (
 		res MostPopularResponse
 	)
@@ -35,7 +37,7 @@ func (c *ClientImpl) GetMostPopular(resourceType string, section string, timePer
 		timePeriodDays,
 		c.mostPopularToken)
 
-	rawRes, err := c.do(uri)
+	rawRes, err := c.do(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +46,7 @@ func (c *ClientImpl) GetMostPopular(resourceType string, section string, timePer
 	return res.Results, err
 }
 
-func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*SemanticConceptArticle, error) {
+func (c *ContextClientImpl) SemanticConceptSearch(ctx context.Context, conceptType, concept string) ([]*SemanticConceptArticle, error) {
 	var (
 		res SemanticConceptResponse
 	)
@@ -53,23 +55,22 @@ func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*Sema
 		concept,
 		c.semanticToken)
 
-	rawRes, err := c.do(uri)
+	rawRes, err := c.do(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
 
 	err = json.Unmarshal(rawRes, &res)
 	if len(res.Results) == 0 {
+		log.Debugf(ctx, "%s", err)
 		return nil, errors.New("no results")
 	}
 
 	return res.Results[0].ArticleList.Results, nil
 }
 
-func (c *ClientImpl) do(uri string) (body []byte, err error) {
-	hc := http.Client{
-		Timeout: 5 * time.Second,
-	}
+func (c *ContextClientImpl) do(ctx context.Context, uri string) (body []byte, err error) {
+	hc := urlfetch.Client(ctx)
 	req, err := http.NewRequest("GET", "https://api.nytimes.com"+uri, nil)
 	if err != nil {
 		return nil, err

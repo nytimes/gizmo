@@ -2,32 +2,39 @@
 // source: semanticconcept.proto
 // DO NOT EDIT!
 
+/*
+Package nyt is a generated protocol buffer package.
+
+It is generated from these files:
+	semanticconcept.proto
+
+It has these top-level messages:
+	SemanticConceptResponse
+	SemanticConceptResult
+	SemanticConceptArticleList
+	SemanticConceptArticle
+*/
 package nyt
 
 import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
 
 type SemanticConceptResponse struct {
 	Status     string                   `protobuf:"bytes,1,opt,name=status" json:"status,omitempty"`
 	Copyright  string                   `protobuf:"bytes,2,opt,name=copyright" json:"copyright,omitempty"`
 	NumResults uint32                   `protobuf:"varint,3,opt,name=num_results" json:"num_results,omitempty"`
-	Result     []*SemanticConceptResult `protobuf:"bytes,4,rep,name=result" json:"result,omitempty"`
+	Results    []*SemanticConceptResult `protobuf:"bytes,4,rep,name=results" json:"results,omitempty"`
 }
 
-func (m *SemanticConceptResponse) Reset()                    { *m = SemanticConceptResponse{} }
-func (m *SemanticConceptResponse) String() string            { return proto.CompactTextString(m) }
-func (*SemanticConceptResponse) ProtoMessage()               {}
-func (*SemanticConceptResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *SemanticConceptResponse) Reset()         { *m = SemanticConceptResponse{} }
+func (m *SemanticConceptResponse) String() string { return proto.CompactTextString(m) }
+func (*SemanticConceptResponse) ProtoMessage()    {}
 
-func (m *SemanticConceptResponse) GetResult() []*SemanticConceptResult {
+func (m *SemanticConceptResponse) GetResults() []*SemanticConceptResult {
 	if m != nil {
-		return m.Result
+		return m.Results
 	}
 	return nil
 }
@@ -36,10 +43,9 @@ type SemanticConceptResult struct {
 	ArticleList *SemanticConceptArticleList `protobuf:"bytes,1,opt,name=article_list" json:"article_list,omitempty"`
 }
 
-func (m *SemanticConceptResult) Reset()                    { *m = SemanticConceptResult{} }
-func (m *SemanticConceptResult) String() string            { return proto.CompactTextString(m) }
-func (*SemanticConceptResult) ProtoMessage()               {}
-func (*SemanticConceptResult) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *SemanticConceptResult) Reset()         { *m = SemanticConceptResult{} }
+func (m *SemanticConceptResult) String() string { return proto.CompactTextString(m) }
+func (*SemanticConceptResult) ProtoMessage()    {}
 
 func (m *SemanticConceptResult) GetArticleList() *SemanticConceptArticleList {
 	if m != nil {
@@ -49,18 +55,17 @@ func (m *SemanticConceptResult) GetArticleList() *SemanticConceptArticleList {
 }
 
 type SemanticConceptArticleList struct {
-	Result []*SemanticConceptArticle `protobuf:"bytes,1,rep,name=result" json:"result,omitempty"`
-	Total  uint32                    `protobuf:"varint,2,opt,name=total" json:"total,omitempty"`
+	Results []*SemanticConceptArticle `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
+	Total   uint32                    `protobuf:"varint,2,opt,name=total" json:"total,omitempty"`
 }
 
-func (m *SemanticConceptArticleList) Reset()                    { *m = SemanticConceptArticleList{} }
-func (m *SemanticConceptArticleList) String() string            { return proto.CompactTextString(m) }
-func (*SemanticConceptArticleList) ProtoMessage()               {}
-func (*SemanticConceptArticleList) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *SemanticConceptArticleList) Reset()         { *m = SemanticConceptArticleList{} }
+func (m *SemanticConceptArticleList) String() string { return proto.CompactTextString(m) }
+func (*SemanticConceptArticleList) ProtoMessage()    {}
 
-func (m *SemanticConceptArticleList) GetResult() []*SemanticConceptArticle {
+func (m *SemanticConceptArticleList) GetResults() []*SemanticConceptArticle {
 	if m != nil {
-		return m.Result
+		return m.Results
 	}
 	return nil
 }
@@ -72,34 +77,9 @@ type SemanticConceptArticle struct {
 	Url    string `protobuf:"bytes,4,opt,name=url" json:"url,omitempty"`
 }
 
-func (m *SemanticConceptArticle) Reset()                    { *m = SemanticConceptArticle{} }
-func (m *SemanticConceptArticle) String() string            { return proto.CompactTextString(m) }
-func (*SemanticConceptArticle) ProtoMessage()               {}
-func (*SemanticConceptArticle) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *SemanticConceptArticle) Reset()         { *m = SemanticConceptArticle{} }
+func (m *SemanticConceptArticle) String() string { return proto.CompactTextString(m) }
+func (*SemanticConceptArticle) ProtoMessage()    {}
 
 func init() {
-	proto.RegisterType((*SemanticConceptResponse)(nil), "nyt.SemanticConceptResponse")
-	proto.RegisterType((*SemanticConceptResult)(nil), "nyt.SemanticConceptResult")
-	proto.RegisterType((*SemanticConceptArticleList)(nil), "nyt.SemanticConceptArticleList")
-	proto.RegisterType((*SemanticConceptArticle)(nil), "nyt.SemanticConceptArticle")
-}
-
-var fileDescriptor1 = []byte{
-	// 254 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x7c, 0x91, 0x41, 0x4b, 0xc3, 0x40,
-	0x10, 0x85, 0x89, 0xa9, 0x81, 0x4c, 0x1a, 0xc1, 0x95, 0x6a, 0xa8, 0x07, 0x4b, 0x4e, 0x45, 0x21,
-	0x87, 0x8a, 0x3f, 0x40, 0xbc, 0x8a, 0x87, 0x7a, 0xf1, 0x56, 0x92, 0x38, 0xe8, 0xc2, 0x76, 0x37,
-	0xec, 0x4c, 0x0e, 0x39, 0xf8, 0xdf, 0x1d, 0x37, 0xc1, 0x8b, 0xad, 0xc7, 0xbc, 0xf7, 0x78, 0xf3,
-	0xf2, 0x2d, 0x2c, 0x08, 0xf7, 0xb5, 0x65, 0xdd, 0xb6, 0xce, 0xb6, 0xd8, 0x71, 0xd5, 0x79, 0xc7,
-	0x4e, 0xc5, 0x76, 0xe0, 0xf2, 0x0b, 0xae, 0x5e, 0x27, 0xf7, 0x69, 0x74, 0xb7, 0x48, 0x9d, 0xb3,
-	0x84, 0xea, 0x0c, 0x12, 0xe2, 0x9a, 0x7b, 0x2a, 0xa2, 0x55, 0xb4, 0x4e, 0xd5, 0x39, 0xa4, 0xad,
-	0xeb, 0x06, 0xaf, 0x3f, 0x3e, 0xb9, 0x38, 0x09, 0xd2, 0x05, 0x64, 0xb6, 0xdf, 0xef, 0x3c, 0x52,
-	0x6f, 0x98, 0x8a, 0x58, 0xc4, 0x5c, 0xdd, 0x42, 0x32, 0x0a, 0xc5, 0x6c, 0x15, 0xaf, 0xb3, 0xcd,
-	0xb2, 0x92, 0x43, 0xd5, 0xdf, 0x2b, 0x92, 0x28, 0x5f, 0x60, 0x71, 0xd0, 0x50, 0x0f, 0x30, 0xaf,
-	0xbd, 0xa8, 0x06, 0x77, 0x46, 0x13, 0x87, 0x09, 0xd9, 0xe6, 0xe6, 0x50, 0xd5, 0xe3, 0x98, 0x7b,
-	0x96, 0x58, 0xf9, 0x06, 0xcb, 0xe3, 0xae, 0xba, 0xfb, 0x5d, 0x16, 0x85, 0x65, 0xd7, 0xff, 0xd4,
-	0xa9, 0x1c, 0x4e, 0xd9, 0x71, 0x6d, 0xc2, 0xaf, 0xe6, 0xe5, 0x16, 0x2e, 0x8f, 0x04, 0xe7, 0x30,
-	0x6b, 0xdc, 0xfb, 0x30, 0x51, 0x12, 0x6a, 0xcd, 0x60, 0xb4, 0xc5, 0x09, 0xd1, 0x4f, 0x8d, 0x66,
-	0x83, 0x01, 0x4e, 0xaa, 0x32, 0x88, 0x7b, 0x6f, 0x84, 0x8c, 0x7c, 0x34, 0x49, 0x78, 0x88, 0xfb,
-	0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0xeb, 0x49, 0xc2, 0xee, 0xa1, 0x01, 0x00, 0x00,
 }

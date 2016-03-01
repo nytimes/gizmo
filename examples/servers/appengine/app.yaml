@@ -1,0 +1,10 @@
+runtime: go
+api_version: go1
+
+handlers:
+- url: /.*
+  script: _go_app
+
+env_variables:
+    MOST_POPULAR_TOKEN: 'YOUR_MOST_POP_TOKEN'
+    SEMANTIC_TOKEN: 'YOUR_SEMANTIC_TOKEN'

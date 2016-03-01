@@ -12,7 +12,7 @@ func (s *AppEngineService) GetMostPopular(ctx context.Context, r *http.Request) 
 	resourceType := mux.Vars(r)["resourceType"]
 	section := mux.Vars(r)["section"]
 	timeframe := web.GetUInt64Var(r, "timeframe")
-	res, err := s.client.GetMostPopular(ctx, resourceType, section, uint(timeframe))
+	res, err := s.nytclient().GetMostPopular(ctx, resourceType, section, uint(timeframe))
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

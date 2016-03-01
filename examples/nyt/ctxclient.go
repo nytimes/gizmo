@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
-	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 )
 
@@ -62,7 +61,6 @@ func (c *ContextClientImpl) SemanticConceptSearch(ctx context.Context, conceptTy
 
 	err = json.Unmarshal(rawRes, &res)
 	if len(res.Results) == 0 {
-		log.Debugf(ctx, "%s", err)
 		return nil, errors.New("no results")
 	}
 

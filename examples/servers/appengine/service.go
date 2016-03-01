@@ -41,6 +41,14 @@ func NewAppEngineService(cfg *Config) *AppEngineService {
 	}
 }
 
+// need to find a way to preload this? maybe a 'warmup'?
+func (s *AppEngineService) nytclient() nyt.ContextClient {
+	var cfg Config
+	config.LoadEnvConfig(&cfg)
+	s.client = nyt.NewContextClient(cfg.MostPopularToken, cfg.SemanticToken)
+	return s.client
+}
+
 // Prefix returns the string prefix used for all endpoints within
 // this service.
 func (s *AppEngineService) Prefix() string {
@@ -70,7 +78,6 @@ func (s *AppEngineService) JSONMiddleware(j appengineserver.JSONEndpoint) appeng
 			return http.StatusServiceUnavailable, nil, &jsonErr{"sorry, this service is unavailable"}
 		}
 
-		log.Infof(ctx, "success?")
 		return status, res, nil
 	}
 }

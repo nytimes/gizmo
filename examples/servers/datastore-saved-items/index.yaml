@@ -1,0 +1,7 @@
+indexes:
+
+- kind: SavedItem
+  properties:
+  - name: UserID
+  - name: Timestamp
+    direction: desc

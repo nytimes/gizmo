@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	//	"github.com/Sirupsen/logrus"
 	"github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/context"
@@ -22,6 +23,7 @@ import (
 	"github.com/rcrowley/go-metrics"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/NYTimes/gizmo/web"
 	"github.com/NYTimes/logrotate"
 )
@@ -166,19 +168,6 @@ func NewServer(cfg *config.Server) Server {
 	}
 }
 
-// NewHealthCheckHandler will inspect the config to generate
-// the appropriate HealthCheckHandler.
-func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
-	switch cfg.HealthCheckType {
-	case "simple":
-		return NewSimpleHealthCheck(cfg.HealthCheckPath)
-	case "esx":
-		return NewESXHealthCheck()
-	default:
-		return NewSimpleHealthCheck("/status.txt")
-	}
-}
-
 // RegisterProfiler will add handlers for pprof endpoints if
 // the config has them enabled.
 func RegisterProfiler(cfg *config.Server, mx *mux.Router) {
@@ -199,9 +188,9 @@ func RegisterProfiler(cfg *config.Server, mx *mux.Router) {
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux.Router) HealthCheckHandler {
+func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux.Router) healthcheck.Handler {
 	// register health check
-	hch := NewHealthCheckHandler(cfg)
+	hch := healthcheck.NewHandler(cfg)
 	err := hch.Start(monitor)
 	if err != nil {
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)

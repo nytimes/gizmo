@@ -1,4 +1,4 @@
-package server
+package healthcheck
 
 import "sync/atomic"
 

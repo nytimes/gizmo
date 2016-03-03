@@ -1,30 +1,33 @@
-package server
+package healthcheck
 
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 var (
-	// ESXShutdownTimeout is the hard cut off kill the server while the ESXHealthCheck is waiting
+	// ESXShutdownTimeout is the hard cut off kill the server while the ESX is waiting
 	// for the server to be inactive.
 	ESXShutdownTimeout = 180 * time.Second
-	// ESXShutdownPollInterval sets the duration for how long ESXHealthCheck will wait between
+	// ESXShutdownPollInterval sets the duration for how long ESX will wait between
 	// each NumActiveRequests poll in WaitForZero.
 	ESXShutdownPollInterval = 1 * time.Second
-	// ESXLoadBalancerNotReadyDuration is the amount of time ESXHealthCheck will wait after
+	// ESXLoadBalancerNotReadyDuration is the amount of time ESX will wait after
 	// sending a 'bad' status to the LB during a graceful shutdown.
 	ESXLoadBalancerNotReadyDuration = 15 * time.Second
 )
 
-// ESXHealthCheck will manage the health checks and manage
+// ESX will manage the health checks and manage
 // a server's load balanacer status. On Stop, it will block
 // until all LBs have received a 'bad' status.
-type ESXHealthCheck struct {
+type ESX struct {
 	// ready flag health checks and graceful shutdown
 	// uint32 so we can use sync/atomic and no defers
 	ready uint32
@@ -36,20 +39,20 @@ type ESXHealthCheck struct {
 	monitor *ActivityMonitor
 }
 
-// NewESXHealthCheck returns a new instance of ESXHealthCheck.
-func NewESXHealthCheck() *ESXHealthCheck {
-	return &ESXHealthCheck{
+// NewESX returns a new instance of ESX.
+func NewESX() *ESX {
+	return &ESX{
 		lbNotReadyTime: map[string]*time.Time{},
 	}
 }
 
 // Path returns the default ESX health path.
-func (e *ESXHealthCheck) Path() string {
+func (e *ESX) Path() string {
 	return "/status.txt"
 }
 
 // Start will set the monitor and flip the ready flag to 'True'.
-func (e *ESXHealthCheck) Start(monitor *ActivityMonitor) error {
+func (e *ESX) Start(monitor *ActivityMonitor) error {
 	e.monitor = monitor
 	atomic.StoreUint32(&e.ready, 1)
 	return nil
@@ -57,25 +60,22 @@ func (e *ESXHealthCheck) Start(monitor *ActivityMonitor) error {
 
 // Stop will set the flip the 'ready' flag and wait block until the server has removed itself
 // from all load balancers.
-func (e *ESXHealthCheck) Stop() error {
+func (e *ESX) Stop() error {
 	// fill the flag and wait
 	atomic.StoreUint32(&e.ready, 0)
 	if err := e.waitForZero(); err != nil {
-		Log.Errorf("server still active after %s, this will not be a graceful shutdown: %s", ESXShutdownTimeout, err)
 		return err
 	}
 	return nil
 }
 
-// ServeHTTP will handle the health check requests on the server. ESXHealthCheck
+// ServeHTTP will handle the health check requests on the server. ESX
 // will return with an "ok" status as long as the ready flag is set to True.
 // If a `deployer` query parameter is included, the request will not be counted
 // as a load balancer.
-func (e *ESXHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (e *ESX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if atomic.LoadUint32(&e.ready) == 1 {
-		if _, err := io.WriteString(w, "ok-"+Name); err != nil {
-			LogWithFields(r).Warn("unable to write healthcheck response: ", err)
-		}
+		io.WriteString(w, "ok")
 		e.updateReadyTime(r, true)
 	} else {
 		http.Error(w, "service unavailable", http.StatusServiceUnavailable)
@@ -83,10 +83,36 @@ func (e *ESXHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (e *ESXHealthCheck) updateReadyTime(r *http.Request, ready bool) {
-	ip, err := GetIP(r)
+// GetIP returns the IP address for the given request.
+func getIP(r *http.Request) (string, error) {
+	ip, ok := mux.Vars(r)["ip"]
+	if ok {
+		return ip, nil
+	}
+
+	// check real ip header first
+	ip = r.Header.Get("X-Real-IP")
+	if len(ip) > 0 {
+		return ip, nil
+	}
+
+	// no nginx reverse proxy?
+	// get IP old fashioned way
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		Log.Warnf("status endpoint was unable to get LB IP addr: %s", err)
+		return "", fmt.Errorf("%q is not IP:port", r.RemoteAddr)
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		return "", fmt.Errorf("%q is not IP:port", r.RemoteAddr)
+	}
+	return userIP.String(), nil
+}
+
+func (e *ESX) updateReadyTime(r *http.Request, ready bool) {
+	ip, err := getIP(r)
+	if err != nil {
 		return
 	}
 
@@ -98,19 +124,17 @@ func (e *ESXHealthCheck) updateReadyTime(r *http.Request, ready bool) {
 			if last := e.lbNotReadyTime[ip]; last == nil {
 				now := time.Now()
 				e.lbNotReadyTime[ip] = &now
-				Log.Infof("status endpoint has returned it's first not-ready status to: %s", ip)
 			}
 		}
 		e.lbNotReadyTimeMu.Unlock()
 	}
 }
 
-func (e *ESXHealthCheck) lbActive() (active bool) {
+func (e *ESX) lbActive() (active bool) {
 	e.lbNotReadyTimeMu.RLock()
 	defer e.lbNotReadyTimeMu.RUnlock()
-	for ip, notReadyTime := range e.lbNotReadyTime {
+	for _, notReadyTime := range e.lbNotReadyTime {
 		if notReadyTime == nil || time.Since(*notReadyTime) < ESXLoadBalancerNotReadyDuration {
-			Log.Infof("load balancer is still active: %s", ip)
 			return true
 		}
 	}
@@ -120,21 +144,18 @@ func (e *ESXHealthCheck) lbActive() (active bool) {
 // waitForZero will continously query Active and NumActiveRequests at the ShutdownPollInterval until the
 // LB has seen a bad status, the server is not Actve and NumActiveRequests returns 0 or the timeout
 // is reached. It will return error in case of timeout.
-func (e *ESXHealthCheck) waitForZero() error {
+func (e *ESX) waitForZero() error {
 	to := time.After(ESXShutdownTimeout)
 	done := make(chan struct{}, 1)
 	go func() {
 		for {
 			if e.monitor.Active() || e.lbActive() {
-				Log.Info("server is still active")
 			} else {
-				Log.Info("server is no longer active")
 				reqs := e.monitor.NumActiveRequests()
 				if reqs == 0 {
 					done <- struct{}{}
 					break
 				} else {
-					Log.Info("server still has requests in flight. waiting longer...")
 				}
 			}
 			time.Sleep(ESXShutdownPollInterval)
@@ -143,7 +164,6 @@ func (e *ESXHealthCheck) waitForZero() error {
 
 	select {
 	case <-done:
-		Log.Info("server is no longer receiving traffic")
 		return nil
 	case <-to:
 		return fmt.Errorf("server is still active after %s", ESXShutdownTimeout)

@@ -191,13 +191,13 @@ func (s *SimpleServer) Register(svcI Service) error {
 		ss = svc
 	case JSONService:
 		js = svc
+	case MixedContextService:
+		jscs = svc
+		cs = svc
 	case ContextService:
 		cs = svc
 	case JSONContextService:
 		jscs = svc
-	case MixedContextService:
-		jscs = svc
-		cs = svc
 
 	default:
 		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")

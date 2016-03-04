@@ -10,13 +10,15 @@ import (
 // NewHealthCheckHandler will inspect the config to generate
 // the appropriate HealthCheckHandler.
 func NewHandler(cfg *config.Server) Handler {
+	if cfg.AppEngine {
+		return NewSimple("/_ah/health")
+	}
+
 	switch cfg.HealthCheckType {
 	case "simple":
 		return NewSimple(cfg.HealthCheckPath)
 	case "esx":
 		return NewESX()
-	case "appengine":
-		return NewSimple("/_ah/health")
 	default:
 		return NewSimple("/status.txt")
 	}

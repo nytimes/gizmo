@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
 	netContext "golang.org/x/net/context"
+	"google.golang.org/appengine"
 )
 
 // SimpleServer is a basic http Server implementation for
@@ -48,12 +49,17 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg.NotFoundHandler != nil {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
+
+	ctx := netContext.Background()
+	if cfg.AppEngine {
+		ctx = appengine.BackgroundContext()
+	}
 	return &SimpleServer{
 		mux:      mx,
 		cfg:      cfg,
 		exit:     make(chan chan error),
 		monitor:  healthcheck.NewActivityMonitor(),
-		ctx:      netContext.Background(),
+		ctx:      ctx,
 		registry: metrics.NewRegistry(),
 	}
 }

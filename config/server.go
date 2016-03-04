@@ -44,6 +44,11 @@ type Server struct {
 	TLSKeyFile *string `envconfig:"TLS_KEY"`
 	// NotFoundHandler will override the default server NotfoundHandler if set.
 	NotFoundHandler http.Handler
+
+	// AppEngine indicates this is running on a managed VM
+	// and we should utilize the appropriate health check
+	// and context.
+	AppEngine bool `envconfig:"APP_ENGINE"`
 }
 
 // LoadServerFromEnv will attempt to load a Server object

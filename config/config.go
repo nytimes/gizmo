@@ -82,7 +82,7 @@ func LoadConfigFromEnv() *Config {
 func LoadEnvConfig(c interface{}) {
 	err := envconfig.Process(EnvAppName, c)
 	if err != nil {
-		log.Fatal("unable to load env variable: ", err)
+		log.Fatalf("unable to load env variable into %T: %s", c, err)
 	}
 }
 

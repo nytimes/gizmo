@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"runtime/debug"
 	"strings"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
@@ -28,7 +28,7 @@ type SimpleServer struct {
 	mux *mux.Router
 
 	// tracks active requests
-	monitor *ActivityMonitor
+	monitor *healthcheck.ActivityMonitor
 
 	// root context
 	ctx netContext.Context
@@ -52,7 +52,7 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		mux:      mx,
 		cfg:      cfg,
 		exit:     make(chan chan error),
-		monitor:  NewActivityMonitor(),
+		monitor:  healthcheck.NewActivityMonitor(),
 		ctx:      netContext.Background(),
 		registry: metrics.NewRegistry(),
 	}
@@ -85,12 +85,10 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 			errCntr.Inc(1)
 
 			// log the panic for all the details later
-			LogWithFields(r).Errorf("simple server recovered from a panic\n%v: %v", x, string(debug.Stack()))
 
 			// give the users our deepest regrets
 			w.WriteHeader(http.StatusInternalServerError)
 			if _, err := w.Write(UnexpectedServerError); err != nil {
-				LogWithFields(r).Warn("unable to write response: ", err)
 			}
 		}
 	}()
@@ -137,10 +135,8 @@ func (s *SimpleServer) Start() error {
 
 	go func() {
 		if err := srv.Serve(l); err != nil {
-			Log.Error("encountered an error while serving listener: ", err)
 		}
 	}()
-	Log.Infof("Listening on %s", l.Addr().String())
 
 	// join the LB
 	go func() {
@@ -148,7 +144,6 @@ func (s *SimpleServer) Start() error {
 
 		// let the health check clean up if it needs to
 		if err := healthHandler.Stop(); err != nil {
-			Log.Warn("health check Stop returned with error: ", err)
 		}
 
 		// stop the listener
@@ -182,9 +177,10 @@ func (s *SimpleServer) Register(svcI Service) error {
 	sr := s.mux.PathPrefix(prefix).Subrouter()
 
 	var (
-		js JSONService
-		ss SimpleService
-		cs ContextService
+		js   JSONService
+		ss   SimpleService
+		cs   ContextService
+		jscs JSONContextService
 	)
 
 	switch svc := svcI.(type) {
@@ -197,6 +193,12 @@ func (s *SimpleServer) Register(svcI Service) error {
 		js = svc
 	case ContextService:
 		cs = svc
+	case JSONContextService:
+		jscs = svc
+	case MixedContextService:
+		jscs = svc
+		cs = svc
+
 	default:
 		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")
 	}
@@ -214,7 +216,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 							if r.Body != nil {
 								defer func() {
 									if err := r.Body.Close(); err != nil {
-										Log.Warn("unable to close request body: ", err)
 									}
 								}()
 							}
@@ -259,6 +260,25 @@ func (s *SimpleServer) Register(svcI Service) error {
 		}
 	}
 
+	if jscs != nil {
+		// register all context endpoints with our wrapper
+		for path, epMethods := range jscs.JSONEndpoints() {
+			for method, ep := range epMethods {
+				endpointName := metricName(prefix, path, method)
+				// set the function handle and register it to metrics
+				sr.Handle(path, Timed(CountedByStatusXX(
+					jscs.Middleware(ContextToHTTP(s.ctx,
+						jscs.ContextMiddleware(
+							JSONContextToHTTP(jscs.JSONContextMiddleware(ep)),
+						),
+					)),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
+				).Methods(method)
+			}
+		}
+	}
+
 	RegisterProfiler(s.cfg, s.mux)
 	return nil
 }
@@ -268,7 +288,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 func AddIPToContext(r *http.Request) {
 	ip, err := GetIP(r)
 	if err != nil {
-		LogWithFields(r).Warningf("unable to get IP: %s", err)
 	} else {
 		context.Set(r, "ip", ip)
 	}
@@ -325,7 +344,6 @@ const (
 func ContextWithUserIP(ctx netContext.Context, r *http.Request) netContext.Context {
 	ip, err := GetIP(r)
 	if err != nil {
-		LogWithFields(r).Warningf("unable to get IP: %s", err)
 	} else {
 		ctx = netContext.WithValue(ctx, UserIPKey, ip)
 	}

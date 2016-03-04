@@ -15,6 +15,8 @@ func NewHandler(cfg *config.Server) Handler {
 		return NewSimple(cfg.HealthCheckPath)
 	case "esx":
 		return NewESX()
+	case "appengine":
+		return NewSimple("/_ah/health")
 	default:
 		return NewSimple("/status.txt")
 	}

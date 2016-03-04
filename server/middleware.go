@@ -16,7 +16,6 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 		if r.Body != nil {
 			defer func() {
 				if err := r.Body.Close(); err != nil {
-					Log.Warn("unable to close request body: ", err)
 				}
 			}()
 		}
@@ -35,11 +34,42 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 
 		err = encoder.Encode(res)
 		if err != nil {
-			LogWithFields(r).Error("unable to JSON encode response: ", err)
 		}
 
 		if _, err := w.Write(b.Bytes()); err != nil {
-			LogWithFields(r).Warn("unable to write response: ", err)
+		}
+	})
+}
+
+// ContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
+func JSONContextToHTTP(ep JSONContextEndpoint) ContextHandler {
+	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if r.Body != nil {
+			defer func() {
+				if err := r.Body.Close(); err != nil {
+				}
+			}()
+		}
+		// it's JSON, so always set that content type
+		w.Header().Set("Content-Type", jsonContentType)
+		// prepare to grab the response from the ep
+		var b bytes.Buffer
+		encoder := json.NewEncoder(&b)
+
+		// call the func and return err or not
+		code, res, err := ep(ctx, r)
+		w.WriteHeader(code)
+		if err != nil {
+			res = err
+		}
+
+		err = encoder.Encode(res)
+		if err != nil {
+			// log?
+		}
+
+		if _, err := w.Write(b.Bytes()); err != nil {
+			// log?
 		}
 	})
 }
@@ -50,7 +80,6 @@ func ContextToHTTP(ctx context.Context, ep ContextHandler) http.Handler {
 		if r.Body != nil {
 			defer func() {
 				if err := r.Body.Close(); err != nil {
-					Log.Warn("unable to close request body: ", err)
 				}
 			}()
 		}
@@ -116,12 +145,10 @@ func JSONPHandler(f http.Handler) http.Handler {
 			result = append(result, jw.buf.Bytes()...)
 			result = append(result, jsonpEnd...)
 			if _, err := w.Write(result); err != nil {
-				LogWithFields(r).Warn("unable to write JSONP response: ", err)
 			}
 		} else {
 			// if no callback, just write the bytes
 			if _, err := w.Write(jw.buf.Bytes()); err != nil {
-				LogWithFields(r).Warn("unable to write response: ", err)
 			}
 		}
 	})

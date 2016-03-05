@@ -2,12 +2,8 @@ package appengineserver
 
 import (
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/NYTimes/gizmo/web"
 )
 
@@ -15,8 +11,6 @@ import (
 type Server interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
 	Register(Service) error
-	Start() error
-	Stop() error
 }
 
 var (
@@ -33,15 +27,6 @@ var (
 // Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
 // this func will set it to a `SimpleServer` listening on `Config.Server.HTTPPort`.
 func Init(scfg *config.Server, service Service) {
-	InitVM(scfg)
-	err := server.Register(service)
-	if err != nil {
-		panic("unable to register service: " + err.Error())
-	}
-	http.Handle("/", server)
-}
-
-func InitVM(scfg *config.Server) {
 	// if no config given, attempt to pull one from
 	// the environment.
 	if scfg == nil {
@@ -61,42 +46,11 @@ func InitVM(scfg *config.Server) {
 	}
 
 	server = NewServer(scfg)
-}
-
-// Register will add a new Service to the DefaultServer.
-func Register(svc Service) error {
-	return server.Register(svc)
-}
-
-// Run will start the DefaultServer and set it up to Stop()
-// on a kill signal.
-func Run() error {
-	if err := server.Start(); err != nil {
-		return err
+	err := server.Register(service)
+	if err != nil {
+		panic("unable to register service: " + err.Error())
 	}
-
-	// parse address for host, port
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
-	return Stop()
-}
-
-// Stop will stop the default server.
-func Stop() error {
-	return server.Stop()
-}
-
-// NewHealthCheckHandler will inspect the config to generate
-// the appropriate HealthCheckHandler.
-func NewHealthCheckHandler(cfg *config.Server) healthcheck.Handler {
-	switch cfg.HealthCheckType {
-	case "simple":
-		return healthcheck.NewSimple(cfg.HealthCheckPath)
-	case "esx":
-		return healthcheck.NewESX()
-	default:
-		return healthcheck.NewSimple("/_ah/health")
-	}
+	http.Handle("/", server)
 }
 
 // NewServer will inspect the config and generate

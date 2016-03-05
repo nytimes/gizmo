@@ -2,12 +2,9 @@ package appengineserver
 
 import (
 	"errors"
-	"fmt"
-	"net"
 	"net/http"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/gorilla/mux"
 )
 
@@ -21,9 +18,6 @@ type SimpleServer struct {
 
 	// mux for routing
 	mux *mux.Router
-
-	// monitor
-	monitor *healthcheck.ActivityMonitor
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -38,77 +32,13 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
 	return &SimpleServer{
-		mux:     mx,
-		monitor: healthcheck.NewActivityMonitor(),
-		cfg:     cfg,
+		mux: mx,
+		cfg: cfg,
 	}
-}
-
-// Start will start the SimpleServer at it's configured address.
-// If they are configured, this will start emitting metrics to Graphite,
-// register profiling, health checks and access logging.
-func (s *SimpleServer) Start() error {
-	// register health check
-	hch := healthcheck.NewHandler(s.cfg)
-	err := hch.Start(s.monitor)
-	if err != nil {
-		panic("unable to start health check handler")
-	}
-	s.cfg.HealthCheckPath = hch.Path()
-	s.mux.Handle(hch.Path(), hch)
-
-	// create server
-	srv := http.Server{
-		Handler:        s,
-		MaxHeaderBytes: maxHeaderBytes,
-	}
-
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
-	if err != nil {
-		return err
-	}
-
-	l = net.Listener(TCPKeepAliveListener{l.(*net.TCPListener)})
-
-	go func() {
-		if err := srv.Serve(l); err != nil {
-			panic("encountered an error while serving listener: " + err.Error())
-		}
-	}()
-
-	// join the LB
-	go func() {
-		exit := <-s.exit
-
-		// let the health check clean up if it needs to
-		if err := hch.Stop(); err != nil {
-			panic("health check Stop returned with error: " + err.Error())
-		}
-
-		// stop the listener
-		exit <- l.Close()
-	}()
-
-	return nil
-}
-
-// Stop initiates the shutdown process and returns when
-// the server completes.
-func (s *SimpleServer) Stop() error {
-	ch := make(chan error)
-	s.exit <- ch
-	return <-ch
 }
 
 // ServeHTTP is SimpleServer's hook for metrics and safely executing each request.
 func (s *SimpleServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	// only count healthcheck requests
-	if r.URL.Path != s.cfg.HealthCheckPath {
-		s.monitor.CountRequest()
-		defer s.monitor.UncountRequest()
-	}
-
 	// hand the request off to gorilla
 	s.mux.ServeHTTP(w, r)
 }

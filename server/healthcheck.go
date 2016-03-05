@@ -1,4 +1,4 @@
-package healthcheck
+package server
 
 import (
 	"io"
@@ -9,60 +9,60 @@ import (
 
 // NewHealthCheckHandler will inspect the config to generate
 // the appropriate HealthCheckHandler.
-func NewHandler(cfg *config.Server) Handler {
+func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
 	if cfg.AppEngine {
-		return NewSimple("/_ah/health")
+		return NewSimpleHealthCheck("/_ah/health")
 	}
 
 	switch cfg.HealthCheckType {
 	case "simple":
-		return NewSimple(cfg.HealthCheckPath)
+		return NewSimpleHealthCheck(cfg.HealthCheckPath)
 	case "esx":
-		return NewESX()
+		return NewESXHealthCheck()
 	default:
-		return NewSimple("/status.txt")
+		return NewSimpleHealthCheck("/status.txt")
 	}
 }
 
-// Handler is an interface used by SimpleServer and RPCServer
+// HealthCheckHandler is an interface used by SimpleHealthCheckServer and RPCServer
 // to allow users to customize their service's health check. Start will be
 // called just before server start up and the given ActivityMonitor should
 // offer insite to the # of requests in flight, if needed.
 // Stop will be called once the servers receive a kill signal.
-type Handler interface {
+type HealthCheckHandler interface {
 	http.Handler
 	Path() string
 	Start(*ActivityMonitor) error
 	Stop() error
 }
 
-// Simple is a basic Handler implementation
+// SimpleHealthCheck is a basic Handler implementation
 // that _always_ returns with an "ok" status and shuts down immediately.
-type Simple struct {
+type SimpleHealthCheck struct {
 	path string
 }
 
-// NewSimple will return a new Simple instance.
-func NewSimple(path string) *Simple {
-	return &Simple{path: path}
+// NewSimpleHealthCheck will return a new SimpleHealthCheck instance.
+func NewSimpleHealthCheck(path string) *SimpleHealthCheck {
+	return &SimpleHealthCheck{path: path}
 }
 
 // Path will return the configured status path to server on.
-func (s *Simple) Path() string {
+func (s *SimpleHealthCheck) Path() string {
 	return s.path
 }
 
 // Start will do nothing.
-func (s *Simple) Start(monitor *ActivityMonitor) error {
+func (s *SimpleHealthCheck) Start(monitor *ActivityMonitor) error {
 	return nil
 }
 
 // Stop will do nothing and return nil.
-func (s *Simple) Stop() error {
+func (s *SimpleHealthCheck) Stop() error {
 	return nil
 }
 
 // ServeHTTP will always respond with "ok-"+server.Name.
-func (s *Simple) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *SimpleHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, "ok")
 }

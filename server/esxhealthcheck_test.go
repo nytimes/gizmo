@@ -1,4 +1,4 @@
-package healthcheck
+package server
 
 import (
 	"net/http"
@@ -119,7 +119,7 @@ func TestESXHealthCheckLB(t *testing.T) {
 		t.Errorf("ESXHealthCheck expected response body to start with 'service unavailable', got %s", gotBody)
 	}
 
-	// wait for the healthcheck to stop
+	// wait for the to stop
 	<-done
 }
 

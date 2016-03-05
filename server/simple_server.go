@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
@@ -29,7 +28,7 @@ type SimpleServer struct {
 	mux *mux.Router
 
 	// tracks active requests
-	monitor *healthcheck.ActivityMonitor
+	monitor *ActivityMonitor
 
 	// root context
 	ctx netContext.Context
@@ -58,7 +57,7 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		mux:      mx,
 		cfg:      cfg,
 		exit:     make(chan chan error),
-		monitor:  healthcheck.NewActivityMonitor(),
+		monitor:  NewActivityMonitor(),
 		ctx:      ctx,
 		registry: metrics.NewRegistry(),
 	}

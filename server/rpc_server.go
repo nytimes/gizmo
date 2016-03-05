@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/healthcheck"
 
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
@@ -31,7 +30,7 @@ type RPCServer struct {
 	mux *mux.Router
 
 	// tracks active requests
-	monitor *healthcheck.ActivityMonitor
+	monitor *ActivityMonitor
 
 	// registry for collecting metrics
 	registry metrics.Registry
@@ -51,7 +50,7 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 		srvr:     grpc.NewServer(),
 		mux:      mx,
 		exit:     make(chan chan error),
-		monitor:  healthcheck.NewActivityMonitor(),
+		monitor:  NewActivityMonitor(),
 		registry: metrics.NewRegistry(),
 	}
 }

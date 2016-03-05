@@ -23,7 +23,6 @@ import (
 	"github.com/rcrowley/go-metrics"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/healthcheck"
 	"github.com/NYTimes/gizmo/web"
 	"github.com/NYTimes/logrotate"
 )
@@ -52,7 +51,7 @@ var (
 	jsonContentType = web.JSONContentType
 )
 
-// Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
+// Init will set up our name, logging,  and parse flags. If DefaultServer isn't set,
 // this func will set it to a `SimpleServer` listening on `Config.Server.HTTPPort`.
 func Init(name string, scfg *config.Server) {
 	// generate a unique ID for the server
@@ -165,9 +164,9 @@ func RegisterProfiler(cfg *config.Server, mx *mux.Router) {
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *config.Server, monitor *healthcheck.ActivityMonitor, mx *mux.Router) healthcheck.Handler {
+func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux.Router) HealthCheckHandler {
 	// register health check
-	hch := healthcheck.NewHandler(cfg)
+	hch := NewHealthCheckHandler(cfg)
 	err := hch.Start(monitor)
 	if err != nil {
 	}

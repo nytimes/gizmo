@@ -13,8 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	//	"github.com/Sirupsen/logrus"
-
+	"github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/context"
 	"github.com/gorilla/handlers"
@@ -41,6 +40,8 @@ var (
 	// Name is used for status and logging.
 	Name = "nyt-awesome-go-server"
 	// Log is the global logger for the server. It will take care of logrotate
+	// and it can accept 'fields' to include with each log line: see LogWithFields(r).
+	Log = logrus.New()
 	// server is what's used in the global server funcs in the package.
 	server Server
 	// MaxHeaderBytes is used by the http server to limit the size of request headers.
@@ -51,7 +52,7 @@ var (
 	jsonContentType = web.JSONContentType
 )
 
-// Init will set up our name, logging,  and parse flags. If DefaultServer isn't set,
+// Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
 // this func will set it to a `SimpleServer` listening on `Config.Server.HTTPPort`.
 func Init(name string, scfg *config.Server) {
 	// generate a unique ID for the server
@@ -82,6 +83,23 @@ func Init(name string, scfg *config.Server) {
 		maxHeaderBytes = *scfg.MaxHeaderBytes
 	}
 
+	// setup app logging
+	if scfg.Log != "" {
+		lf, err := logrotate.NewFile(scfg.Log)
+		if err != nil {
+			Log.Fatalf("unable to access log file: %s", err)
+		}
+		Log.Out = lf
+		// json output when writing to file
+		Log.Formatter = &logrus.JSONFormatter{}
+	} else {
+		Log.Out = os.Stderr
+	}
+	if scfg.AppEngine {
+		Log.Formatter = &logrus.JSONFormatter{}
+	}
+	SetLogLevel(scfg)
+
 	server = NewServer(scfg)
 }
 
@@ -93,6 +111,7 @@ func Register(svc Service) error {
 // Run will start the DefaultServer and set it up to Stop()
 // on a kill signal.
 func Run() error {
+	Log.Infof("Starting new %s server", Name)
 	if err := server.Start(); err != nil {
 		return err
 	}
@@ -100,13 +119,19 @@ func Run() error {
 	// parse address for host, port
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
-	<-ch
+	Log.Infof("Received signal %s", <-ch)
 	return Stop()
 }
 
 // Stop will stop the default server.
 func Stop() error {
+	Log.Infof("Stopping %s server", Name)
 	return server.Stop()
+}
+
+// LogWithFields will feed any request context into a logrus Entry.
+func LogWithFields(r *http.Request) *logrus.Entry {
+	return Log.WithFields(ContextFields(r))
 }
 
 // ContextFields will take a request and convert a context map to logrus Fields.
@@ -169,6 +194,7 @@ func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux
 	hch := NewHealthCheckHandler(cfg)
 	err := hch.Start(monitor)
 	if err != nil {
+		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
 	mx.Handle(hch.Path(), hch)
 	return hch
@@ -184,8 +210,10 @@ func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
 	if cfg.GraphiteHost == "" {
 		return
 	}
+	Log.Infof("connecting to graphite host: %s", cfg.GraphiteHost)
 	addr, err := net.ResolveTCPAddr("tcp", cfg.GraphiteHost)
 	if err != nil {
+		Log.Warnf("unable to resolve graphite host: %s", err)
 	}
 	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
 }
@@ -199,6 +227,7 @@ func RegisterAccessLogger(cfg *config.Server, handler http.Handler) http.Handler
 
 	lf, err := logrotate.NewFile(cfg.HTTPAccessLog)
 	if err != nil {
+		Log.Fatalf("unable to access http access log file: %s", err)
 	}
 	return handlers.CombinedLoggingHandler(lf, handler)
 }
@@ -213,4 +242,19 @@ func MetricsRegistryName() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
+}
+
+// SetLogLevel will set the appropriate logrus log level
+// given the server config.
+func SetLogLevel(scfg *config.Server) {
+	switch scfg.LogLevel {
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "warn":
+		logrus.SetLevel(logrus.WarnLevel)
+	case "fatal":
+		logrus.SetLevel(logrus.FatalLevel)
+	default:
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }

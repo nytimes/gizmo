@@ -24,7 +24,7 @@ func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
 	}
 }
 
-// HealthCheckHandler is an interface used by SimpleHealthCheckServer and RPCServer
+// HealthCheckHandler is an interface used by SimpleServer and RPCServer
 // to allow users to customize their service's health check. Start will be
 // called just before server start up and the given ActivityMonitor should
 // offer insite to the # of requests in flight, if needed.
@@ -36,7 +36,7 @@ type HealthCheckHandler interface {
 	Stop() error
 }
 
-// SimpleHealthCheck is a basic Handler implementation
+// SimpleHealthCheck is a basic HealthCheckHandler implementation
 // that _always_ returns with an "ok" status and shuts down immediately.
 type SimpleHealthCheck struct {
 	path string
@@ -64,5 +64,7 @@ func (s *SimpleHealthCheck) Stop() error {
 
 // ServeHTTP will always respond with "ok-"+server.Name.
 func (s *SimpleHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "ok")
+	if _, err := io.WriteString(w, "ok-"+Name); err != nil {
+		LogWithFields(r).Warn("unable to write healthcheck response: ", err)
+	}
 }

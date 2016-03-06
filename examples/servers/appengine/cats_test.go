@@ -14,7 +14,7 @@ import (
 	"google.golang.org/appengine/aetest"
 )
 
-func TestGetCats(t *testing.T) {
+func TestAppEngineGetCats(t *testing.T) {
 	tests := []struct {
 		givenURI    string
 		givenClient *nyttest.CtxClient

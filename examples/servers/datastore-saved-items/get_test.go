@@ -37,7 +37,7 @@ func (r *testSavedItemsRepo) Delete(ctx context.Context, userID, url string) err
 	return r.MockDelete(userID, url)
 }
 
-func TestGet(t *testing.T) {
+func TestAppEngineGet(t *testing.T) {
 	testDate := time.Date(2015, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	tests := []struct {

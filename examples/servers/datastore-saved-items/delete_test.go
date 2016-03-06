@@ -13,7 +13,7 @@ import (
 	"google.golang.org/appengine/user"
 )
 
-func TestDelete(t *testing.T) {
+func TestAppEngineDelete(t *testing.T) {
 
 	tests := []struct {
 		givenID   string

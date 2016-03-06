@@ -9,7 +9,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
+// JSONContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
 func JSONContextToHTTP(ep JSONContextEndpoint) ContextHandler {
 	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {

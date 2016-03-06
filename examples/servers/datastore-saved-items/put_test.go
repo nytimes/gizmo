@@ -13,7 +13,7 @@ import (
 	"google.golang.org/appengine/user"
 )
 
-func TestPut(t *testing.T) {
+func TestAppEnginePut(t *testing.T) {
 
 	tests := []struct {
 		givenID   string
@@ -46,7 +46,7 @@ func TestPut(t *testing.T) {
 			"http://nytimes.com/article",
 			func(id string, url string) error {
 				if id != "123456" {
-					t.Errorf("MockPut expected id of 123456; got %d", id)
+					t.Errorf("MockPut expected id of 123456; got %s", id)
 				}
 				if url != "http://nytimes.com/article" {
 					t.Errorf("MockPut expected url of `http://nytimes.com/aritcle'; got %s", url)

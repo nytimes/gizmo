@@ -11,7 +11,7 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-// JSONToHTTP is the middleware func to convert a JSONEndpoint to
+// JSONToHTTPContext is the middleware func to convert a JSONEndpoint to
 // an http.HandlerFunc.
 func JSONToHTTPContext(ep JSONEndpoint) ContextHandler {
 	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {

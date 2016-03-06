@@ -64,7 +64,7 @@ type RPCService interface {
 // JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc.
 type JSONEndpoint func(*http.Request) (int, interface{}, error)
 
-// JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc.
+// JSONContextEndpoint is the JSONContextService equivalent to JSONService's JSONEndpoint.
 type JSONContextEndpoint func(context.Context, *http.Request) (int, interface{}, error)
 
 // ContextService is an interface defining a service that
@@ -77,6 +77,8 @@ type ContextService interface {
 	ContextMiddleware(ContextHandler) ContextHandler
 }
 
+// JSONContextService is an interface defining a service that
+// is made up of JSONContextEndpoints.
 type JSONContextService interface {
 	ContextService
 
@@ -85,6 +87,8 @@ type JSONContextService interface {
 	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
 }
 
+// MixedContextService is an interface defining a service that
+// is made up of JSONContextEndpoints and ContextHandlerFuncs.
 type MixedContextService interface {
 	ContextService
 

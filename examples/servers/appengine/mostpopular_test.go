@@ -14,7 +14,7 @@ import (
 	"google.golang.org/appengine/aetest"
 )
 
-func TestGetMostPopular(t *testing.T) {
+func TestAppEngineGetMostPopular(t *testing.T) {
 	tests := []struct {
 		givenURI    string
 		givenClient *nyttest.CtxClient

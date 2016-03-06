@@ -41,7 +41,13 @@ func (s *SavedItemsService) Middleware(h http.Handler) http.Handler {
 }
 
 func (s *SavedItemsService) ContextMiddleware(h appengineserver.ContextHandler) appengineserver.ContextHandler {
-	return h
+	return appengineserver.ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		if usr := user.Current(ctx); usr == nil {
+			s.LoginRedirect(ctx, w, r)
+			return
+		}
+		h.ServeHTTPContext(ctx, w, r)
+	})
 }
 
 // JSONMiddleware provides a hook to add service-wide middleware for how JSONEndpoints
@@ -49,6 +55,7 @@ func (s *SavedItemsService) ContextMiddleware(h appengineserver.ContextHandler) 
 // identify and authorize the user. This method helps satisfy the server.JSONService interface.
 func (s *SavedItemsService) JSONMiddleware(j appengineserver.JSONEndpoint) appengineserver.JSONEndpoint {
 	return func(ctx context.Context, r *http.Request) (code int, res interface{}, err error) {
+
 		// call the endpoint
 		code, res, err = j(ctx, r)
 

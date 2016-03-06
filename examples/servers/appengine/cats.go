@@ -7,7 +7,7 @@ import (
 )
 
 func (s *AppEngineService) GetCats(ctx context.Context, r *http.Request) (int, interface{}, error) {
-	res, err := s.nytclient().SemanticConceptSearch(ctx, "des", "cats")
+	res, err := nytclient().SemanticConceptSearch(ctx, "des", "cats")
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

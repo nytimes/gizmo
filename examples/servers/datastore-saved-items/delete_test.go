@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/NYTimes/gizmo/appengineserver"
+	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/user"
 )
 
 func TestDelete(t *testing.T) {
@@ -64,11 +66,17 @@ func TestDelete(t *testing.T) {
 				return nil
 			},
 
-			http.StatusUnauthorized,
-			UnauthErr,
-			&jsonResponse{},
+			http.StatusFound,
+			nil,
+			nil,
 		},
 	}
+
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
 
 	for _, test := range tests {
 
@@ -83,9 +91,9 @@ func TestDelete(t *testing.T) {
 
 		// set up the w and r to pass into our server
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("DELETE", "/svc/saved-items?url="+test.givenURL, nil)
+		r, _ := inst.NewRequest("DELETE", "/svc/saved-items?url="+test.givenURL, nil)
 		if test.givenID != "" {
-			r.Header.Set("USER_ID", test.givenID)
+			aetest.Login(&user.User{Email: "eml", ID: test.givenID}, r)
 		}
 
 		// run the test by passing a request we expect to hit our endpoint

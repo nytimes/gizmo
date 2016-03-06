@@ -11,19 +11,20 @@ import (
 	"github.com/NYTimes/gizmo/appengineserver"
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/examples/nyt/nyttest"
+	"google.golang.org/appengine/aetest"
 )
 
 func TestGetMostPopular(t *testing.T) {
 	tests := []struct {
 		givenURI    string
-		givenClient *nyttest.Client
+		givenClient *nyttest.CtxClient
 
 		wantCode int
 		wantBody interface{}
 	}{
 		{
 			"/svc/nyt/most-popular/my-resource/my-section/1",
-			&nyttest.Client{
+			&nyttest.CtxClient{
 				TestGetMostPopular: func(resourceType, section string, timeframe uint) ([]*nyt.MostPopularResult, error) {
 					if resourceType != "my-resource" {
 						t.Errorf("expected resourceType of 'my-resource'; got %#v", resourceType)
@@ -53,7 +54,7 @@ func TestGetMostPopular(t *testing.T) {
 		},
 		{
 			"/svc/nyt/most-popular/my-resource/my-section/10",
-			&nyttest.Client{
+			&nyttest.CtxClient{
 				TestGetMostPopular: func(resourceType, section string, timeframe uint) ([]*nyt.MostPopularResult, error) {
 					if resourceType != "my-resource" {
 						t.Errorf("expected resourceType of 'my-resource'; got %#v", resourceType)
@@ -75,12 +76,22 @@ func TestGetMostPopular(t *testing.T) {
 		},
 	}
 
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
 	for _, test := range tests {
 
 		srvr := appengineserver.NewSimpleServer(nil)
-		srvr.Register(&AppEngineService{client: test.givenClient})
+		nytclient = func() nyt.ContextClient { return test.givenClient }
+		srvr.Register(&AppEngineService{})
 
-		r, _ := http.NewRequest("GET", test.givenURI, nil)
+		r, rerr := inst.NewRequest("GET", test.givenURI, nil)
+		if rerr != nil {
+			t.Fatalf("unable to create request: %v", rerr)
+		}
 		w := httptest.NewRecorder()
 		srvr.ServeHTTP(w, r)
 

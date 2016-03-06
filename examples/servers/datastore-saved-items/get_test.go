@@ -11,6 +11,8 @@ import (
 
 	"github.com/NYTimes/gizmo/appengineserver"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/aetest"
+	"google.golang.org/appengine/user"
 )
 
 // testSavedItemsRepo is a mock implementation of the SavedItemsRepo interface.
@@ -86,9 +88,9 @@ func TestGet(t *testing.T) {
 				}, nil
 			},
 
-			http.StatusUnauthorized,
-			UnauthErr,
-			[]*SavedItem(nil),
+			http.StatusFound,
+			nil,
+			nil,
 		},
 		{
 			"123456",
@@ -105,6 +107,12 @@ func TestGet(t *testing.T) {
 		},
 	}
 
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
 	for testnum, test := range tests {
 
 		// create a new Gizmo simple server
@@ -118,9 +126,9 @@ func TestGet(t *testing.T) {
 
 		// set up the w and r to pass into our server
 		w := httptest.NewRecorder()
-		r, _ := http.NewRequest("GET", "/svc/saved-items", nil)
+		r, _ := inst.NewRequest("GET", "/svc/saved-items", nil)
 		if test.givenID != "" {
-			r.Header.Set("USER_ID", test.givenID)
+			aetest.Login(&user.User{Email: "eml", ID: test.givenID}, r)
 		}
 
 		// run the test by passing a request we expect to hit our endpoint

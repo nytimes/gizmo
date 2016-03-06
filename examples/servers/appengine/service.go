@@ -30,23 +30,20 @@ type (
 func init() {
 	var cfg Config
 	config.LoadEnvConfig(&cfg)
-	appengineserver.Init(cfg.Server, NewAppEngineService(&cfg))
+	appengineserver.Init(cfg.Server, NewAppEngineService())
 }
 
 // NewAppEngineService will instantiate a AppEngineService
 // with the given configuration.
-func NewAppEngineService(cfg *Config) *AppEngineService {
-	return &AppEngineService{
-		nyt.NewContextClient(cfg.MostPopularToken, cfg.SemanticToken),
-	}
+func NewAppEngineService() *AppEngineService {
+	return &AppEngineService{}
 }
 
 // need to find a way to preload this? maybe a 'warmup'?
-func (s *AppEngineService) nytclient() nyt.ContextClient {
+var nytclient = func() nyt.ContextClient {
 	var cfg Config
 	config.LoadEnvConfig(&cfg)
-	s.client = nyt.NewContextClient(cfg.MostPopularToken, cfg.SemanticToken)
-	return s.client
+	return nyt.NewContextClient(cfg.MostPopularToken, cfg.SemanticToken)
 }
 
 // Prefix returns the string prefix used for all endpoints within

@@ -11,19 +11,20 @@ import (
 	"github.com/NYTimes/gizmo/appengineserver"
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/examples/nyt/nyttest"
+	"google.golang.org/appengine/aetest"
 )
 
 func TestGetCats(t *testing.T) {
 	tests := []struct {
 		givenURI    string
-		givenClient *nyttest.Client
+		givenClient *nyttest.CtxClient
 
 		wantCode int
 		wantBody interface{}
 	}{
 		{
 			"/svc/nyt/cats",
-			&nyttest.Client{
+			&nyttest.CtxClient{
 				TestSemanticConceptSearch: func(conceptType, concept string) ([]*nyt.SemanticConceptArticle, error) {
 					return []*nyt.SemanticConceptArticle{
 						&nyt.SemanticConceptArticle{
@@ -42,7 +43,7 @@ func TestGetCats(t *testing.T) {
 		},
 		{
 			"/svc/nyt/cats",
-			&nyttest.Client{
+			&nyttest.CtxClient{
 				TestSemanticConceptSearch: func(conceptType, concept string) ([]*nyt.SemanticConceptArticle, error) {
 					return nil, errors.New("NOPE!")
 				},
@@ -55,12 +56,19 @@ func TestGetCats(t *testing.T) {
 		},
 	}
 
+	inst, err := aetest.NewInstance(nil)
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+	defer inst.Close()
+
 	for _, test := range tests {
 
 		srvr := appengineserver.NewSimpleServer(nil)
-		srvr.Register(&AppEngineService{client: test.givenClient})
+		nytclient = func() nyt.ContextClient { return test.givenClient }
+		srvr.Register(&AppEngineService{})
 
-		r, _ := http.NewRequest("GET", test.givenURI, nil)
+		r, _ := inst.NewRequest("GET", test.givenURI, nil)
 		w := httptest.NewRecorder()
 		srvr.ServeHTTP(w, r)
 

@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
-	"google.golang.org/cloud/datastore"
 )
 
 type (
@@ -21,8 +21,7 @@ type (
 	// DatastoreSavedItemsRepo is an implementation of the repo
 	// interface built on top of Datastore.
 	DatastoreSavedItemsRepo struct {
-		kind    string
-		dclient *datastore.Client
+		kind string
 	}
 
 	// SavedItem represents an article, blog, interactive, etc.
@@ -40,16 +39,6 @@ func NewSavedItemsRepo() SavedItemsRepo {
 	return &DatastoreSavedItemsRepo{kind: "SavedItem"}
 }
 
-func (r *DatastoreSavedItemsRepo) client(ctx context.Context) *datastore.Client {
-	var err error
-	r.dclient, err = datastore.NewClient(ctx, "nyt-reading-list")
-	if err != nil {
-		log.Criticalf(ctx, "cannot init datastore client: %s", err)
-		panic(err)
-	}
-	return r.dclient
-}
-
 // Get will attempt to query the underlying Datastore database for saved items
 // for a single user.
 func (r *DatastoreSavedItemsRepo) Get(ctx context.Context, userID string) ([]*SavedItem, error) {
@@ -61,7 +50,7 @@ func (r *DatastoreSavedItemsRepo) Get(ctx context.Context, userID string) ([]*Sa
 	log.Debugf(ctx, "query: %#v", query)
 
 	var items []*SavedItem
-	for iter := r.client(ctx).Run(ctx, query); ; {
+	for iter := query.Run(ctx); ; {
 		var si SavedItem
 		_, err := iter.Next(&si)
 		if err == datastore.Done {
@@ -79,11 +68,11 @@ func (r *DatastoreSavedItemsRepo) Get(ctx context.Context, userID string) ([]*Sa
 
 // Put will attempt to insert a new saved item for the user.
 func (r *DatastoreSavedItemsRepo) Put(ctx context.Context, userID, url string) error {
-	_, err := r.client(ctx).Put(ctx, datastore.NewKey(ctx, r.kind, userID+url, 0, nil), &SavedItem{userID, url, time.Now().UTC()})
+	_, err := datastore.Put(ctx, datastore.NewKey(ctx, r.kind, userID+url, 0, nil), &SavedItem{userID, url, time.Now().UTC()})
 	return err
 }
 
 // Delete will attempt to remove an item from a user's saved items.
 func (r *DatastoreSavedItemsRepo) Delete(ctx context.Context, userID, url string) error {
-	return r.client(ctx).Delete(ctx, datastore.NewKey(ctx, r.kind, userID+url, 0, nil))
+	return datastore.Delete(ctx, datastore.NewKey(ctx, r.kind, userID+url, 0, nil))
 }

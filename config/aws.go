@@ -64,7 +64,7 @@ type (
 		TableName string `envconfig:"AWS_DYNAMODB_TABLE_NAME"`
 	}
 
-	/// ElastiCache holds the basic info required to work with
+	// ElastiCache holds the basic info required to work with
 	// Amazon ElastiCache.
 	ElastiCache struct {
 		AWS
@@ -110,13 +110,14 @@ func (e *ElastiCache) MustClient() *memcache.Client {
 // LoadAWSFromEnv will attempt to load the AWS structs
 // from environment variables. If not populated, nil
 // is returned.
-func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB) {
+func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB, *ElastiCache) {
 	var (
 		aws = &AWS{}
 		sns = &SNS{}
 		sqs = &SQS{}
 		s3  = &S3{}
 		ddb = &DynamoDB{}
+		ec  = &ElastiCache{}
 	)
 	LoadEnvConfig(aws)
 	if aws.AccessKey == "" {
@@ -138,5 +139,9 @@ func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB) {
 	if ddb.TableName == "" {
 		ddb = nil
 	}
-	return aws, sns, sqs, s3, ddb
+	LoadEnvConfig(&ec)
+	if ec.ClusterID == "" {
+		ec = nil
+	}
+	return aws, sns, sqs, s3, ddb, ec
 }

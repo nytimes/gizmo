@@ -19,11 +19,12 @@ type (
 	Config struct {
 		Server *Server
 
-		AWS      *AWS
-		SQS      *SQS
-		SNS      *SNS
-		S3       *S3
-		DynamoDB *DynamoDB
+		AWS         *AWS
+		SQS         *SQS
+		SNS         *SNS
+		S3          *S3
+		DynamoDB    *DynamoDB
+		ElastiCache *ElastiCache
 
 		Kafka *Kafka
 

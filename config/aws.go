@@ -1,6 +1,16 @@
 package config
 
-import "time"
+import (
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/elasticache"
+	"github.com/bradfitz/gomemcache/memcache"
+)
 
 const (
 	// AWSRegionUSEast1 is a helper constant for AWS configs.
@@ -53,7 +63,49 @@ type (
 		AWS
 		TableName string `envconfig:"AWS_DYNAMODB_TABLE_NAME"`
 	}
+
+	/// ElastiCache holds the basic info required to work with
+	// Amazon ElastiCache.
+	ElastiCache struct {
+		AWS
+		ClusterID string `envconfig:"AWS_ELASTICACHE_CONFIG_ENDPOINT"`
+	}
 )
+
+// MustClient will use the cache cluster ID to describe
+// the cache cluster and instantiate a memcache.Client
+// with the returned from AWS.
+func (e *ElastiCache) MustClient() *memcache.Client {
+	var creds *credentials.Credentials
+	if e.AccessKey != "" {
+		creds = credentials.NewStaticCredentials(e.AccessKey, e.SecretKey, "")
+	} else {
+		creds = credentials.NewEnvCredentials()
+	}
+
+	ecclient := elasticache.New(session.New(&aws.Config{
+		Credentials: creds,
+		Region:      &e.Region,
+	}))
+
+	resp, err := ecclient.DescribeCacheClusters(&elasticache.DescribeCacheClustersInput{
+		CacheClusterId:    &e.ClusterID,
+		ShowCacheNodeInfo: aws.Bool(true),
+	})
+	if err != nil {
+		log.Fatalf("unable to describe cache cluster: %s", err)
+	}
+
+	var nodes []string
+	for _, cluster := range resp.CacheClusters {
+		for _, cnode := range cluster.CacheNodes {
+			addr := fmt.Sprintf("%s:%d", *cnode.Endpoint.Address, *cnode.Endpoint.Port)
+			nodes = append(nodes, addr)
+		}
+	}
+
+	return memcache.New(nodes...)
+}
 
 // LoadAWSFromEnv will attempt to load the AWS structs
 // from environment variables. If not populated, nil

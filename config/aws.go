@@ -74,7 +74,7 @@ type (
 
 // MustClient will use the cache cluster ID to describe
 // the cache cluster and instantiate a memcache.Client
-// with the returned from AWS.
+// with the cache nodes returned from AWS.
 func (e *ElastiCache) MustClient() *memcache.Client {
 	var creds *credentials.Credentials
 	if e.AccessKey != "" {

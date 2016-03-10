@@ -30,7 +30,7 @@ type SimpleServer struct {
 	// tracks active requests
 	monitor *ActivityMonitor
 
-	// root context
+	// server context
 	ctx netContext.Context
 
 	// registry for collecting metrics
@@ -251,7 +251,22 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(cs.Middleware(ContextToHTTP(s.ctx, cs.ContextMiddleware(ep))),
+				sr.Handle(path, Timed(CountedByStatusXX(
+					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							// is it worth it to always close this?
+							if r.Body != nil {
+								defer func() {
+									if err := r.Body.Close(); err != nil {
+										Log.Warn("unable to close request body: ", err)
+									}
+								}()
+							}
+							ctx := netContext.Background()
+							// call the func and return err or not
+							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
+						})
+					}(ep, cs),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
 				).Methods(method)
@@ -326,11 +341,9 @@ func ContextWithUserIP(ctx netContext.Context, r *http.Request) netContext.Conte
 	ip, err := GetIP(r)
 	if err != nil {
 		LogWithFields(r).Warningf("unable to get IP: %s", err)
-	} else {
-		ctx = netContext.WithValue(ctx, UserIPKey, ip)
+		return ctx
 	}
-
-	return ctx
+	return netContext.WithValue(ctx, UserIPKey, ip)
 }
 
 // ContextWithForwardForIP returns new context with forward for ip.

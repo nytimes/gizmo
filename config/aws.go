@@ -68,7 +68,7 @@ type (
 	// Amazon ElastiCache.
 	ElastiCache struct {
 		AWS
-		ClusterID string `envconfig:"AWS_ELASTICACHE_CONFIG_ENDPOINT"`
+		ClusterID string `envconfig:"AWS_ELASTICACHE_CLUSTER_ID"`
 	}
 )
 

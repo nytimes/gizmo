@@ -10,8 +10,6 @@ install:
     - curl -O https://storage.googleapis.com/appengine-sdks/$FILE
     - unzip -q go_appengine_sdk_linux*
     - export PATH=$PATH:$PWD/go_appengine/
-    - ls $PWD/go_appengine/
-    - echo $PATH
 
 script:
   - make test

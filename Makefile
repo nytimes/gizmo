@@ -7,7 +7,9 @@ updatedeps:
 	go get -d -v -u -f github.com/NYTimes/gizmo/...
 
 testdeps:
-	go get -d -v -t github.com/NYTimes/gizmo/...
+	for dir in $$(go list ./... | grep -v 'examples\/servers\/appengine\|examples\/servers\/datastore-saved-items\|.git'); do \
+		go get -d -v -t  $${dir}; \
+	done
 
 updatetestdeps:
 	go get -d -v -t -u -f github.com/NYTimes/gizmo/...

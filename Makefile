@@ -37,7 +37,12 @@ errcheck: testdeps
 pretest: lint vet # errcheck
 
 test: testdeps pretest
-	go test github.com/NYTimes/gizmo/...
+	for dir in $$(go list ./... | grep -v 'examples\/servers\/appengine\|examples\/servers\/datastore-saved-items\|.git'); do \
+		go test $${dir}; \
+	done
+	# app engine bits
+	goapp test ./examples/servers/appengine
+	goapp test ./examples/servers/datastore-saved-items
 
 clean:
 	go clean -i github.com/NYTimes/gizmo/...

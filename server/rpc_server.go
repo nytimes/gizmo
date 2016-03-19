@@ -109,7 +109,7 @@ func (r *RPCServer) Start() error {
 		return err
 	}
 
-	func() {
+	go func() {
 		if err := r.srvr.Serve(rl); err != nil {
 			Log.Error("encountered an error while serving RPC listener: ", err)
 		}
@@ -130,8 +130,8 @@ func (r *RPCServer) Start() error {
 		return err
 	}
 
-	func() {
-		if err := srv.Serve(rl); err != nil {
+	go func() {
+		if err := srv.Serve(hl); err != nil {
 			Log.Error("encountered an error while serving listener: ", err)
 		}
 	}()

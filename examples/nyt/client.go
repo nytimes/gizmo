@@ -40,7 +40,7 @@ func (c *ClientImpl) GetMostPopular(resourceType string, section string, timePer
 	}
 
 	err = json.Unmarshal(rawRes, &res)
-	return res.Result, err
+	return res.Results, err
 }
 
 func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*SemanticConceptArticle, error) {
@@ -58,11 +58,11 @@ func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*Sema
 	}
 
 	err = json.Unmarshal(rawRes, &res)
-	if len(res.Result) == 0 {
+	if len(res.Results) == 0 {
 		return nil, errors.New("no results")
 	}
 
-	return res.Result[0].ArticleList.Result, nil
+	return res.Results[0].ArticleList.Results, nil
 }
 
 func (c *ClientImpl) do(uri string) (body []byte, err error) {

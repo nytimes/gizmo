@@ -246,7 +246,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 				"name":     methodName,
 				"duration": time.Since(start),
 				"error":    err,
-			})
+			}).Info("access")
 		}
 	}
 }

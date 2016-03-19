@@ -23,20 +23,4 @@ message MostPopularResult  {
     string published_date = 11;
     string source = 12;
     uint32 views = 13;
-    repeated Media media = 14;
-}
-
-message Media {
-    string type = 1;
-    string subtype = 2;
-    string caption = 3;
-    string copyright = 4;
-    repeated MediaMetadata media_metadata = 5;
-}
-
-message MediaMetadata {
-    string url = 1;
-    string format = 2;
-    uint32 height = 3;
-    uint32 width = 4;
 }

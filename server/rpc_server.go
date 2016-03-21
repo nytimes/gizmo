@@ -123,6 +123,8 @@ func (r *RPCServer) Start() error {
 	srv := http.Server{
 		Handler:        RegisterAccessLogger(r.cfg, r),
 		MaxHeaderBytes: maxHeaderBytes,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
 	}
 	var hl net.Listener
 	hl, err = net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.HTTPPort))

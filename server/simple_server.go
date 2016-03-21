@@ -112,6 +112,8 @@ func (s *SimpleServer) Start() error {
 	srv := http.Server{
 		Handler:        RegisterAccessLogger(s.cfg, s),
 		MaxHeaderBytes: maxHeaderBytes,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))

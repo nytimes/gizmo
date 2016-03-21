@@ -17,6 +17,12 @@ type Server struct {
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
 	//	MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).
 	MaxHeaderBytes *int `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
+	// ReadTimeout can be used to override the default http server timeout of 10s.
+	// The string should be formatted like a time.Duration string.
+	ReadTimeout *string `envconfig:"GIZMO_READ_TIMEOUT"`
+	// WriteTimeout can be used to override the default http server timeout of 10s.
+	// The string should be formatted like a time.Duration string.
+	WriteTimeout *string `envconfig:"GIZMO_WRITE_TIMEOUT"`
 	// GOMAXPROCS can be used to override the default GOMAXPROCS (runtime.NumCPU).
 	GOMAXPROCS *int `envconfig:"GIZMO_SERVER_GOMAXPROCS"`
 	// HTTPAccessLog is the location of the http access log. If it is empty,

@@ -44,9 +44,15 @@ var (
 	Log = logrus.New()
 	// server is what's used in the global server funcs in the package.
 	server Server
-	// MaxHeaderBytes is used by the http server to limit the size of request headers.
+	// maxHeaderBytes is used by the http server to limit the size of request headers.
 	// This may need to be increased if accepting cookies from the public.
 	maxHeaderBytes = 1 << 20
+	// readTimeout is used by the http server to set a maximum duration before
+	// timing out read of the request. The default timeout is 10 seconds.
+	readTimeout = 10 * time.Second
+	// writeTimeout is used by the http server to set a maximum duration before
+	// timing out write of the response. The default timeout is 10 seconds.
+	writeTimeout = 10 * time.Second
 	// JSONContentType is the content type that will be used for JSONEndpoints.
 	// It will default to the web.JSONContentType value.
 	jsonContentType = web.JSONContentType
@@ -81,6 +87,22 @@ func Init(name string, scfg *config.Server) {
 
 	if scfg.MaxHeaderBytes != nil {
 		maxHeaderBytes = *scfg.MaxHeaderBytes
+	}
+
+	if scfg.ReadTimeout != nil {
+		tReadTimeout, err := time.ParseDuration(*scfg.ReadTimeout)
+		if err != nil {
+			Log.Fatal("invalid server ReadTimeout: ", err)
+		}
+		readTimeout = tReadTimeout
+	}
+
+	if scfg.WriteTimeout != nil {
+		tWriteTimeout, err := time.ParseDuration(*scfg.WriteTimeout)
+		if err != nil {
+			Log.Fatal("invalid server WriteTimeout: ", err)
+		}
+		writeTimeout = tWriteTimeout
 	}
 
 	// setup app logging

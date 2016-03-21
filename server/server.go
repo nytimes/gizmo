@@ -53,7 +53,7 @@ var (
 	// writeTimeout is used by the http server to set a maximum duration before
 	// timing out write of the response. The default timeout is 10 seconds.
 	writeTimeout = 10 * time.Second
-	// JSONContentType is the content type that will be used for JSONEndpoints.
+	// jsonContentType is the content type that will be used for JSONEndpoints.
 	// It will default to the web.JSONContentType value.
 	jsonContentType = web.JSONContentType
 )

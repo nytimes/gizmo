@@ -49,13 +49,17 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 	if cfg.NotFoundHandler != nil {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
+	registry := cfg.MetricsRegistry
+	if registry == nil {
+		registry = metrics.NewRegistry()
+	}
 	return &RPCServer{
 		cfg:      cfg,
 		srvr:     grpc.NewServer(),
 		mux:      mx,
 		exit:     make(chan chan error),
 		monitor:  NewActivityMonitor(),
-		registry: metrics.NewRegistry(),
+		registry: registry,
 	}
 }
 

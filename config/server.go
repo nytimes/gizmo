@@ -1,6 +1,9 @@
 package config
 
-import "net/http"
+import (
+	"net/http"
+	"github.com/rcrowley/go-metrics"
+)
 
 // Server holds info required to configure a gizmo server.Server.
 type Server struct {
@@ -50,6 +53,9 @@ type Server struct {
 	TLSKeyFile *string `envconfig:"TLS_KEY"`
 	// NotFoundHandler will override the default server NotfoundHandler if set.
 	NotFoundHandler http.Handler
+	// MetricsRegistry will override the default server metrics registry if set.
+	MetricsRegistry metrics.Registry
+
 }
 
 // LoadServerFromEnv will attempt to load a Server object

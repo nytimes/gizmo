@@ -11,6 +11,7 @@ import (
 	"github.com/NYTimes/gizmo/config"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
+	"github.com/rcrowley/go-metrics"
 )
 
 func BenchmarkSimpleServer_NoParam(b *testing.B) {
@@ -309,5 +310,17 @@ func TestBasicRegistration(t *testing.T) {
 
 	if err := s.Register(&testInvalidService{}); err == nil {
 		t.Error("Invalid services should produce an error in service registration")
+	}
+}
+
+func TestCustomMetricsRegistry(t *testing.T) {
+
+	cfg := &config.Server{MetricsRegistry: metrics.NewRegistry()}
+	_ = metrics.NewRegisteredTimer("test-timer", cfg.MetricsRegistry)
+
+	s := NewSimpleServer(cfg)
+
+	if s.registry.Get("test-timer") == nil {
+		t.Error("Custom metrics registry is failed to register within simple server")
 	}
 }

@@ -47,9 +47,9 @@ func (m *MySQL) DB() (*sql.DB, error) {
 func (m *MySQL) String() string {
 
 	if m.Location != "" {
-		m.Location = url.QueryEscape(DefaultLocation)
-	} else {
 		m.Location = url.QueryEscape(m.Location)
+	} else {
+		m.Location = url.QueryEscape(DefaultLocation)
 	}
 
 	return fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?loc=%s&parseTime=true",

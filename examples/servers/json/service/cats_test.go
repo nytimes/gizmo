@@ -11,8 +11,6 @@ import (
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/examples/nyt/nyttest"
 	"github.com/NYTimes/gizmo/server"
-
-	"github.com/rcrowley/go-metrics"
 )
 
 func TestGetCats(t *testing.T) {
@@ -79,9 +77,6 @@ func TestGetCats(t *testing.T) {
 		if !reflect.DeepEqual(got, test.wantBody) {
 			t.Errorf("expected response body of\n%#v;\ngot\n%#v", test.wantBody, got)
 		}
-
-		// ** THIS IS REQUIRED in order to run the test multiple times.
-		metrics.DefaultRegistry.UnregisterAll()
 	}
 
 }

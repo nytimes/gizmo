@@ -1,0 +1,14 @@
+{
+    "MySQL": {
+        "User": "jp",
+        "Pw": "jp",
+        "DBName": "saveditems",
+        "Host": "localhost"
+    },
+    "Server": {
+        "HTTPPort": 8080,
+        "HTTPAccessLog": "/var/log/nyt/saved-items-api-access.log",
+        "Log": "/var/log/nyt/saved-items-api.log"
+    }
+}
+

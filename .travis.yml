@@ -1,14 +1,21 @@
 language: go
 
 before_install:
+  # Decrypts a script that installs an authenticated cookie
+  # for git to use when cloning from googlesource.com.
+  # Bypasses "bandwidth limit exceeded" errors.
+  # See github.com/golang/go/issues/12933
+  - openssl aes-256-cbc -K $encrypted_83935ad6c1b7_key -iv $encrypted_83935ad6c1b7_iv -in gitcookies.sh.enc -out gitcookies.sh -d
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
+
+install:
+ - bash gitcookies.sh
 
 script:
   - make test
   - make coverage
 
 go:
-  - 1.4.2
   - 1.5.2

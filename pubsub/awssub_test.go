@@ -2,6 +2,7 @@ package pubsub
 
 import (
 	"encoding/base64"
+	"errors"
 	"log"
 	"reflect"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func TestSQSSubscriber(t *testing.T) {
+func TestSQSSubscriberNoBase64(t *testing.T) {
 	test1 := "hey hey hey!"
 	test2 := "ho ho ho!"
 	test3 := "yessir!"
@@ -42,14 +43,14 @@ func TestSQSSubscriber(t *testing.T) {
 		},
 	}
 
-	cfg := &config.SQS{}
+	fals := false
+	cfg := &config.SQS{ConsumeBase64: &fals}
 	defaultSQSConfig(cfg)
 	sub := &SQSSubscriber{
-		sqs:        sqstest,
-		cfg:        cfg,
-		toDelete:   make(chan *deleteRequest),
-		deleteDone: make(chan bool),
-		stop:       make(chan chan error, 1),
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
 	}
 
 	queue := sub.Start()
@@ -58,6 +59,76 @@ func TestSQSSubscriber(t *testing.T) {
 	verifySQSSub(t, queue, sqstest, test3, 2)
 	verifySQSSub(t, queue, sqstest, test4, 3)
 	sub.Stop()
+
+}
+func TestSQSReceiveError(t *testing.T) {
+	wantErr := errors.New("my sqs error")
+	sqstest := &TestSQSAPI{
+		Err: wantErr,
+	}
+
+	fals := false
+	cfg := &config.SQS{ConsumeBase64: &fals}
+	defaultSQSConfig(cfg)
+	sub := &SQSSubscriber{
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
+	}
+
+	queue := sub.Start()
+	_, ok := <-queue
+	if ok {
+		t.Error("no message should've gotten to us, the channel should be closed")
+		return
+	}
+	sub.Stop()
+
+	if sub.Err() != wantErr {
+		t.Errorf("expected SQSSubscriber to return error '%s'; got '%s'",
+			wantErr, sub.Err())
+	}
+
+}
+func TestSQSDoneAfterStop(t *testing.T) {
+	test := "it stopped??"
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			[]*sqs.Message{
+				&sqs.Message{
+					Body:          &test,
+					ReceiptHandle: &test,
+				},
+			},
+		},
+	}
+
+	fals := false
+	cfg := &config.SQS{ConsumeBase64: &fals}
+	defaultSQSConfig(cfg)
+	sub := &SQSSubscriber{
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
+	}
+
+	queue := sub.Start()
+	// verify we can receive a message, stop and still mark the message as 'done'
+	gotRaw := <-queue
+	sub.Stop()
+	gotRaw.Done()
+	// do all the other normal verifications
+	if len(sqstest.Deleted) != 1 {
+		t.Errorf("SQSSubscriber expected %d deleted message, got: %d", 1, len(sqstest.Deleted))
+	}
+
+	if *sqstest.Deleted[0].ReceiptHandle != test {
+		t.Errorf("SQSSubscriber expected receipt handle of \"%s\" , got:+ \"%s\"",
+			test,
+			*sqstest.Deleted[0].ReceiptHandle)
+	}
 }
 
 func verifySQSSub(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQSAPI, want string, index int) {
@@ -79,7 +150,7 @@ func verifySQSSub(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQS
 	}
 }
 
-func TestSQSSubscriberProto(t *testing.T) {
+func TestSQSSubscriber(t *testing.T) {
 	test1 := &TestProto{"hey hey hey!"}
 	test2 := &TestProto{"ho ho ho!"}
 	test3 := &TestProto{"yessir!"}
@@ -108,14 +179,14 @@ func TestSQSSubscriberProto(t *testing.T) {
 			},
 		},
 	}
-	cfg := &config.SQS{ConsumeProtobuf: true}
+
+	cfg := &config.SQS{}
 	defaultSQSConfig(cfg)
 	sub := &SQSSubscriber{
-		sqs:        sqstest,
-		cfg:        cfg,
-		toDelete:   make(chan *deleteRequest),
-		deleteDone: make(chan bool),
-		stop:       make(chan chan error, 1),
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
 	}
 
 	queue := sub.Start()
@@ -157,24 +228,76 @@ func makeProto(b []byte) *TestProto {
 	t := &TestProto{}
 	err := proto.Unmarshal(b, t)
 	if err != nil {
-		log.Printf("unable to unmarshal protobuf: %s", err)
+		log.Fatalf("unable to unmarshal protobuf: %s", err)
 	}
 	return t
+}
+
+/*
+  500000	     13969 ns/op	    1494 B/op	      31 allocs/op
+ 1000000	     14248 ns/op	    1491 B/op	      31 allocs/op
+ 2000000	     14138 ns/op	    1489 B/op	      31 allocs/op
+*/
+func BenchmarkSQSSubscriber_Proto(b *testing.B) {
+	test1 := &TestProto{"hey hey hey!"}
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			[]*sqs.Message{
+				&sqs.Message{
+					Body:          makeB64String(test1),
+					ReceiptHandle: &test1.Value,
+				},
+			},
+		},
+	}
+
+	for i := 0; i < b.N/2; i++ {
+		sqstest.Messages = append(sqstest.Messages, []*sqs.Message{
+			&sqs.Message{
+				Body:          makeB64String(test1),
+				ReceiptHandle: &test1.Value,
+			},
+			&sqs.Message{
+				Body:          makeB64String(test1),
+				ReceiptHandle: &test1.Value,
+			},
+		})
+
+	}
+
+	cfg := &config.SQS{}
+	defaultSQSConfig(cfg)
+	sub := &SQSSubscriber{
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
+	}
+	queue := sub.Start()
+	for i := 0; i < b.N; i++ {
+		gotRaw := <-queue
+		// get message, forcing base64 decode
+		gotRaw.Message()
+		// send delete message
+		gotRaw.Done()
+	}
+	go sub.Stop()
 }
 
 type TestSQSAPI struct {
 	Offset   int
 	Messages [][]*sqs.Message
 	Deleted  []*sqs.DeleteMessageBatchRequestEntry
+	Err      error
 }
 
 func (s *TestSQSAPI) ReceiveMessage(*sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	if s.Offset >= len(s.Messages) {
-		return &sqs.ReceiveMessageOutput{}, nil
+		return &sqs.ReceiveMessageOutput{}, s.Err
 	}
 	out := s.Messages[s.Offset]
 	s.Offset++
-	return &sqs.ReceiveMessageOutput{Messages: out}, nil
+	return &sqs.ReceiveMessageOutput{Messages: out}, s.Err
 }
 
 func (s *TestSQSAPI) DeleteMessageBatch(i *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {

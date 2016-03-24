@@ -21,7 +21,7 @@ This package contains a handful of structs meant for managing common configurati
 * MySQL
 * MongoDB
 * Oracle
-* AWS (SNS, SQS, S3)
+* AWS (SNS, SQS, S3, DynamoDB, ElastiCache)
 * Kafka
 * Gorilla's `securecookie`
 * Gizmo Servers
@@ -45,7 +45,7 @@ type Server interface {
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implementations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 4 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService` and `MixedService`. A service and these implementations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -59,7 +59,7 @@ type Service interface {
 }
 ```
 
-The 3 service types that are accepted and hostable on the `SimpleServer`:
+The 4 service types that are accepted and hostable on the `SimpleServer`:
 
 ```go
 type SimpleService interface {
@@ -78,6 +78,15 @@ type JSONService interface {
     JSONMiddleware(JSONEndpoint) JSONEndpoint
 }
 
+type ContextService interface {
+	Service
+
+	// route - method - func
+	ContextEndpoints() map[string]map[string]ContextHandlerFunc
+	// ContextMiddleware provides a hook for service-wide middleware around ContextHandler
+	ContextMiddleware(ContextHandler) ContextHandler
+}
+
 type MixedService interface {
     Service
 
@@ -91,10 +100,16 @@ type MixedService interface {
 }
 ```
 
-Where a `JSONEndpoint` is defined as:
+Where a `JSONEndpoint`, `ContextHandler` and `ContextHandlerFunc` are defined as:
 
-```
+```go
 type JSONEndpoint func(*http.Request) (int, interface{}, error)
+
+type ContextHandler interface {
+	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
+}
+
+type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 ```
 
 Also, the one service type that works with an `RPCServer`:
@@ -112,7 +127,7 @@ type RPCService interface {
 }
 ```
 
-The `Middleware(..)` functions offer each service a 'hook' to wrap each of it's endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (i.e. oauth, tracing, metrics, logging, etc.)
+The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
 ## The `pubsub` package
 

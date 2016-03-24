@@ -30,8 +30,11 @@ type SimpleServer struct {
 	// tracks active requests
 	monitor *ActivityMonitor
 
-	// root context
+	// server context
 	ctx netContext.Context
+
+	// registry for collecting metrics
+	registry metrics.Registry
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -46,11 +49,12 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
 	return &SimpleServer{
-		mux:     mx,
-		cfg:     cfg,
-		exit:    make(chan chan error),
-		monitor: NewActivityMonitor(),
-		ctx:     netContext.Background(),
+		mux:      mx,
+		cfg:      cfg,
+		exit:     make(chan chan error),
+		monitor:  NewActivityMonitor(),
+		ctx:      netContext.Background(),
+		registry: metrics.NewRegistry(),
 	}
 }
 
@@ -77,7 +81,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("PANIC", metrics.DefaultRegistry)
+			errCntr := metrics.GetOrRegisterCounter("PANIC", s.registry)
 			errCntr.Inc(1)
 
 			// log the panic for all the details later
@@ -100,7 +104,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 // register profiling, health checks and access logging.
 func (s *SimpleServer) Start() error {
 
-	StartServerMetrics(s.cfg)
+	StartServerMetrics(s.cfg, s.registry)
 
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
@@ -108,6 +112,8 @@ func (s *SimpleServer) Start() error {
 	srv := http.Server{
 		Handler:        RegisterAccessLogger(s.cfg, s),
 		MaxHeaderBytes: maxHeaderBytes,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
@@ -219,8 +225,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 							ss.Middleware(ep).ServeHTTP(w, r)
 						})
 					}(ep, ss),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}
@@ -234,8 +240,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 				// set the function handle and register it to metrics
 				sr.Handle(path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}
@@ -247,9 +253,24 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(cs.Middleware(ContextToHTTP(s.ctx, cs.ContextMiddleware(ep))),
-					endpointName+".STATUS-COUNT", metrics.DefaultRegistry),
-					endpointName+".DURATION", metrics.DefaultRegistry),
+				sr.Handle(path, Timed(CountedByStatusXX(
+					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							// is it worth it to always close this?
+							if r.Body != nil {
+								defer func() {
+									if err := r.Body.Close(); err != nil {
+										Log.Warn("unable to close request body: ", err)
+									}
+								}()
+							}
+							ctx := netContext.Background()
+							// call the func and return err or not
+							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
+						})
+					}(ep, cs),
+					endpointName+".STATUS-COUNT", s.registry),
+					endpointName+".DURATION", s.registry),
 				).Methods(method)
 			}
 		}
@@ -322,11 +343,9 @@ func ContextWithUserIP(ctx netContext.Context, r *http.Request) netContext.Conte
 	ip, err := GetIP(r)
 	if err != nil {
 		LogWithFields(r).Warningf("unable to get IP: %s", err)
-	} else {
-		ctx = netContext.WithValue(ctx, UserIPKey, ip)
+		return ctx
 	}
-
-	return ctx
+	return netContext.WithValue(ctx, UserIPKey, ip)
 }
 
 // ContextWithForwardForIP returns new context with forward for ip.

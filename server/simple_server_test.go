@@ -10,7 +10,6 @@ import (
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/gorilla/mux"
-	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 )
 
@@ -27,8 +26,6 @@ func BenchmarkSimpleServer_NoParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 
 func BenchmarkSimpleServer_WithParam(b *testing.B) {
@@ -44,8 +41,6 @@ func BenchmarkSimpleServer_WithParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 
 type benchmarkSimpleService struct{}
@@ -91,8 +86,6 @@ func BenchmarkJSONServer_JSONPayload(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 func BenchmarkJSONServer_NoParam(b *testing.B) {
 	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
@@ -107,8 +100,6 @@ func BenchmarkJSONServer_NoParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 func BenchmarkJSONServer_WithParam(b *testing.B) {
 	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
@@ -123,8 +114,6 @@ func BenchmarkJSONServer_WithParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 
 type benchmarkJSONService struct{}
@@ -186,8 +175,6 @@ func BenchmarkContextSimpleServer_NoParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 
 func BenchmarkContextSimpleServer_WithParam(b *testing.B) {
@@ -203,8 +190,6 @@ func BenchmarkContextSimpleServer_WithParam(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		srvr.ServeHTTP(w, r)
 	}
-
-	metrics.DefaultRegistry.UnregisterAll()
 }
 
 type benchmarkContextService struct {
@@ -318,8 +303,8 @@ func TestBasicRegistration(t *testing.T) {
 		if err := s.Register(svc); err != nil {
 			t.Errorf("Basic registration of services should not encounter an error: %s\n", err)
 		}
-		// need to unregister DefaultRegistry in between service registrations
-		metrics.DefaultRegistry.UnregisterAll()
+		// need to unregister metrics in between service registrations
+		s.registry.UnregisterAll()
 	}
 
 	if err := s.Register(&testInvalidService{}); err == nil {

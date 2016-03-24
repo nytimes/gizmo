@@ -48,13 +48,17 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg.NotFoundHandler != nil {
 		mx.NotFoundHandler = cfg.NotFoundHandler
 	}
+	registry := cfg.MetricsRegistry
+	if registry == nil {
+		registry = metrics.NewRegistry()
+	}
 	return &SimpleServer{
 		mux:      mx,
 		cfg:      cfg,
 		exit:     make(chan chan error),
 		monitor:  NewActivityMonitor(),
 		ctx:      netContext.Background(),
-		registry: metrics.NewRegistry(),
+		registry: registry,
 	}
 }
 

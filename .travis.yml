@@ -11,7 +11,7 @@ before_install:
   - go get golang.org/x/tools/cmd/cover
 
 install:
- - bash gitcookies.sh
+  - if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then bash gitcookies.sh; fi
 
 script:
   - make test

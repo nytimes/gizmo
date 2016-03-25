@@ -20,7 +20,7 @@ type MySQL struct {
 const (
 	// DefaultLocation is the default location for MySQL connections.
 	DefaultLocation = "America/New_York"
-	// DefaultPort is the default port for MySQL connections.
+	// DefaultMySQLPort is the default port for MySQL connections.
 	DefaultMySQLPort = 3306
 )
 

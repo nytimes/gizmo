@@ -21,7 +21,7 @@ const (
 	// DefaultLocation is the default location for MySQL connections.
 	DefaultLocation = "America/New_York"
 	// DefaultPort is the default port for MySQL connections.
-	DefaultPort = 3306
+	DefaultMySQLPort = 3306
 )
 
 var (
@@ -51,7 +51,7 @@ func (m *MySQL) DB() (*sql.DB, error) {
 // String will return the MySQL connection string.
 func (m *MySQL) String() string {
 	if m.Port == 0 {
-		m.Port = DefaultPort
+		m.Port = DefaultMySQLPort
 	}
 
 	if m.Location != "" {

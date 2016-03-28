@@ -18,7 +18,7 @@ type Server struct {
 	HealthCheckPath string `envconfig:"GIZMO_HEALTH_CHECK_PATH"`
 	// JSONContentType can be used to override the default JSONContentType.
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
-	//	MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).
+	// MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).
 	MaxHeaderBytes *int `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
 	// ReadTimeout can be used to override the default http server timeout of 10s.
 	// The string should be formatted like a time.Duration string.

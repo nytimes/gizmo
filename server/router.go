@@ -67,42 +67,42 @@ type FastRouter struct {
 // Handle will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
-func (g *FastRouter) Handle(method, path string, h http.Handler) {
+func (f *FastRouter) Handle(method, path string, h http.Handler) {
 	switch strings.ToUpper(method) {
 	case "GET":
-		g.mux.GET(path, HTTPToFastRoute(h))
+		f.mux.GET(path, HTTPToFastRoute(h))
 	case "PUT":
-		g.mux.PUT(path, HTTPToFastRoute(h))
+		f.mux.PUT(path, HTTPToFastRoute(h))
 	case "POST":
-		g.mux.POST(path, HTTPToFastRoute(h))
+		f.mux.POST(path, HTTPToFastRoute(h))
 	case "DELETE":
-		g.mux.DELETE(path, HTTPToFastRoute(h))
+		f.mux.DELETE(path, HTTPToFastRoute(h))
 	case "HEAD":
-		g.mux.HEAD(path, HTTPToFastRoute(h))
+		f.mux.HEAD(path, HTTPToFastRoute(h))
 	case "OPTIONS":
-		g.mux.OPTIONS(path, HTTPToFastRoute(h))
+		f.mux.OPTIONS(path, HTTPToFastRoute(h))
 	case "PATCH":
-		g.mux.PATCH(path, HTTPToFastRoute(h))
+		f.mux.PATCH(path, HTTPToFastRoute(h))
 	default:
-		g.mux.Handle(method, path, HTTPToFastRoute(h))
+		f.mux.Handle(method, path, HTTPToFastRoute(h))
 	}
 }
 
 // HandleFunc will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
-func (g *FastRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
-	g.Handle(method, path, http.HandlerFunc(h))
+func (f *FastRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
+	f.Handle(method, path, http.HandlerFunc(h))
 }
 
 // SetNotFoundHandler will set httprouter.Router.NotFound.
-func (g *FastRouter) SetNotFoundHandler(h http.Handler) {
-	g.mux.NotFound = h
+func (f *FastRouter) SetNotFoundHandler(h http.Handler) {
+	f.mux.NotFound = h
 }
 
 // ServeHTTP will call httprouter.ServerHTTP directly.
-func (g *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.mux.ServeHTTP(w, r)
+func (f *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	f.mux.ServeHTTP(w, r)
 }
 
 // HTTPToFastRoute will convert an http.Handler to a httprouter.Handle

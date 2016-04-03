@@ -64,31 +64,31 @@ type FastRouter struct {
 	mux *httprouter.Router
 }
 
-// Handle will call the `httprouter.METHOD` methods and use the FastRouterHTTPAdapter
+// Handle will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
 func (g *FastRouter) Handle(method, path string, h http.Handler) {
 	switch strings.ToUpper(method) {
 	case "GET":
-		g.mux.GET(path, FastRouterHTTPAdapter(h))
+		g.mux.GET(path, HTTPToFastRoute(h))
 	case "PUT":
-		g.mux.PUT(path, FastRouterHTTPAdapter(h))
+		g.mux.PUT(path, HTTPToFastRoute(h))
 	case "POST":
-		g.mux.POST(path, FastRouterHTTPAdapter(h))
+		g.mux.POST(path, HTTPToFastRoute(h))
 	case "DELETE":
-		g.mux.DELETE(path, FastRouterHTTPAdapter(h))
+		g.mux.DELETE(path, HTTPToFastRoute(h))
 	case "HEAD":
-		g.mux.HEAD(path, FastRouterHTTPAdapter(h))
+		g.mux.HEAD(path, HTTPToFastRoute(h))
 	case "OPTIONS":
-		g.mux.OPTIONS(path, FastRouterHTTPAdapter(h))
+		g.mux.OPTIONS(path, HTTPToFastRoute(h))
 	case "PATCH":
-		g.mux.PATCH(path, FastRouterHTTPAdapter(h))
+		g.mux.PATCH(path, HTTPToFastRoute(h))
 	default:
-		g.mux.Handle(method, path, FastRouterHTTPAdapter(h))
+		g.mux.Handle(method, path, HTTPToFastRoute(h))
 	}
 }
 
-// HandleFunc will call the `httprouter.METHOD` methods and use the FastRouterHTTPAdapter
+// HandleFunc will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
 func (g *FastRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
@@ -105,11 +105,11 @@ func (g *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.mux.ServeHTTP(w, r)
 }
 
-// FastRouterHTTPAdapter will convert an http.Handler to a httprouter.Handle
+// HTTPToFastRoute will convert an http.Handler to a httprouter.Handle
 // by stuffing any route parameters into a Gorilla request context.
 // To access the request parameters within the endpoint,
 // use the `FastRouterVars` function.
-func FastRouterHTTPAdapter(fh http.Handler) httprouter.Handle {
+func HTTPToFastRoute(fh http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		if len(params) > 0 {
 			vars := map[string]string{}

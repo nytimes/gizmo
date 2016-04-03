@@ -12,7 +12,7 @@ import (
 )
 
 // Router is an interface to wrap different router types to be embedded within
-// Gizmo Server implementations.
+// Gizmo server.Server implementations.
 type Router interface {
 	Handle(string, string, http.Handler)
 	HandleFunc(string, string, func(http.ResponseWriter, *http.Request))
@@ -77,8 +77,14 @@ func (g *FastRouter) Handle(method, path string, h http.Handler) {
 		g.mux.POST(path, FastRouterHTTPAdapter(h))
 	case "DELETE":
 		g.mux.DELETE(path, FastRouterHTTPAdapter(h))
+	case "HEAD":
+		g.mux.HEAD(path, FastRouterHTTPAdapter(h))
+	case "OPTIONS":
+		g.mux.OPTIONS(path, FastRouterHTTPAdapter(h))
+	case "PATCH":
+		g.mux.PATCH(path, FastRouterHTTPAdapter(h))
 	default:
-		g.mux.GET(path, FastRouterHTTPAdapter(h))
+		g.mux.Handle(method, path, FastRouterHTTPAdapter(h))
 	}
 }
 
@@ -86,18 +92,7 @@ func (g *FastRouter) Handle(method, path string, h http.Handler) {
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
 func (g *FastRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
-	switch strings.ToUpper(method) {
-	case "GET":
-		g.mux.GET(path, FastRouterHTTPAdapter(http.HandlerFunc(h)))
-	case "PUT":
-		g.mux.PUT(path, FastRouterHTTPAdapter(http.HandlerFunc(h)))
-	case "POST":
-		g.mux.POST(path, FastRouterHTTPAdapter(http.HandlerFunc(h)))
-	case "DELETE":
-		g.mux.DELETE(path, FastRouterHTTPAdapter(http.HandlerFunc(h)))
-	default:
-		g.mux.GET(path, FastRouterHTTPAdapter(http.HandlerFunc(h)))
-	}
+	g.Handle(method, path, http.HandlerFunc(h))
 }
 
 // SetNotFoundHandler will set httprouter.Router.NotFound.
@@ -116,18 +111,16 @@ func (g *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // use the `FastRouterVars` function.
 func FastRouterHTTPAdapter(fh http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		vars := map[string]string{}
-		for _, param := range params {
-			vars[param.Key] = param.Value
-		}
-		if len(vars) > 0 {
+		if len(params) > 0 {
+			vars := map[string]string{}
+			for _, param := range params {
+				vars[param.Key] = param.Value
+			}
 			setFastRouteVars(r, vars)
 		}
 		fh.ServeHTTP(w, r)
 	}
 }
-
-const fastRouteVarsKey ContextKey = 2
 
 // FastRouteVars is a helper function for accessing route
 // parameters from the FastRouter. This is the equivalent

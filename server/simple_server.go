@@ -339,6 +339,10 @@ const (
 
 	// UserForwardForIPKey is key to set/retrieve value from context.
 	UserForwardForIPKey ContextKey = 1
+
+	// key to set/retrieve httprouter params from a
+	// Gorilla request context.
+	fastRouteVarsKey ContextKey = 2
 )
 
 // ContextWithUserIP returns new context with user ip address.

@@ -12,7 +12,6 @@ import (
 	"github.com/NYTimes/logrotate"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -31,7 +30,7 @@ type RPCServer struct {
 	srvr *grpc.Server
 
 	// mux for routing HTTP requests
-	mux *mux.Router
+	mux Router
 
 	// tracks active requests
 	monitor *ActivityMonitor
@@ -45,9 +44,9 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 	if cfg == nil {
 		cfg = &config.Server{}
 	}
-	mx := mux.NewRouter()
+	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
-		mx.NotFoundHandler = cfg.NotFoundHandler
+		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
 	registry := cfg.MetricsRegistry
 	if registry == nil {
@@ -80,19 +79,17 @@ func (r *RPCServer) Register(svc Service) error {
 	}
 
 	// register HTTP
-	prefix := rpcsvc.Prefix()
-	sr := r.mux.PathPrefix(prefix).Subrouter()
-
 	// loop through json endpoints and register them
+	prefix := svc.Prefix()
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)
 			// set the function handle and register is to metrics
-			sr.Handle(path, Timed(CountedByStatusXX(
+			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
 				endpointName+".STATUS-COUNT", r.registry),
 				endpointName+".DURATION", r.registry),
-			).Methods(method)
+			)
 		}
 	}
 

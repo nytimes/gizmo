@@ -25,7 +25,7 @@ type SimpleServer struct {
 	exit chan chan error
 
 	// mux for routing
-	mux *mux.Router
+	mux Router
 
 	// tracks active requests
 	monitor *ActivityMonitor
@@ -44,9 +44,9 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg == nil {
 		cfg = &config.Server{}
 	}
-	mx := mux.NewRouter()
+	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
-		mx.NotFoundHandler = cfg.NotFoundHandler
+		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
 	registry := cfg.MetricsRegistry
 	if registry == nil {
@@ -185,7 +185,6 @@ func metricName(prefix, path, method string) string {
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
 	prefix := svcI.Prefix()
-	sr := s.mux.PathPrefix(prefix).Subrouter()
 
 	var (
 		js JSONService
@@ -213,7 +212,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -231,7 +230,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 					}(ep, ss),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}
@@ -242,11 +241,11 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}
@@ -257,7 +256,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -275,7 +274,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 					}(ep, cs),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}

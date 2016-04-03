@@ -2,6 +2,7 @@ package config
 
 import (
 	"net/http"
+
 	"github.com/rcrowley/go-metrics"
 )
 
@@ -13,6 +14,9 @@ type Server struct {
 	// HealthCheckType is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to 'simple'.
 	HealthCheckType string `envconfig:"GIZMO_HEALTH_CHECK_TYPE"`
+	// RouterType is used by the server to init the proper Router implementation.
+	// If empty, this will default to 'gorilla'.
+	RouterType string `envconfig:"GIZMO_ROUTER_TYPE"`
 	// HealthCheckPath is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to '/status.txt'.
 	HealthCheckPath string `envconfig:"GIZMO_HEALTH_CHECK_PATH"`
@@ -55,7 +59,6 @@ type Server struct {
 	NotFoundHandler http.Handler
 	// MetricsRegistry will override the default server metrics registry if set.
 	MetricsRegistry metrics.Registry
-
 }
 
 // LoadServerFromEnv will attempt to load a Server object

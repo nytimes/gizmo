@@ -11,7 +11,7 @@ import (
 	"github.com/NYTimes/gizmo/config"
 )
 
-// Router is an interface for router types to and be embedded within
+// Router is an interface to wrap different router types to be embedded within
 // Gizmo Server implementations.
 type Router interface {
 	Handle(string, string, http.Handler)

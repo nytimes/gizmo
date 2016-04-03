@@ -1,16 +1,16 @@
 all: test
 
 deps:
-	go get -d -v github.com/NYTimes/gizmo/...
+	go get -d -v github.com/NYTimes/gizmo/... && true
 
 updatedeps:
-	go get -d -v -u -f github.com/NYTimes/gizmo/...
+	go get -d -v -u -f github.com/NYTimes/gizmo/... && true
 
 testdeps:
-	go get -d -v github.com/NYTimes/gizmo/...
+	go get -d -v -t github.com/NYTimes/gizmo/... && true
 
 updatetestdeps:
-	go get -d -v -t -u -f github.com/NYTimes/gizmo/...
+	go get -d -v -t -u -f github.com/NYTimes/gizmo/... && true
 
 build: deps
 	go build github.com/NYTimes/gizmo/...

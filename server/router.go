@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -68,24 +67,7 @@ type FastRouter struct {
 // to pass httprouter.Params into a Gorilla request context. The params will be available
 // via the `FastRouterVars` function.
 func (f *FastRouter) Handle(method, path string, h http.Handler) {
-	switch strings.ToUpper(method) {
-	case "GET":
-		f.mux.GET(path, HTTPToFastRoute(h))
-	case "PUT":
-		f.mux.PUT(path, HTTPToFastRoute(h))
-	case "POST":
-		f.mux.POST(path, HTTPToFastRoute(h))
-	case "DELETE":
-		f.mux.DELETE(path, HTTPToFastRoute(h))
-	case "HEAD":
-		f.mux.HEAD(path, HTTPToFastRoute(h))
-	case "OPTIONS":
-		f.mux.OPTIONS(path, HTTPToFastRoute(h))
-	case "PATCH":
-		f.mux.PATCH(path, HTTPToFastRoute(h))
-	default:
-		f.mux.Handle(method, path, HTTPToFastRoute(h))
-	}
+	f.mux.Handle(method, path, HTTPToFastRoute(h))
 }
 
 // HandleFunc will call the `httprouter.METHOD` methods and use the HTTPToFastRoute

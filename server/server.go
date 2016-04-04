@@ -17,7 +17,6 @@ import (
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/context"
 	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
 	"github.com/rcrowley/go-metrics"
 
@@ -203,32 +202,32 @@ func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
 
 // RegisterProfiler will add handlers for pprof endpoints if
 // the config has them enabled.
-func RegisterProfiler(cfg *config.Server, mx *mux.Router) {
+func RegisterProfiler(cfg *config.Server, mx Router) {
 	if !cfg.EnablePProf {
 		return
 	}
-	mx.HandleFunc("/debug/pprof/", pprof.Index)
-	mx.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mx.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mx.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mx.HandleFunc("GET", "/debug/pprof/", pprof.Index)
+	mx.HandleFunc("GET", "/debug/pprof/cmdline", pprof.Cmdline)
+	mx.HandleFunc("GET", "/debug/pprof/profile", pprof.Profile)
+	mx.HandleFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
 
 	// Manually add support for paths linked to by index page at /debug/pprof/
-	mx.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-	mx.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-	mx.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-	mx.Handle("/debug/pprof/block", pprof.Handler("block"))
+	mx.Handle("GET", "/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	mx.Handle("GET", "/debug/pprof/heap", pprof.Handler("heap"))
+	mx.Handle("GET", "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	mx.Handle("GET", "/debug/pprof/block", pprof.Handler("block"))
 }
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux.Router) HealthCheckHandler {
+func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
 	// register health check
 	hch := NewHealthCheckHandler(cfg)
 	err := hch.Start(monitor)
 	if err != nil {
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
-	mx.Handle(hch.Path(), hch)
+	mx.Handle("GET", hch.Path(), hch)
 	return hch
 }
 

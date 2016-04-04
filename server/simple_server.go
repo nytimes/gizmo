@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/web"
 	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
 	netContext "golang.org/x/net/context"
 )
@@ -305,7 +305,7 @@ func GetForwardedIP(r *http.Request) string {
 
 // GetIP returns the IP address for the given request.
 func GetIP(r *http.Request) (string, error) {
-	ip, ok := mux.Vars(r)["ip"]
+	ip, ok := web.Vars(r)["ip"]
 	if ok {
 		return ip, nil
 	}
@@ -339,10 +339,6 @@ const (
 
 	// UserForwardForIPKey is key to set/retrieve value from context.
 	UserForwardForIPKey ContextKey = 1
-
-	// key to set/retrieve httprouter params from a
-	// Gorilla request context.
-	fastRouteVarsKey ContextKey = 2
 )
 
 // ContextWithUserIP returns new context with user ip address.

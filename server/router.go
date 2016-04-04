@@ -3,11 +3,11 @@ package server
 import (
 	"net/http"
 
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/julienschmidt/httprouter"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/web"
 )
 
 // Router is an interface to wrap different router types to be embedded within
@@ -24,10 +24,10 @@ type Router interface {
 // will default to using Gorilla mux.
 func NewRouter(cfg *config.Server) Router {
 	switch cfg.RouterType {
+	case "fast", "httprouter":
+		return &FastRouter{httprouter.New()}
 	case "gorilla":
 		return &GorillaRouter{mux.NewRouter()}
-	case "httprouter", "fast":
-		return &FastRouter{httprouter.New()}
 	default:
 		return &GorillaRouter{mux.NewRouter()}
 	}
@@ -40,12 +40,18 @@ type GorillaRouter struct {
 
 // Handle will call the Gorilla web toolkit's Handle().Method() methods.
 func (g *GorillaRouter) Handle(method, path string, h http.Handler) {
-	g.mux.Handle(path, h).Methods(method)
+	g.mux.Handle(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// copy the route params into a shared location
+		// duplicating memory, but allowing Gizmo to be more flexible with
+		// router implementations.
+		web.SetRouteVars(r, mux.Vars(r))
+		h.ServeHTTP(w, r)
+	})).Methods(method)
 }
 
 // HandleFunc will call the Gorilla web toolkit's HandleFunc().Method() methods.
 func (g *GorillaRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
-	g.mux.HandleFunc(path, h).Methods(method)
+	g.HandleFunc(method, path, h)
 }
 
 // SetNotFoundHandler will set the Gorilla mux.Router.NotFoundHandler.
@@ -90,7 +96,7 @@ func (f *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // HTTPToFastRoute will convert an http.Handler to a httprouter.Handle
 // by stuffing any route parameters into a Gorilla request context.
 // To access the request parameters within the endpoint,
-// use the `FastRouterVars` function.
+// use the `web.Vars` function.
 func HTTPToFastRoute(fh http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		if len(params) > 0 {
@@ -98,24 +104,8 @@ func HTTPToFastRoute(fh http.Handler) httprouter.Handle {
 			for _, param := range params {
 				vars[param.Key] = param.Value
 			}
-			setFastRouteVars(r, vars)
+			web.SetRouteVars(r, vars)
 		}
 		fh.ServeHTTP(w, r)
-	}
-}
-
-// FastRouteVars is a helper function for accessing route
-// parameters from the FastRouter. This is the equivalent
-// of using `mux.Vars(r)` with the GorillaRouter.
-func FastRouteVars(r *http.Request) map[string]string {
-	if rv := context.Get(r, fastRouteVarsKey); rv != nil {
-		return rv.(map[string]string)
-	}
-	return nil
-}
-
-func setFastRouteVars(r *http.Request, val interface{}) {
-	if val != nil {
-		context.Set(r, fastRouteVarsKey, val)
 	}
 }

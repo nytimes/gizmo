@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/gorilla/mux"
+	"github.com/NYTimes/gizmo/web"
 	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 )
@@ -36,7 +36,7 @@ func BenchmarkFastSimpleServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkSimpleService{true})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "/svc/v1/1/blah", nil)
+	r, _ := http.NewRequest("GET", "/svc/v1/1/{something}/blah", nil)
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -66,7 +66,7 @@ func BenchmarkSimpleServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkSimpleService{})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "/svc/v1/1/blah", nil)
+	r, _ := http.NewRequest("GET", "/svc/v1/1/blah/:something", nil)
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -74,7 +74,9 @@ func BenchmarkSimpleServer_WithParam(b *testing.B) {
 	}
 }
 
-type benchmarkSimpleService struct{ fast bool }
+type benchmarkSimpleService struct {
+	fast bool
+}
 
 func (s *benchmarkSimpleService) Prefix() string {
 	return "/svc/v1"
@@ -96,12 +98,7 @@ func (s *benchmarkSimpleService) Middleware(h http.Handler) http.Handler {
 }
 
 func (s *benchmarkSimpleService) GetSimple(w http.ResponseWriter, r *http.Request) {
-	var something string
-	if s.fast {
-		something = mux.Vars(r)["something"]
-	} else {
-		something = FastRouteVars(r)["something"]
-	}
+	something := web.Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 
@@ -144,7 +141,7 @@ func BenchmarkFastJSONServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkJSONService{true})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("PUT", "/svc/v1/3/blah", bytes.NewBufferString(`{"hello":"hi","howdy":"yo"}`))
+	r, _ := http.NewRequest("PUT", "/svc/v1/3/{something}/blah", bytes.NewBufferString(`{"hello":"hi","howdy":"yo"}`))
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -188,7 +185,7 @@ func BenchmarkJSONServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkJSONService{})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("PUT", "/svc/v1/3/blah", bytes.NewBufferString(`{"hello":"hi","howdy":"yo"}`))
+	r, _ := http.NewRequest("PUT", "/svc/v1/3/blah/:something", bytes.NewBufferString(`{"hello":"hi","howdy":"yo"}`))
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -240,12 +237,7 @@ func (s *benchmarkJSONService) GetJSON(r *http.Request) (int, interface{}, error
 }
 
 func (s *benchmarkJSONService) GetJSONParam(r *http.Request) (int, interface{}, error) {
-	var something string
-	if s.fast {
-		something = mux.Vars(r)["something"]
-	} else {
-		something = FastRouteVars(r)["something"]
-	}
+	something := web.Vars(r)["something"]
 	return http.StatusOK, &testJSON{"hi", something}, nil
 }
 
@@ -271,7 +263,7 @@ func BenchmarkFastContextSimpleServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkContextService{true})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "/svc/v1/ctx/1/blah", nil)
+	r, _ := http.NewRequest("GET", "/svc/v1/ctx/1/{something}/blah", nil)
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -301,7 +293,7 @@ func BenchmarkContextSimpleServer_WithParam(b *testing.B) {
 	srvr.Register(&benchmarkContextService{})
 
 	w := httptest.NewRecorder()
-	r, _ := http.NewRequest("GET", "/svc/v1/ctx/1/blah", nil)
+	r, _ := http.NewRequest("GET", "/svc/v1/ctx/1/blah/:something", nil)
 	r.RemoteAddr = "0.0.0.0:8080"
 
 	for i := 0; i < b.N; i++ {
@@ -337,12 +329,7 @@ func (s *benchmarkContextService) Middleware(h http.Handler) http.Handler {
 }
 
 func (s *benchmarkContextService) GetSimple(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var something string
-	if s.fast {
-		something = mux.Vars(r)["something"]
-	} else {
-		something = FastRouteVars(r)["something"]
-	}
+	something := web.Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 
@@ -380,12 +367,7 @@ func (s *testMixedService) Endpoints() map[string]map[string]http.HandlerFunc {
 }
 
 func (s *testMixedService) GetSimple(w http.ResponseWriter, r *http.Request) {
-	var something string
-	if s.fast {
-		something = mux.Vars(r)["something"]
-	} else {
-		something = FastRouteVars(r)["something"]
-	}
+	something := web.Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 

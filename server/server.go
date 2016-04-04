@@ -43,6 +43,9 @@ var (
 	Log = logrus.New()
 	// server is what's used in the global server funcs in the package.
 	server Server
+	// routerType will be used by the global `Vars` function to determine where to pull
+	// parameters from.
+	routerType string
 	// maxHeaderBytes is used by the http server to limit the size of request headers.
 	// This may need to be increased if accepting cookies from the public.
 	maxHeaderBytes = 1 << 20

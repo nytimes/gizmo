@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/NYTimes/gizmo/config"
@@ -82,9 +83,8 @@ func (r *RPCServer) Register(svc Service) error {
 	// loop through json endpoints and register them
 	prefix := svc.Prefix()
 	// quick fix for backwards compatibility
-	if prefix == "/" {
-		prefix = ""
-	}
+	prefix = strings.TrimRight(prefix, "/")
+
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)

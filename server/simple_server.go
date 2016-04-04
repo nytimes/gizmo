@@ -186,9 +186,8 @@ func metricName(prefix, path, method string) string {
 func (s *SimpleServer) Register(svcI Service) error {
 	prefix := svcI.Prefix()
 	// quick fix for backwards compatibility
-	if prefix == "/" {
-		prefix = ""
-	}
+	prefix = strings.TrimRight(prefix, "/")
+
 	var (
 		js JSONService
 		ss SimpleService

@@ -185,7 +185,10 @@ func metricName(prefix, path, method string) string {
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
 	prefix := svcI.Prefix()
-
+	// quick fix for backwards compatibility
+	if prefix == "/" {
+		prefix = ""
+	}
 	var (
 		js JSONService
 		ss SimpleService

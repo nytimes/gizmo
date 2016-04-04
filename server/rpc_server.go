@@ -81,6 +81,10 @@ func (r *RPCServer) Register(svc Service) error {
 	// register HTTP
 	// loop through json endpoints and register them
 	prefix := svc.Prefix()
+	// quick fix for backwards compatibility
+	if prefix == "/" {
+		prefix = ""
+	}
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)

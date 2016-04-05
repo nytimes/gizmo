@@ -34,7 +34,7 @@ type Server struct {
 	GOMAXPROCS *int `envconfig:"GIZMO_SERVER_GOMAXPROCS"`
 	// HTTPAccessLog is the location of the http access log. If it is empty,
 	// no access logging will be done.
-	HTTPAccessLog string `envconfig:"HTTP_ACCESS_LOG"`
+	HTTPAccessLog *string `envconfig:"HTTP_ACCESS_LOG"`
 	// RPCAccessLog is the location of the RPC access log. If it is empty,
 	// no access logging will be done.
 	RPCAccessLog string `envconfig:"RPC_ACCESS_LOG"`
@@ -68,7 +68,7 @@ func LoadServerFromEnv() *Server {
 	var server Server
 	LoadEnvConfig(&server)
 	if server.HTTPPort != 0 || server.RPCPort != 0 ||
-		server.HTTPAccessLog != "" || server.RPCAccessLog != "" ||
+		server.HTTPAccessLog != nil || server.RPCAccessLog != "" ||
 		server.HealthCheckType != "" || server.HealthCheckPath != "" {
 		return &server
 	}

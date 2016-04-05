@@ -3,6 +3,7 @@ package server
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -252,15 +253,20 @@ func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
 // RegisterAccessLogger will wrap a logrotate-aware Apache-style access log handler
 // around the given handler if an access log location is provided by the config.
 func RegisterAccessLogger(cfg *config.Server, handler http.Handler) http.Handler {
-	if len(cfg.HTTPAccessLog) == 0 {
+	if cfg.HTTPAccessLog == nil {
 		return handler
 	}
-
-	lf, err := logrotate.NewFile(cfg.HTTPAccessLog)
-	if err != nil {
-		Log.Fatalf("unable to access http access log file: %s", err)
+	var lw io.Writer
+	var err error
+	if *cfg.HTTPAccessLog == "stdout" {
+		lw = os.Stdout
+	} else {
+		lw, err = logrotate.NewFile(*cfg.HTTPAccessLog)
+		if err != nil {
+			Log.Fatalf("unable to access http access log file: %s", err)
+		}
 	}
-	return handlers.CombinedLoggingHandler(lf, handler)
+	return handlers.CombinedLoggingHandler(lw, handler)
 }
 
 // MetricsRegistryName returns "apps.{hostname prefix}", which is

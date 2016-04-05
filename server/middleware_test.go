@@ -33,7 +33,7 @@ func TestCORSHandler(t *testing.T) {
 			"",
 			".nytimes.com.",
 			"true",
-			"Content-Type, *",
+			"Content-Type, x-requested-by, *",
 			"GET, PUT, POST, DELETE, OPTIONS",
 		},
 		{

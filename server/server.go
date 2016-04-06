@@ -3,7 +3,6 @@ package server
 import (
 	"flag"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -17,7 +16,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/context"
-	"github.com/gorilla/handlers"
 	"github.com/nu7hatch/gouuid"
 	"github.com/rcrowley/go-metrics"
 
@@ -248,25 +246,6 @@ func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
 		Log.Warnf("unable to resolve graphite host: %s", err)
 	}
 	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
-}
-
-// RegisterAccessLogger will wrap a logrotate-aware Apache-style access log handler
-// around the given handler if an access log location is provided by the config.
-func RegisterAccessLogger(cfg *config.Server, handler http.Handler) http.Handler {
-	if cfg.HTTPAccessLog == nil {
-		return handler
-	}
-	var lw io.Writer
-	var err error
-	if *cfg.HTTPAccessLog == "stdout" {
-		lw = os.Stdout
-	} else {
-		lw, err = logrotate.NewFile(*cfg.HTTPAccessLog)
-		if err != nil {
-			Log.Fatalf("unable to access http access log file: %s", err)
-		}
-	}
-	return handlers.CombinedLoggingHandler(lw, handler)
 }
 
 // MetricsRegistryName returns "apps.{hostname prefix}", which is

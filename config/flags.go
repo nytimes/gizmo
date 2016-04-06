@@ -51,8 +51,8 @@ func SetServerOverrides(c *Server) {
 		c.HTTPAccessLog = HTTPAccessLogCLI
 	}
 
-	if *RPCAccessLogCLI != "" {
-		c.RPCAccessLog = *RPCAccessLogCLI
+	if RPCAccessLogCLI != nil {
+		c.RPCAccessLog = RPCAccessLogCLI
 	}
 
 	if *HTTPPortCLI > 0 {

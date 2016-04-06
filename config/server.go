@@ -1,7 +1,11 @@
 package config
 
 import (
+	"github.com/NYTimes/logrotate"
+	"github.com/gorilla/handlers"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/rcrowley/go-metrics"
 )
@@ -37,7 +41,7 @@ type Server struct {
 	HTTPAccessLog *string `envconfig:"HTTP_ACCESS_LOG"`
 	// RPCAccessLog is the location of the RPC access log. If it is empty,
 	// no access logging will be done.
-	RPCAccessLog string `envconfig:"RPC_ACCESS_LOG"`
+	RPCAccessLog *string `envconfig:"RPC_ACCESS_LOG"`
 	// HTTPPort is the port the server implementation will serve HTTP over.
 	HTTPPort int `envconfig:"HTTP_PORT"`
 	// RPCPort is the port the server implementation will serve RPC over.
@@ -68,9 +72,29 @@ func LoadServerFromEnv() *Server {
 	var server Server
 	LoadEnvConfig(&server)
 	if server.HTTPPort != 0 || server.RPCPort != 0 ||
-		server.HTTPAccessLog != nil || server.RPCAccessLog != "" ||
+		server.HTTPAccessLog != nil || server.RPCAccessLog != nil ||
 		server.HealthCheckType != "" || server.HealthCheckPath != "" {
 		return &server
 	}
 	return nil
+}
+
+// NewAccessLogMiddleware will wrap a logrotate-aware Apache-style access log handler
+// around the given http.Handler if an access log location is provided by the config,
+// or optionally send access logs to stdout.
+func NewAccessLogMiddleware(logLocation *string, handler http.Handler) (http.Handler, error) {
+	if logLocation == nil {
+		return handler, nil
+	}
+	var lw io.Writer
+	var err error
+	if *logLocation == "stdout" {
+		lw = os.Stdout
+	} else {
+		lw, err = logrotate.NewFile(*logLocation)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return handlers.CombinedLoggingHandler(lw, handler), nil
 }

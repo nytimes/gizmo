@@ -125,8 +125,14 @@ func (r *RPCServer) Start() error {
 	// setup HTTP
 	healthHandler := RegisterHealthHandler(r.cfg, r.monitor, r.mux)
 	r.cfg.HealthCheckPath = healthHandler.Path()
+
+	wrappedHandler, err := config.NewAccessLogMiddleware(r.cfg.RPCAccessLog, r)
+	if err != nil {
+		Log.Fatalf("unable to create http access log: %s", err)
+	}
+
 	srv := http.Server{
-		Handler:        RegisterAccessLogger(r.cfg, r),
+		Handler:        wrappedHandler,
 		MaxHeaderBytes: maxHeaderBytes,
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,
@@ -294,11 +300,13 @@ func registerRPCMetrics(name string, registry metrics.Registry) {
 var rpcAccessLog *logrus.Logger
 
 func registerRPCAccessLogger(cfg *config.Server) {
-	if cfg.RPCAccessLog == "" {
+	// gRPC doesn't have a hook à la http.Handler-middleware
+	// so some of this duplicates logic from config.NewAccessLogMiddleware
+	if cfg.RPCAccessLog == nil {
 		return
 	}
 
-	lf, err := logrotate.NewFile(cfg.RPCAccessLog)
+	lf, err := logrotate.NewFile(*cfg.RPCAccessLog)
 	if err != nil {
 		Log.Fatalf("unable to access rpc access log file: %s", err)
 	}

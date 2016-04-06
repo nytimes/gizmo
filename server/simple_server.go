@@ -113,8 +113,13 @@ func (s *SimpleServer) Start() error {
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
 
+	wrappedHandler, err := config.NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
+	if err != nil {
+		Log.Fatalf("unable to create http access log: %s", err)
+	}
+
 	srv := http.Server{
-		Handler:        RegisterAccessLogger(s.cfg, s),
+		Handler:        wrappedHandler,
 		MaxHeaderBytes: maxHeaderBytes,
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,

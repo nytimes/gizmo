@@ -47,12 +47,12 @@ func SetLogOverride(log *string) {
 func SetServerOverrides(c *Server) {
 	SetLogOverride(&c.Log)
 
-	if *HTTPAccessLogCLI != "" {
-		c.HTTPAccessLog = *HTTPAccessLogCLI
+	if HTTPAccessLogCLI != nil {
+		c.HTTPAccessLog = HTTPAccessLogCLI
 	}
 
-	if *RPCAccessLogCLI != "" {
-		c.RPCAccessLog = *RPCAccessLogCLI
+	if RPCAccessLogCLI != nil {
+		c.RPCAccessLog = RPCAccessLogCLI
 	}
 
 	if *HTTPPortCLI > 0 {

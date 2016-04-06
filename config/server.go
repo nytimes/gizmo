@@ -88,9 +88,10 @@ func NewAccessLogMiddleware(logLocation *string, handler http.Handler) (http.Han
 	}
 	var lw io.Writer
 	var err error
-	if *logLocation == "stdout" {
+	switch *logLocation {
+	case "stdout":
 		lw = os.Stdout
-	} else {
+	default:
 		lw, err = logrotate.NewFile(*logLocation)
 		if err != nil {
 			return nil, err

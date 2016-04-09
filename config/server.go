@@ -20,6 +20,7 @@ type Server struct {
 	// HealthCheckType is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to 'simple'.
 	HealthCheckType string `envconfig:"GIZMO_HEALTH_CHECK_TYPE"`
+	// HealthCheckPath is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to '/status.txt'.
 	HealthCheckPath string `envconfig:"GIZMO_HEALTH_CHECK_PATH"`
 	// CustomHealthCheckHandler will be used if HealthCheckType is set with "custom".
@@ -29,7 +30,6 @@ type Server struct {
 	// If empty, this will default to 'gorilla'.
 	RouterType string `envconfig:"GIZMO_ROUTER_TYPE"`
 
-	// HealthCheckPath is used by server to init the proper HealthCheckHandler.
 	// JSONContentType can be used to override the default JSONContentType.
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
 	// MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).

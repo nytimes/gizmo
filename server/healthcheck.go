@@ -49,3 +49,36 @@ func (s *SimpleHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		LogWithFields(r).Warn("unable to write healthcheck response: ", err)
 	}
 }
+
+// NewCustomHealthCheck will return a new CustomHealthCheck with the given
+// path and handler.
+func NewCustomHealthCheck(path string, handler http.Handler) *CustomHealthCheck {
+	return &CustomHealthCheck{path, handler}
+}
+
+// CustomHealthCheck is a HealthCheckHandler that uses
+// a custom http.Handler provided to the server via `config.Server.CustomHealthCheckHandler`.
+type CustomHealthCheck struct {
+	path    string
+	handler http.Handler
+}
+
+// Path will return the configured status path to server on.
+func (c *CustomHealthCheck) Path() string {
+	return c.path
+}
+
+// Start will do nothing.
+func (c *CustomHealthCheck) Start(monitor *ActivityMonitor) error {
+	return nil
+}
+
+// Stop will do nothing and return nil.
+func (c *CustomHealthCheck) Stop() error {
+	return nil
+}
+
+// ServeHTTP will allow the custom handler to manage the request and response.
+func (c *CustomHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.handler.ServeHTTP(w, r)
+}

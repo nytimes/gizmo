@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -189,14 +190,23 @@ func NewServer(cfg *config.Server) Server {
 
 // NewHealthCheckHandler will inspect the config to generate
 // the appropriate HealthCheckHandler.
-func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
+func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
+	// default the status path if not set
+	if cfg.HealthCheckPath == "" {
+		cfg.HealthCheckPath = "/status.txt"
+	}
 	switch cfg.HealthCheckType {
 	case "simple":
-		return NewSimpleHealthCheck(cfg.HealthCheckPath)
+		return NewSimpleHealthCheck(cfg.HealthCheckPath), nil
 	case "esx":
-		return NewESXHealthCheck()
+		return NewESXHealthCheck(), nil
+	case "custom":
+		if cfg.CustomHealthCheckHandler == nil {
+			return nil, errors.New("health check type is set to 'custom', but no config.Server.CustomHealthCheckHandler provided")
+		}
+		return NewCustomHealthCheck(cfg.HealthCheckPath, cfg.CustomHealthCheckHandler), nil
 	default:
-		return NewSimpleHealthCheck("/status.txt")
+		return NewSimpleHealthCheck(cfg.HealthCheckPath), nil
 	}
 }
 
@@ -222,8 +232,11 @@ func RegisterProfiler(cfg *config.Server, mx Router) {
 // given config and add a handler to the given router.
 func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
 	// register health check
-	hch := NewHealthCheckHandler(cfg)
-	err := hch.Start(monitor)
+	hch, err := NewHealthCheckHandler(cfg)
+	if err != nil {
+		Log.Fatal("unable to configure the HealthCheckHandler: ", err)
+	}
+	err = hch.Start(monitor)
 	if err != nil {
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}

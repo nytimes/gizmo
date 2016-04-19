@@ -156,13 +156,14 @@ func ContextFields(r *http.Request) map[string]interface{} {
 	fields := map[string]interface{}{}
 	for k, v := range context.GetAll(r) {
 		strK := fmt.Sprintf("%+v", k)
+		typeK := fmt.Sprintf("%T-%+v", k, k)
 		// gorilla.mux adds the route to context.
 		// we want to remove it for now
-		if strK == "1" {
+		if typeK == "mux.contextKey-1" || typeK == "mux.contextKey-0" {
 			continue
 		}
-		// gorilla puts mux vars here, we want to give a better label
-		if strK == "0" {
+		// web.varsKey for _all_ mux variables (gorilla or httprouter)
+		if typeK == "web.contextKey-2" {
 			strK = "muxvars"
 		}
 		fields[strK] = fmt.Sprintf("%#+v", v)

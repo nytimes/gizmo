@@ -279,12 +279,12 @@ func MetricsRegistryName() string {
 func SetLogLevel(scfg *config.Server) {
 	switch scfg.LogLevel {
 	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
+		Log.Level = logrus.DebugLevel
 	case "warn":
-		logrus.SetLevel(logrus.WarnLevel)
+		Log.Level = logrus.WarnLevel
 	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
+		Log.Level = logrus.FatalLevel
 	default:
-		logrus.SetLevel(logrus.InfoLevel)
+		Log.Level = logrus.InfoLevel
 	}
 }

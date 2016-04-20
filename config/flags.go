@@ -47,11 +47,11 @@ func SetLogOverride(log *string) {
 func SetServerOverrides(c *Server) {
 	SetLogOverride(&c.Log)
 
-	if HTTPAccessLogCLI != nil {
+	if *HTTPAccessLogCLI != "" {
 		c.HTTPAccessLog = HTTPAccessLogCLI
 	}
 
-	if RPCAccessLogCLI != nil {
+	if *RPCAccessLogCLI != "" {
 		c.RPCAccessLog = RPCAccessLogCLI
 	}
 

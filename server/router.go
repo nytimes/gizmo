@@ -51,7 +51,7 @@ func (g *GorillaRouter) Handle(method, path string, h http.Handler) {
 
 // HandleFunc will call the Gorilla web toolkit's HandleFunc().Method() methods.
 func (g *GorillaRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
-	g.HandleFunc(method, path, h)
+	g.Handle(method, path, http.HandlerFunc(h))
 }
 
 // SetNotFoundHandler will set the Gorilla mux.Router.NotFoundHandler.

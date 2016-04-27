@@ -6,6 +6,7 @@ import (
 	"log"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -20,22 +21,22 @@ func TestSQSSubscriberNoBase64(t *testing.T) {
 	test4 := "nope!"
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          &test1,
 					ReceiptHandle: &test1,
 				},
-				&sqs.Message{
+				{
 					Body:          &test2,
 					ReceiptHandle: &test2,
 				},
 			},
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          &test3,
 					ReceiptHandle: &test3,
 				},
-				&sqs.Message{
+				{
 					Body:          &test4,
 					ReceiptHandle: &test4,
 				},
@@ -95,8 +96,8 @@ func TestSQSDoneAfterStop(t *testing.T) {
 	test := "it stopped??"
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          &test,
 					ReceiptHandle: &test,
 				},
@@ -130,6 +131,41 @@ func TestSQSDoneAfterStop(t *testing.T) {
 			*sqstest.Deleted[0].ReceiptHandle)
 	}
 }
+func TestExtendDoneTimeout(t *testing.T) {
+	test := "some test"
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			{
+				{
+					Body:          &test,
+					ReceiptHandle: &test,
+				},
+			},
+		},
+	}
+
+	fals := false
+	cfg := &config.SQS{ConsumeBase64: &fals}
+	defaultSQSConfig(cfg)
+	sub := &SQSSubscriber{
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
+	}
+
+	queue := sub.Start()
+	defer sub.Stop()
+	gotRaw := <-queue
+	gotRaw.ExtendDoneDeadline(time.Hour)
+	if len(sqstest.Extended) != 1 {
+		t.Errorf("SQSSubscriber expected %d extended message, got %d", 1, len(sqstest.Extended))
+	}
+
+	if *sqstest.Extended[0].ReceiptHandle != test {
+		t.Errorf("SQSSubscriber expected receipt handle of %q , got:+ %q", test, *sqstest.Extended[0].ReceiptHandle)
+	}
+}
 
 func verifySQSSub(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQSAPI, want string, index int) {
 	gotRaw := <-queue
@@ -157,22 +193,22 @@ func TestSQSSubscriber(t *testing.T) {
 	test4 := &TestProto{"nope!"}
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          makeB64String(test1),
 					ReceiptHandle: &test1.Value,
 				},
-				&sqs.Message{
+				{
 					Body:          makeB64String(test2),
 					ReceiptHandle: &test2.Value,
 				},
 			},
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          makeB64String(test3),
 					ReceiptHandle: &test3.Value,
 				},
-				&sqs.Message{
+				{
 					Body:          makeB64String(test4),
 					ReceiptHandle: &test4.Value,
 				},
@@ -242,8 +278,8 @@ func BenchmarkSQSSubscriber_Proto(b *testing.B) {
 	test1 := &TestProto{"hey hey hey!"}
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{
-			[]*sqs.Message{
-				&sqs.Message{
+			{
+				{
 					Body:          makeB64String(test1),
 					ReceiptHandle: &test1.Value,
 				},
@@ -253,11 +289,11 @@ func BenchmarkSQSSubscriber_Proto(b *testing.B) {
 
 	for i := 0; i < b.N/2; i++ {
 		sqstest.Messages = append(sqstest.Messages, []*sqs.Message{
-			&sqs.Message{
+			{
 				Body:          makeB64String(test1),
 				ReceiptHandle: &test1.Value,
 			},
-			&sqs.Message{
+			{
 				Body:          makeB64String(test1),
 				ReceiptHandle: &test1.Value,
 			},
@@ -288,6 +324,7 @@ type TestSQSAPI struct {
 	Offset   int
 	Messages [][]*sqs.Message
 	Deleted  []*sqs.DeleteMessageBatchRequestEntry
+	Extended []*sqs.ChangeMessageVisibilityInput
 	Err      error
 }
 
@@ -303,6 +340,11 @@ func (s *TestSQSAPI) ReceiveMessage(*sqs.ReceiveMessageInput) (*sqs.ReceiveMessa
 func (s *TestSQSAPI) DeleteMessageBatch(i *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
 	s.Deleted = append(s.Deleted, i.Entries...)
 	return nil, errNotImpl
+}
+
+func (s *TestSQSAPI) ChangeMessageVisibility(i *sqs.ChangeMessageVisibilityInput) (*sqs.ChangeMessageVisibilityOutput, error) {
+	s.Extended = append(s.Extended, i)
+	return nil, nil
 }
 
 ///////////
@@ -325,9 +367,6 @@ func (s *TestSQSAPI) AddPermission(*sqs.AddPermissionInput) (*sqs.AddPermissionO
 }
 func (s *TestSQSAPI) ChangeMessageVisibilityRequest(*sqs.ChangeMessageVisibilityInput) (*request.Request, *sqs.ChangeMessageVisibilityOutput) {
 	return nil, nil
-}
-func (s *TestSQSAPI) ChangeMessageVisibility(*sqs.ChangeMessageVisibilityInput) (*sqs.ChangeMessageVisibilityOutput, error) {
-	return nil, errNotImpl
 }
 func (s *TestSQSAPI) ChangeMessageVisibilityBatchRequest(*sqs.ChangeMessageVisibilityBatchInput) (*request.Request, *sqs.ChangeMessageVisibilityBatchOutput) {
 	return nil, nil

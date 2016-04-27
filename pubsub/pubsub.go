@@ -1,6 +1,8 @@
 package pubsub
 
 import (
+	"time"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 )
@@ -35,5 +37,6 @@ type Subscriber interface {
 // a mechanism for acknowledging messages _after_ they've been processed.
 type SubscriberMessage interface {
 	Message() []byte
+	ExtendDoneDeadline(time.Duration) error
 	Done() error
 }

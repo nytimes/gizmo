@@ -3,6 +3,7 @@ package pubsub
 import (
 	"errors"
 	"log"
+	"time"
 
 	"github.com/NYTimes/gizmo/config"
 
@@ -93,6 +94,11 @@ type (
 // Message will return the message payload.
 func (m *KafkaSubMessage) Message() []byte {
 	return m.message.Value
+}
+
+// ExtendDoneDeadline has no effect on KafkaSubMessage.
+func (m *KafkaSubMessage) ExtendDoneDeadline(time.Duration) error {
+	return nil
 }
 
 // Done will emit the message's offset.

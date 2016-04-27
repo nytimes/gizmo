@@ -2,6 +2,7 @@ package pubsubtest
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
@@ -33,14 +34,21 @@ type (
 	}
 	// TestSubsMessage represents a test subscriber message.
 	TestSubsMessage struct {
-		Msg   []byte
-		Doned bool
+		Msg         []byte
+		DoneTimeout time.Duration
+		Doned       bool
 	}
 )
 
 // Message returns the subscriber message.
 func (m *TestSubsMessage) Message() []byte {
 	return m.Msg
+}
+
+// ExtendDoneDeadline changes the underlying DoneTimeout
+func (m *TestSubsMessage) ExtendDoneDeadline(d time.Duration) error {
+	m.DoneTimeout = d
+	return nil
 }
 
 // Done sets the Doned field to true.

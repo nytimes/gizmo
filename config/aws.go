@@ -123,23 +123,23 @@ func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB, *ElastiCache) {
 	if aws.AccessKey == "" {
 		aws = nil
 	}
-	LoadEnvConfig(&sns)
+	LoadEnvConfig(sns)
 	if sns.Topic == "" {
 		sns = nil
 	}
-	LoadEnvConfig(&sqs)
+	LoadEnvConfig(sqs)
 	if sqs.QueueName == "" {
 		sqs = nil
 	}
-	LoadEnvConfig(&s3)
+	LoadEnvConfig(s3)
 	if s3.Bucket == "" {
 		s3 = nil
 	}
-	LoadEnvConfig(&ddb)
+	LoadEnvConfig(ddb)
 	if ddb.TableName == "" {
 		ddb = nil
 	}
-	LoadEnvConfig(&ec)
+	LoadEnvConfig(ec)
 	if ec.ClusterID == "" {
 		ec = nil
 	}

@@ -12,7 +12,7 @@ import (
 // the appropriate HealthCheckHandler.
 func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
 	if cfg.AppEngine {
-		return NewSimpleHealthCheck("/_ah/health")
+		return NewSimpleHealthCheck("/_ah/health"), nil
 	}
 	// default the status path if not set
 	if cfg.HealthCheckPath == "" {

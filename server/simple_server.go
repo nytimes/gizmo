@@ -303,7 +303,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, path, Timed(CountedByStatusXX(
 					jscs.Middleware(ContextToHTTP(s.ctx,
 						jscs.ContextMiddleware(
 							JSONContextToHTTP(jscs.JSONContextMiddleware(ep)),
@@ -311,7 +311,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 					)),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}

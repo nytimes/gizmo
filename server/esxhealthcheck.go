@@ -117,7 +117,7 @@ func (e *ESXHealthCheck) lbActive() (active bool) {
 	return false
 }
 
-// waitForZero will continously query Active and NumActiveRequests at the ShutdownPollInterval until the
+// waitForZero will continuously query Active and NumActiveRequests at the ShutdownPollInterval until the
 // LB has seen a bad status, the server is not Actve and NumActiveRequests returns 0 or the timeout
 // is reached. It will return error in case of timeout.
 func (e *ESXHealthCheck) waitForZero() error {

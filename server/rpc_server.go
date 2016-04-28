@@ -6,13 +6,13 @@ import (
 	"net"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/logrotate"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -31,7 +31,7 @@ type RPCServer struct {
 	srvr *grpc.Server
 
 	// mux for routing HTTP requests
-	mux *mux.Router
+	mux Router
 
 	// tracks active requests
 	monitor *ActivityMonitor
@@ -45,9 +45,13 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 	if cfg == nil {
 		cfg = &config.Server{}
 	}
-	mx := mux.NewRouter()
+	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
-		mx.NotFoundHandler = cfg.NotFoundHandler
+		mx.SetNotFoundHandler(cfg.NotFoundHandler)
+	}
+	registry := cfg.MetricsRegistry
+	if registry == nil {
+		registry = metrics.NewRegistry()
 	}
 	return &RPCServer{
 		cfg:      cfg,
@@ -55,7 +59,7 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 		mux:      mx,
 		exit:     make(chan chan error),
 		monitor:  NewActivityMonitor(),
-		registry: metrics.NewRegistry(),
+		registry: registry,
 	}
 }
 
@@ -76,19 +80,20 @@ func (r *RPCServer) Register(svc Service) error {
 	}
 
 	// register HTTP
-	prefix := rpcsvc.Prefix()
-	sr := r.mux.PathPrefix(prefix).Subrouter()
-
 	// loop through json endpoints and register them
+	prefix := svc.Prefix()
+	// quick fix for backwards compatibility
+	prefix = strings.TrimRight(prefix, "/")
+
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)
 			// set the function handle and register is to metrics
-			sr.Handle(path, Timed(CountedByStatusXX(
+			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
 				endpointName+".STATUS-COUNT", r.registry),
 				endpointName+".DURATION", r.registry),
-			).Methods(method)
+			)
 		}
 	}
 
@@ -109,7 +114,7 @@ func (r *RPCServer) Start() error {
 		return err
 	}
 
-	func() {
+	go func() {
 		if err := r.srvr.Serve(rl); err != nil {
 			Log.Error("encountered an error while serving RPC listener: ", err)
 		}
@@ -120,9 +125,17 @@ func (r *RPCServer) Start() error {
 	// setup HTTP
 	healthHandler := RegisterHealthHandler(r.cfg, r.monitor, r.mux)
 	r.cfg.HealthCheckPath = healthHandler.Path()
+
+	wrappedHandler, err := config.NewAccessLogMiddleware(r.cfg.RPCAccessLog, r)
+	if err != nil {
+		Log.Fatalf("unable to create http access log: %s", err)
+	}
+
 	srv := http.Server{
-		Handler:        RegisterAccessLogger(r.cfg, r),
+		Handler:        wrappedHandler,
 		MaxHeaderBytes: maxHeaderBytes,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
 	}
 	var hl net.Listener
 	hl, err = net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.HTTPPort))
@@ -130,8 +143,8 @@ func (r *RPCServer) Start() error {
 		return err
 	}
 
-	func() {
-		if err := srv.Serve(rl); err != nil {
+	go func() {
+		if err := srv.Serve(hl); err != nil {
 			Log.Error("encountered an error while serving listener: ", err)
 		}
 	}()
@@ -246,7 +259,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 				"name":     methodName,
 				"duration": time.Since(start),
 				"error":    err,
-			})
+			}).Info("access")
 		}
 	}
 }
@@ -287,11 +300,13 @@ func registerRPCMetrics(name string, registry metrics.Registry) {
 var rpcAccessLog *logrus.Logger
 
 func registerRPCAccessLogger(cfg *config.Server) {
-	if cfg.RPCAccessLog == "" {
+	// gRPC doesn't have a hook à la http.Handler-middleware
+	// so some of this duplicates logic from config.NewAccessLogMiddleware
+	if cfg.RPCAccessLog == nil {
 		return
 	}
 
-	lf, err := logrotate.NewFile(cfg.RPCAccessLog)
+	lf, err := logrotate.NewFile(*cfg.RPCAccessLog)
 	if err != nil {
 		Log.Fatalf("unable to access rpc access log file: %s", err)
 	}

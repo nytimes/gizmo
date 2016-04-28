@@ -19,11 +19,12 @@ type (
 	Config struct {
 		Server *Server
 
-		AWS      *AWS
-		SQS      *SQS
-		SNS      *SNS
-		S3       *S3
-		DynamoDB *DynamoDB
+		AWS         *AWS
+		SQS         *SQS
+		SNS         *SNS
+		S3          *S3
+		DynamoDB    *DynamoDB
+		ElastiCache *ElastiCache
 
 		Kafka *Kafka
 
@@ -67,7 +68,7 @@ var EnvAppName = ""
 func LoadConfigFromEnv() *Config {
 	var app Config
 	LoadEnvConfig(&app)
-	app.AWS, app.SNS, app.SQS, app.S3, app.DynamoDB = LoadAWSFromEnv()
+	app.AWS, app.SNS, app.SQS, app.S3, app.DynamoDB, app.ElastiCache = LoadAWSFromEnv()
 	app.MongoDB = LoadMongoDBFromEnv()
 	app.Kafka = LoadKafkaFromEnv()
 	app.MySQL = LoadMySQLFromEnv()

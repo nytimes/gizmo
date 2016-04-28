@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/web"
 	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -26,12 +26,12 @@ type SimpleServer struct {
 	exit chan chan error
 
 	// mux for routing
-	mux *mux.Router
+	mux Router
 
 	// tracks active requests
 	monitor *ActivityMonitor
 
-	// root context
+	// server context
 	ctx netContext.Context
 
 	// registry for collecting metrics
@@ -45,9 +45,13 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg == nil {
 		cfg = &config.Server{}
 	}
-	mx := mux.NewRouter()
+	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
-		mx.NotFoundHandler = cfg.NotFoundHandler
+		mx.SetNotFoundHandler(cfg.NotFoundHandler)
+	}
+	registry := cfg.MetricsRegistry
+	if registry == nil {
+		registry = metrics.NewRegistry()
 	}
 	ctx := netContext.Background()
 	if cfg.AppEngine {
@@ -59,7 +63,7 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		exit:     make(chan chan error),
 		monitor:  NewActivityMonitor(),
 		ctx:      ctx,
-		registry: metrics.NewRegistry(),
+		registry: registry,
 	}
 }
 
@@ -114,9 +118,16 @@ func (s *SimpleServer) Start() error {
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
 
+	wrappedHandler, err := config.NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
+	if err != nil {
+		Log.Fatalf("unable to create http access log: %s", err)
+	}
+
 	srv := http.Server{
-		Handler:        RegisterAccessLogger(s.cfg, s),
+		Handler:        wrappedHandler,
 		MaxHeaderBytes: maxHeaderBytes,
+		ReadTimeout:    readTimeout,
+		WriteTimeout:   writeTimeout,
 	}
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
@@ -184,7 +195,8 @@ func metricName(prefix, path, method string) string {
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
 	prefix := svcI.Prefix()
-	sr := s.mux.PathPrefix(prefix).Subrouter()
+	// quick fix for backwards compatibility
+	prefix = strings.TrimRight(prefix, "/")
 
 	var (
 		js   JSONService
@@ -218,7 +230,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -236,7 +248,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 					}(ep, ss),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}
@@ -247,11 +259,11 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}
@@ -262,10 +274,25 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				sr.Handle(path, Timed(CountedByStatusXX(cs.Middleware(ContextToHTTP(s.ctx, cs.ContextMiddleware(ep))),
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							// is it worth it to always close this?
+							if r.Body != nil {
+								defer func() {
+									if err := r.Body.Close(); err != nil {
+										Log.Warn("unable to close request body: ", err)
+									}
+								}()
+							}
+							ctx := netContext.Background()
+							// call the func and return err or not
+							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
+						})
+					}(ep, cs),
 					endpointName+".STATUS-COUNT", s.registry),
 					endpointName+".DURATION", s.registry),
-				).Methods(method)
+				)
 			}
 		}
 	}
@@ -315,7 +342,7 @@ func GetForwardedIP(r *http.Request) string {
 
 // GetIP returns the IP address for the given request.
 func GetIP(r *http.Request) (string, error) {
-	ip, ok := mux.Vars(r)["ip"]
+	ip, ok := web.Vars(r)["ip"]
 	if ok {
 		return ip, nil
 	}
@@ -356,11 +383,9 @@ func ContextWithUserIP(ctx netContext.Context, r *http.Request) netContext.Conte
 	ip, err := GetIP(r)
 	if err != nil {
 		LogWithFields(r).Warningf("unable to get IP: %s", err)
-	} else {
-		ctx = netContext.WithValue(ctx, UserIPKey, ip)
+		return ctx
 	}
-
-	return ctx
+	return netContext.WithValue(ctx, UserIPKey, ip)
 }
 
 // ContextWithForwardForIP returns new context with forward for ip.

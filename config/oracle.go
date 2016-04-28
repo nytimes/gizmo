@@ -25,7 +25,7 @@ func (o *Oracle) DB() (*sql.DB, error) {
 
 // String will return the Oracle connection string.
 func (o *Oracle) String() string {
-	if len(o.ConnectString) > 0 {
+	if o.ConnectString != "" {
 		return fmt.Sprintf("%s/%s@%s",
 			o.User,
 			o.Pw,

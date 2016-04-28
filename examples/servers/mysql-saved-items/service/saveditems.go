@@ -46,9 +46,9 @@ func NewSavedItemsRepo(cfg *config.MySQL) (SavedItemsRepo, error) {
 // Get will attempt to query the underlying MySQL database for saved items
 // for a single user.
 func (r *MySQLSavedItemsRepo) Get(userID uint64) ([]*SavedItem, error) {
-	query := `SELECT 
-				user_id, 
-				url, 
+	query := `SELECT
+				user_id,
+				url,
 				timestamp
 			FROM saved_items
 			WHERE user_id = ?
@@ -64,7 +64,7 @@ func (r *MySQLSavedItemsRepo) Get(userID uint64) ([]*SavedItem, error) {
 
 func scanItems(rows sqliface.Rows) ([]*SavedItem, error) {
 	var err error
-	// intializing so we return an empty array in case of 0
+	// initializing so we return an empty array in case of 0
 	items := []*SavedItem{}
 	for rows.Next() {
 		item := &SavedItem{}

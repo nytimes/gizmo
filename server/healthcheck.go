@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
@@ -9,18 +10,26 @@ import (
 
 // NewHealthCheckHandler will inspect the config to generate
 // the appropriate HealthCheckHandler.
-func NewHealthCheckHandler(cfg *config.Server) HealthCheckHandler {
+func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
 	if cfg.AppEngine {
 		return NewSimpleHealthCheck("/_ah/health")
 	}
-
+	// default the status path if not set
+	if cfg.HealthCheckPath == "" {
+		cfg.HealthCheckPath = "/status.txt"
+	}
 	switch cfg.HealthCheckType {
 	case "simple":
-		return NewSimpleHealthCheck(cfg.HealthCheckPath)
+		return NewSimpleHealthCheck(cfg.HealthCheckPath), nil
 	case "esx":
-		return NewESXHealthCheck()
+		return NewESXHealthCheck(), nil
+	case "custom":
+		if cfg.CustomHealthCheckHandler == nil {
+			return nil, errors.New("health check type is set to 'custom', but no config.Server.CustomHealthCheckHandler provided")
+		}
+		return NewCustomHealthCheck(cfg.HealthCheckPath, cfg.CustomHealthCheckHandler), nil
 	default:
-		return NewSimpleHealthCheck("/status.txt")
+		return NewSimpleHealthCheck(cfg.HealthCheckPath), nil
 	}
 }
 
@@ -67,4 +76,37 @@ func (s *SimpleHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.WriteString(w, "ok-"+Name); err != nil {
 		LogWithFields(r).Warn("unable to write healthcheck response: ", err)
 	}
+}
+
+// NewCustomHealthCheck will return a new CustomHealthCheck with the given
+// path and handler.
+func NewCustomHealthCheck(path string, handler http.Handler) *CustomHealthCheck {
+	return &CustomHealthCheck{path, handler}
+}
+
+// CustomHealthCheck is a HealthCheckHandler that uses
+// a custom http.Handler provided to the server via `config.Server.CustomHealthCheckHandler`.
+type CustomHealthCheck struct {
+	path    string
+	handler http.Handler
+}
+
+// Path will return the configured status path to server on.
+func (c *CustomHealthCheck) Path() string {
+	return c.path
+}
+
+// Start will do nothing.
+func (c *CustomHealthCheck) Start(monitor *ActivityMonitor) error {
+	return nil
+}
+
+// Stop will do nothing and return nil.
+func (c *CustomHealthCheck) Stop() error {
+	return nil
+}
+
+// ServeHTTP will allow the custom handler to manage the request and response.
+func (c *CustomHealthCheck) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.handler.ServeHTTP(w, r)
 }

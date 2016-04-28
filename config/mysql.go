@@ -12,12 +12,17 @@ type MySQL struct {
 	User     string `envconfig:"MYSQL_USER"`
 	Pw       string `envconfig:"MYSQL_PW"`
 	Host     string `envconfig:"MYSQL_HOST_NAME"`
+	Port     int    `envconfig:"MYSQL_PORT"`
 	DBName   string `envconfig:"MYSQL_DB_NAME"`
 	Location string `envconfig:"MYSQL_LOCATION"`
 }
 
-// DefaultLocation is used for MySQL connections.
-const DefaultLocation = "America/New_York"
+const (
+	// DefaultLocation is the default location for MySQL connections.
+	DefaultLocation = "America/New_York"
+	// DefaultMySQLPort is the default port for MySQL connections.
+	DefaultMySQLPort = 3306
+)
 
 var (
 	// MySQLMaxOpenConns will be used to set a MySQL
@@ -45,17 +50,21 @@ func (m *MySQL) DB() (*sql.DB, error) {
 
 // String will return the MySQL connection string.
 func (m *MySQL) String() string {
-
-	if m.Location != "" {
-		m.Location = url.QueryEscape(DefaultLocation)
-	} else {
-		m.Location = url.QueryEscape(m.Location)
+	if m.Port == 0 {
+		m.Port = DefaultMySQLPort
 	}
 
-	return fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?loc=%s&parseTime=true",
+	if m.Location != "" {
+		m.Location = url.QueryEscape(m.Location)
+	} else {
+		m.Location = url.QueryEscape(DefaultLocation)
+	}
+
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?loc=%s&parseTime=true",
 		m.User,
 		m.Pw,
 		m.Host,
+		m.Port,
 		m.DBName,
 		m.Location,
 	)

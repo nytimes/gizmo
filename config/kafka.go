@@ -2,7 +2,7 @@ package config
 
 import "strings"
 
-// Kafka holds the basic information for working with Kafka
+// Kafka holds the basic information for working with Kafka.
 type Kafka struct {
 	BrokerHosts []string
 	// BrokerHostsString is used when loading the list from environment variables.

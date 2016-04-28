@@ -80,24 +80,31 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 // ContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
 func ContextToHTTP(ctx context.Context, ep ContextHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Body != nil {
-			defer func() {
-				if err := r.Body.Close(); err != nil {
-					Log.Warn("unable to close request body: ", err)
+		ep.ServeHTTPContext(ctx, w, r)
+	})
+}
+
+// WithCloseHandler returns a Handler cancelling the context when the client
+// connection close unexpectedly.
+func WithCloseHandler(h ContextHandler) ContextHandler {
+	return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		// Cancel the context if the client closes the connection
+		if wcn, ok := w.(http.CloseNotifier); ok {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithCancel(ctx)
+			defer cancel()
+
+			notify := wcn.CloseNotify()
+			go func() {
+				select {
+				case <-notify:
+					cancel()
+				case <-ctx.Done():
 				}
 			}()
 		}
 
-		var cancel context.CancelFunc
-
-		ctx, cancel = context.WithCancel(ctx)
-
-		defer cancel()
-
-		ctx = ContextWithUserIP(ctx, r)
-		ctx = ContextWithForwardForIP(ctx, r)
-
-		ep.ServeHTTPContext(ctx, w, r)
+		h.ServeHTTPContext(ctx, w, r)
 	})
 }
 
@@ -113,7 +120,7 @@ func CORSHandler(f http.Handler, originSuffix string) http.Handler {
 			(originSuffix == "" || strings.HasSuffix(origin, originSuffix)) {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, *")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-requested-by, *")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 		}
 		f.ServeHTTP(w, r)

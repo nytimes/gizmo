@@ -223,6 +223,18 @@ func (m *SQSMessage) Message() []byte {
 	return msgBody
 }
 
+// ExtendDoneDeadline changes the visibility timeout of the underlying SQS
+// message. It will set the visibility timeout of the message to the given
+// duration.
+func (m *SQSMessage) ExtendDoneDeadline(d time.Duration) error {
+	_, err := m.sub.sqs.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
+		QueueUrl:          m.sub.queueURL,
+		ReceiptHandle:     m.message.ReceiptHandle,
+		VisibilityTimeout: aws.Int64(int64(d.Seconds())),
+	})
+	return err
+}
+
 // Done will queue up a message to be deleted. By default,
 // the `SQSDeleteBufferSize` will be 0, so this will block until the
 // message has been deleted.

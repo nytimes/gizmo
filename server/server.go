@@ -16,8 +16,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/gorilla/context"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/nu7hatch/gouuid"
 	"github.com/rcrowley/go-metrics"
 
@@ -44,10 +42,16 @@ var (
 	Log = logrus.New()
 	// server is what's used in the global server funcs in the package.
 	server Server
-	// MaxHeaderBytes is used by the http server to limit the size of request headers.
+	// maxHeaderBytes is used by the http server to limit the size of request headers.
 	// This may need to be increased if accepting cookies from the public.
 	maxHeaderBytes = 1 << 20
-	// JSONContentType is the content type that will be used for JSONEndpoints.
+	// readTimeout is used by the http server to set a maximum duration before
+	// timing out read of the request. The default timeout is 10 seconds.
+	readTimeout = 10 * time.Second
+	// writeTimeout is used by the http server to set a maximum duration before
+	// timing out write of the response. The default timeout is 10 seconds.
+	writeTimeout = 10 * time.Second
+	// jsonContentType is the content type that will be used for JSONEndpoints.
 	// It will default to the web.JSONContentType value.
 	jsonContentType = web.JSONContentType
 )
@@ -81,6 +85,22 @@ func Init(name string, scfg *config.Server) {
 
 	if scfg.MaxHeaderBytes != nil {
 		maxHeaderBytes = *scfg.MaxHeaderBytes
+	}
+
+	if scfg.ReadTimeout != nil {
+		tReadTimeout, err := time.ParseDuration(*scfg.ReadTimeout)
+		if err != nil {
+			Log.Fatal("invalid server ReadTimeout: ", err)
+		}
+		readTimeout = tReadTimeout
+	}
+
+	if scfg.WriteTimeout != nil {
+		tWriteTimeout, err := time.ParseDuration(*scfg.WriteTimeout)
+		if err != nil {
+			Log.Fatal("invalid server WriteTimeout: ", err)
+		}
+		writeTimeout = tWriteTimeout
 	}
 
 	// setup app logging
@@ -139,13 +159,14 @@ func ContextFields(r *http.Request) map[string]interface{} {
 	fields := map[string]interface{}{}
 	for k, v := range context.GetAll(r) {
 		strK := fmt.Sprintf("%+v", k)
+		typeK := fmt.Sprintf("%T-%+v", k, k)
 		// gorilla.mux adds the route to context.
 		// we want to remove it for now
-		if strK == "1" {
+		if typeK == "mux.contextKey-1" || typeK == "mux.contextKey-0" {
 			continue
 		}
-		// gorilla puts mux vars here, we want to give a better label
-		if strK == "0" {
+		// web.varsKey for _all_ mux variables (gorilla or httprouter)
+		if typeK == "web.contextKey-2" {
 			strK = "muxvars"
 		}
 		fields[strK] = fmt.Sprintf("%#+v", v)
@@ -171,32 +192,35 @@ func NewServer(cfg *config.Server) Server {
 
 // RegisterProfiler will add handlers for pprof endpoints if
 // the config has them enabled.
-func RegisterProfiler(cfg *config.Server, mx *mux.Router) {
+func RegisterProfiler(cfg *config.Server, mx Router) {
 	if !cfg.EnablePProf {
 		return
 	}
-	mx.HandleFunc("/debug/pprof/", pprof.Index)
-	mx.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mx.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mx.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mx.HandleFunc("GET", "/debug/pprof/", pprof.Index)
+	mx.HandleFunc("GET", "/debug/pprof/cmdline", pprof.Cmdline)
+	mx.HandleFunc("GET", "/debug/pprof/profile", pprof.Profile)
+	mx.HandleFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
 
 	// Manually add support for paths linked to by index page at /debug/pprof/
-	mx.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-	mx.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-	mx.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-	mx.Handle("/debug/pprof/block", pprof.Handler("block"))
+	mx.Handle("GET", "/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	mx.Handle("GET", "/debug/pprof/heap", pprof.Handler("heap"))
+	mx.Handle("GET", "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	mx.Handle("GET", "/debug/pprof/block", pprof.Handler("block"))
 }
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx *mux.Router) HealthCheckHandler {
+func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
 	// register health check
-	hch := NewHealthCheckHandler(cfg)
-	err := hch.Start(monitor)
+	hch, err := NewHealthCheckHandler(cfg)
+	if err != nil {
+		Log.Fatal("unable to configure the HealthCheckHandler: ", err)
+	}
+	err = hch.Start(monitor)
 	if err != nil {
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
-	mx.Handle(hch.Path(), hch)
+	mx.Handle("GET", hch.Path(), hch)
 	return hch
 }
 
@@ -218,20 +242,6 @@ func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
 	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
 }
 
-// RegisterAccessLogger will wrap a logrotate-aware Apache-style access log handler
-// around the given handler if an access log location is provided by the config.
-func RegisterAccessLogger(cfg *config.Server, handler http.Handler) http.Handler {
-	if len(cfg.HTTPAccessLog) == 0 {
-		return handler
-	}
-
-	lf, err := logrotate.NewFile(cfg.HTTPAccessLog)
-	if err != nil {
-		Log.Fatalf("unable to access http access log file: %s", err)
-	}
-	return handlers.CombinedLoggingHandler(lf, handler)
-}
-
 // MetricsRegistryName returns "apps.{hostname prefix}", which is
 // the convention used in NYT ESX environment.
 func MetricsRegistryName() string {
@@ -249,12 +259,12 @@ func MetricsRegistryName() string {
 func SetLogLevel(scfg *config.Server) {
 	switch scfg.LogLevel {
 	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
+		Log.Level = logrus.DebugLevel
 	case "warn":
-		logrus.SetLevel(logrus.WarnLevel)
+		Log.Level = logrus.WarnLevel
 	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
+		Log.Level = logrus.FatalLevel
 	default:
-		logrus.SetLevel(logrus.InfoLevel)
+		Log.Level = logrus.InfoLevel
 	}
 }

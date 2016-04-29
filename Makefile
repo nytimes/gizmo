@@ -1,16 +1,16 @@
 all: test
 
 deps:
-	go get -d -v github.com/NYTimes/gizmo/... && true
+	go get -d -v github.com/NYTimes/gizmo/...
 
 updatedeps:
-	go get -d -v -u -f github.com/NYTimes/gizmo/... && true
+	go get -d -v -u -f github.com/NYTimes/gizmo/...
 
 testdeps:
-	go get -d -v -t github.com/NYTimes/gizmo/... && true
+	go get -d -v -t github.com/NYTimes/gizmo/...
 
 updatetestdeps:
-	go get -d -v -t -u -f github.com/NYTimes/gizmo/... && true
+	go get -d -v -t -u -f github.com/NYTimes/gizmo/...
 
 build: deps
 	go build github.com/NYTimes/gizmo/...
@@ -41,8 +41,8 @@ test: testdeps pretest
 		go test $${dir}; \
 	done
 	# app engine bits
-	goapp test ./examples/servers/appengine
-	goapp test ./examples/servers/datastore-saved-items
+	# goapp test ./examples/servers/appengine
+	# goapp test ./examples/servers/datastore-saved-items
 
 clean:
 	go clean -i github.com/NYTimes/gizmo/...

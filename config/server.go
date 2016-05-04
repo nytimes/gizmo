@@ -63,6 +63,8 @@ type Server struct {
 
 	// Enable pprof Profiling. Off by default.
 	EnablePProf bool `envconfig:"ENABLE_PPROF"`
+	// Enable the server to expose server metrics via the '/debug/metrics' endpoint.
+	EnableExpvar bool `envconfig:"ENABLE_EXPVAR"`
 	// GraphiteHost should be the host and port of an available graphite cluster.
 	// If not set, the server will not emit metrics.
 	GraphiteHost string `envconfig:"GRAPHITE_HOST"`

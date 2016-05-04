@@ -19,6 +19,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/nu7hatch/gouuid"
 	"github.com/rcrowley/go-metrics"
+	"github.com/rcrowley/go-metrics/exp"
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
@@ -247,19 +248,23 @@ func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Rout
 // StartServerMetrics will start emitting metrics to the provided
 // registry (nil means the DefaultRegistry) if a Graphite host name
 // is given in the config.
-func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
+func StartServerMetrics(cfg *config.Server, registry metrics.Registry, mux Router) {
 	if registry == nil {
 		registry = metrics.DefaultRegistry
 	}
-	if cfg.GraphiteHost == "" {
-		return
+	if cfg.GraphiteHost != "" {
+		Log.Infof("connecting to graphite host: %s", cfg.GraphiteHost)
+		addr, err := net.ResolveTCPAddr("tcp", cfg.GraphiteHost)
+		if err != nil {
+			Log.Warnf("unable to resolve graphite host: %s", err)
+		}
+		go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
 	}
-	Log.Infof("connecting to graphite host: %s", cfg.GraphiteHost)
-	addr, err := net.ResolveTCPAddr("tcp", cfg.GraphiteHost)
-	if err != nil {
-		Log.Warnf("unable to resolve graphite host: %s", err)
+
+	if cfg.EnableExpvar {
+		Log.Debug("registering metrics to expvar")
+		mux.Handle("GET", "/debug/metrics", exp.ExpHandler(registry))
 	}
-	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
 }
 
 // MetricsRegistryName returns "apps.{hostname prefix}", which is

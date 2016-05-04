@@ -105,7 +105,7 @@ func (r *RPCServer) Register(svc Service) error {
 // Start start the RPC server.
 func (r *RPCServer) Start() error {
 
-	StartServerMetrics(r.cfg, r.registry)
+	StartServerMetrics(r.cfg, r.registry, r.mux)
 
 	// setup RPC
 	registerRPCAccessLogger(r.cfg)

@@ -108,7 +108,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 // register profiling, health checks and access logging.
 func (s *SimpleServer) Start() error {
 
-	StartServerMetrics(s.cfg, s.registry)
+	StartServerMetrics(s.cfg, s.registry, s.mux)
 
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()

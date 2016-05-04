@@ -277,14 +277,9 @@ func MetricsRegistryName() string {
 // SetLogLevel will set the appropriate logrus log level
 // given the server config.
 func SetLogLevel(scfg *config.Server) {
-	switch scfg.LogLevel {
-	case "debug":
-		Log.Level = logrus.DebugLevel
-	case "warn":
-		Log.Level = logrus.WarnLevel
-	case "fatal":
-		Log.Level = logrus.FatalLevel
-	default:
+	if lvl, err := logrus.ParseLevel(scfg.LogLevel); err != nil {
 		Log.Level = logrus.InfoLevel
+	} else {
+		Log.Level = lvl
 	}
 }

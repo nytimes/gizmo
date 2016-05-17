@@ -35,7 +35,9 @@ The 3 service types that are accepted and hostable on the `SimpleServer`:
     type JSONService interface {
         Service
 
-        // router - method - func
+        // Ensure that the route syntax is compatible with the router
+        // implementation chosen in cfg.RouterType.
+        // route - method - func
         JSONEndpoints() map[string]map[string]JSONEndpoint
         // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
         JSONMiddleware(JSONEndpoint) JSONEndpoint
@@ -47,6 +49,8 @@ The 3 service types that are accepted and hostable on the `SimpleServer`:
         // route - method - func
         Endpoints() map[string]map[string]http.HandlerFunc
 
+        // Ensure that the route syntax is compatible with the router
+        // implementation chosen in cfg.RouterType.
         // route - method - func
         JSONEndpoints() map[string]map[string]JSONEndpoint
         // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
@@ -64,6 +68,8 @@ Also, the one service type that works with an `RPCServer`:
 
         Service() (grpc.ServiceDesc, interface{})
 
+        // Ensure that the route syntax is compatible with the router
+        // implementation chosen in cfg.RouterType.
         // route - method - func
         JSONEndpoints() map[string]map[string]JSONEndpoint
         // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.

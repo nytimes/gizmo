@@ -72,7 +72,9 @@ type SimpleService interface {
 type JSONService interface {
     Service
 
-    // router - method - func
+    // Ensure that the route syntax is compatible with the router
+    // implementation chosen in cfg.RouterType.
+    // route - method - func
     JSONEndpoints() map[string]map[string]JSONEndpoint
     // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
     JSONMiddleware(JSONEndpoint) JSONEndpoint
@@ -93,6 +95,8 @@ type MixedService interface {
     // route - method - func
     Endpoints() map[string]map[string]http.HandlerFunc
 
+    // Ensure that the route syntax is compatible with the router
+    // implementation chosen in cfg.RouterType.
     // route - method - func
     JSONEndpoints() map[string]map[string]JSONEndpoint
     // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
@@ -120,6 +124,8 @@ type RPCService interface {
 
     Service() (grpc.ServiceDesc, interface{})
 
+    // Ensure that the route syntax is compatible with the router
+    // implementation chosen in cfg.RouterType.
     // route - method - func
     JSONEndpoints() map[string]map[string]JSONEndpoint
     // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.

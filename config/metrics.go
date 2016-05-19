@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 )
 
@@ -13,16 +12,18 @@ import (
 type MetricsType string
 
 const (
-	// Statsd is used by config to indicate use of the StatsdProvider.
+	// Statsd is used by config to indicate use of the statsdProvider.
 	Statsd MetricsType = "statsd"
-	// DogStatsd is used by config to indicate use of the DogstatsdProvider.
+	// DogStatsd is used by config to indicate use of the dogstatsdProvider.
 	DogStatsd MetricsType = "dogstatsd"
-	// Prometheus is used by config to indicate use of the PrometheusProvider.
+	// Prometheus is used by config to indicate use of the prometheusProvider.
 	Prometheus MetricsType = "prometheus"
-	// Graphite is used by config to indicate use of the GraphiteProvider.
+	// Graphite is used by config to indicate use of the graphiteProvider.
 	Graphite MetricsType = "graphite"
-	// Expvar is used by config to indicate use of the ExpvarProvider.
+	// Expvar is used by config to indicate use of the expvarProvider.
 	Expvar MetricsType = "expvar"
+	// Discard is used by config to indicate use of the discardProvider.
+	Discard MetricsType = "discard"
 )
 
 // Metrics config can be used to configure and instantiate a new
@@ -86,44 +87,6 @@ func (cfg Metrics) NewProvider() (provider.Provider, error) {
 	case Expvar:
 		return provider.NewExpvarProvider(cfg.Prefix), nil
 	default:
-		return nopMetricsProvider{}, nil
+		return provider.NewDiscardProvider(), nil
 	}
 }
-
-type nopMetricsProvider struct{}
-
-func (p nopMetricsProvider) NewCounter(name string, help string) metrics.Counter {
-	return nopCounter{}
-}
-func (p nopMetricsProvider) NewHistogram(name string, help string, min int64, max int64, sigfigs int, quantiles ...int) (metrics.Histogram, error) {
-	return nopHistogram{}, nil
-}
-func (p nopMetricsProvider) NewGauge(name string, help string) metrics.Gauge {
-	return nopGauge{}
-}
-func (p nopMetricsProvider) Stop() {}
-
-type nopHistogram struct{}
-
-func (h nopHistogram) Name() string                         { return "" }
-func (h nopHistogram) With(metrics.Field) metrics.Histogram { return h }
-func (h nopHistogram) Observe(value int64)                  {}
-func (h nopHistogram) Distribution() ([]metrics.Bucket, []metrics.Quantile) {
-	return []metrics.Bucket{}, []metrics.Quantile{}
-}
-
-type nopGauge struct{}
-
-func (g nopGauge) Name() string                     { return "" }
-func (g nopGauge) With(metrics.Field) metrics.Gauge { return g }
-func (g nopGauge) Set(value float64)                {}
-func (g nopGauge) Add(delta float64)                {}
-func (g nopGauge) Get() float64 {
-	return 0
-}
-
-type nopCounter struct{}
-
-func (c nopCounter) Name() string                       { return "" }
-func (c nopCounter) With(metrics.Field) metrics.Counter { return c }
-func (c nopCounter) Add(delta uint64)                   {}

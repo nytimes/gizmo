@@ -50,15 +50,23 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg.NotFoundHandler != nil {
 		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
-	mets := newMetricsProvider(cfg)
+
+	provider := cfg.MetricsProvider
+	if provider == nil {
+		var err error
+		provider, err = cfg.Metrics.NewProvider()
+		if err != nil {
+			Log.Fatal("invalid metrics config:", err)
+		}
+	}
 	return &SimpleServer{
 		mux:          mx,
 		cfg:          cfg,
 		exit:         make(chan chan error),
 		monitor:      NewActivityMonitor(),
 		ctx:          netContext.Background(),
-		mets:         mets,
-		panicCounter: mets.NewCounter("panic", "counting any server panics"),
+		mets:         provider,
+		panicCounter: provider.NewCounter("panic", "counting any server panics"),
 	}
 }
 

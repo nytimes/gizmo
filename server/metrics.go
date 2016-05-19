@@ -3,13 +3,29 @@ package server
 import (
 	"bufio"
 	"errors"
+	"expvar"
 	"fmt"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/rcrowley/go-metrics"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/provider"
 )
+
+func expvarHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Fprintf(w, "{\n")
+	first := true
+	expvar.Do(func(kv expvar.KeyValue) {
+		if !first {
+			fmt.Fprintf(w, ",\n")
+		}
+		first = false
+		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+	})
+	fmt.Fprintf(w, "\n}\n")
+}
 
 // metricsResponseWriter grabs the StatusCode.
 type metricsResponseWriter struct {
@@ -43,7 +59,7 @@ func (w *metricsResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 }
 
 // CounterByStatusXX is an http.Handler that counts responses by the first
-// digit of their HTTP status code via go-metrics.
+// digit of their HTTP status code via go-kit/kit/metrics.
 type CounterByStatusXX struct {
 	counter1xx, counter2xx, counter3xx, counter4xx, counter5xx metrics.Counter
 	handler                                                    http.Handler
@@ -51,130 +67,68 @@ type CounterByStatusXX struct {
 
 // CountedByStatusXX returns an http.Handler that passes requests to an
 // underlying http.Handler and then counts the response by the first digit of
-// its HTTP status code via go-metrics.
-func CountedByStatusXX(handler http.Handler, name string, registry metrics.Registry) *CounterByStatusXX {
-	if nil == registry {
-		registry = metrics.DefaultRegistry
+// its HTTP status code via go-kit/kit/metrics.
+func CountedByStatusXX(handler http.Handler, name string, p provider.Provider) *CounterByStatusXX {
+	return &CounterByStatusXX{
+		counter1xx: p.NewCounter(fmt.Sprintf("%s-1xx", name),
+			fmt.Sprintf("counting responses to %q with a status code of 1XX", name)),
+		counter2xx: p.NewCounter(fmt.Sprintf("%s-2xx", name),
+			fmt.Sprintf("counting responses to %q with a status code of 2XX", name)),
+		counter3xx: p.NewCounter(fmt.Sprintf("%s-3xx", name),
+			fmt.Sprintf("counting responses to %q with a status code of 3XX", name)),
+		counter4xx: p.NewCounter(fmt.Sprintf("%s-4xx", name),
+			fmt.Sprintf("counting responses to %q with a status code of 4XX", name)),
+		counter5xx: p.NewCounter(fmt.Sprintf("%s-5xx", name),
+			fmt.Sprintf("counting responses to %q with a status code of 5XX", name)),
+		handler: handler,
 	}
-	c := &CounterByStatusXX{
-		counter1xx: metrics.NewCounter(),
-		counter2xx: metrics.NewCounter(),
-		counter3xx: metrics.NewCounter(),
-		counter4xx: metrics.NewCounter(),
-		counter5xx: metrics.NewCounter(),
-		handler:    handler,
-	}
-	if err := registry.Register(
-		fmt.Sprintf("%s-1xx", name),
-		c.counter1xx,
-	); nil != err {
-		panic(err)
-	}
-	if err := registry.Register(
-		fmt.Sprintf("%s-2xx", name),
-		c.counter2xx,
-	); nil != err {
-		panic(err)
-	}
-	if err := registry.Register(
-		fmt.Sprintf("%s-3xx", name),
-		c.counter3xx,
-	); nil != err {
-		panic(err)
-	}
-	if err := registry.Register(
-		fmt.Sprintf("%s-4xx", name),
-		c.counter4xx,
-	); nil != err {
-		panic(err)
-	}
-	if err := registry.Register(
-		fmt.Sprintf("%s-5xx", name),
-		c.counter5xx,
-	); nil != err {
-		panic(err)
-	}
-	return c
 }
 
 // ServeHTTP passes the request to the underlying http.Handler and then counts
-// the response by its HTTP status code via go-metrics.
+// the response by its HTTP status code via go-kit/kit/metrics.
 func (c *CounterByStatusXX) ServeHTTP(w0 http.ResponseWriter, r *http.Request) {
 	w := newMetricsResponseWriter(w0)
 	c.handler.ServeHTTP(w, r)
 	if w.StatusCode < 200 {
-		c.counter1xx.Inc(1)
+		c.counter1xx.Add(1)
 	} else if w.StatusCode < 300 {
-		c.counter2xx.Inc(1)
+		c.counter2xx.Add(1)
 	} else if w.StatusCode < 400 {
-		c.counter3xx.Inc(1)
+		c.counter3xx.Add(1)
 	} else if w.StatusCode < 500 {
-		c.counter4xx.Inc(1)
+		c.counter4xx.Add(1)
 	} else {
-		c.counter5xx.Inc(1)
+		c.counter5xx.Add(1)
 	}
 }
 
-// Timer is an http.Handler that counts requests via go-metrics.
+// Timer is an http.Handler that counts requests via go-kit/kit/metrics.
 type Timer struct {
-	metrics.Timer
+	metrics.TimeHistogram
 	handler http.Handler
 }
 
 // Timed returns an http.Handler that starts a timer, passes requests to an
 // underlying http.Handler, stops the timer, and updates the timer via
-// go-metrics.
-func Timed(handler http.Handler, name string, registry metrics.Registry) *Timer {
-	timer := &Timer{
-		Timer:   metrics.NewTimer(),
-		handler: handler,
+// go-kit/kit/metrics.
+func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
+	hist, err := p.NewHistogram(name,
+		fmt.Sprintf("tracking request duration for %q", name),
+		0, 1500000, 4, // 0-15 minute time range, 4 sigfigs
+		50, 75, 90, 95, 99) // quantiles
+	if err != nil {
+		panic("invalid histogram settings")
 	}
-	if nil == registry {
-		registry = metrics.DefaultRegistry
+
+	return &Timer{
+		TimeHistogram: metrics.NewTimeHistogram(time.Millisecond, hist),
+		handler:       handler,
 	}
-	if err := registry.Register(name, timer); nil != err {
-		panic(err)
-	}
-	return timer
 }
 
 // ServeHTTP starts a timer, passes the request to the underlying http.Handler,
-// stops the timer, and updates the timer via go-metrics.
+// stops the timer, and updates the timer via go-kit/kit/metrics.
 func (t *Timer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer t.UpdateSince(time.Now())
+	defer func(start time.Time) { t.Observe(time.Since(start)) }(time.Now())
 	t.handler.ServeHTTP(w, r)
 }
-
-/*
-The contents of this file are derived from the 'https://github.com/rcrowley/go-tigertonic' package.
-
-Copyright 2013 Richard Crowley. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    1.  Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-
-    2.  Redistributions in binary form must reproduce the above
-        copyright notice, this list of conditions and the following
-        disclaimer in the documentation and/or other materials provided
-        with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY RICHARD CROWLEY ``AS IS'' AND ANY EXPRESS
-OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL RICHARD CROWLEY OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-THE POSSIBILITY OF SUCH DAMAGE.
-
-The views and conclusions contained in the software and documentation
-are those of the authors and should not be interpreted as representing
-official policies, either expressed or implied, of Richard Crowley.
-*/

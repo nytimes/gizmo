@@ -6,9 +6,8 @@ import (
 	"os"
 
 	"github.com/NYTimes/logrotate"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/handlers"
-
-	"github.com/rcrowley/go-metrics"
 )
 
 // Server holds info required to configure a gizmo server.Server.
@@ -61,14 +60,6 @@ type Server struct {
 	// LogLevel will override the default log level of 'info'.
 	LogLevel string `envconfig:"APP_LOG_LEVEL"`
 
-	// Enable pprof Profiling. Off by default.
-	EnablePProf bool `envconfig:"ENABLE_PPROF"`
-	// Enable the server to expose server metrics via the '/debug/metrics' endpoint.
-	EnableExpvar bool `envconfig:"ENABLE_EXPVAR"`
-	// GraphiteHost should be the host and port of an available graphite cluster.
-	// If not set, the server will not emit metrics.
-	GraphiteHost string `envconfig:"GRAPHITE_HOST"`
-
 	// TLSCertFile is an optional string for enabling TLS in simple servers.
 	TLSCertFile *string `envconfig:"TLS_CERT"`
 	// TLSKeyFile is an optional string for enabling TLS in simple servers.
@@ -77,8 +68,15 @@ type Server struct {
 	// NotFoundHandler will override the default server NotfoundHandler if set.
 	NotFoundHandler http.Handler
 
-	// MetricsRegistry will override the default server metrics registry if set.
-	MetricsRegistry metrics.Registry
+	// Enable pprof Profiling. Off by default.
+	EnablePProf bool `envconfig:"ENABLE_PPROF"`
+
+	// Metrics encapsulates the configurations required for a Gizmo
+	// Server to emit metrics. If your application has additional metrics,
+	// you should provide a MetricsFactory instead.
+	Metrics Metrics
+	// MetricsProvider will override the default server metrics provider if set.
+	MetricsProvider provider.Provider
 }
 
 // LoadServerFromEnv will attempt to load a Server object

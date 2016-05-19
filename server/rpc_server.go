@@ -11,9 +11,10 @@ import (
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/logrotate"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/provider"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -36,8 +37,8 @@ type RPCServer struct {
 	// tracks active requests
 	monitor *ActivityMonitor
 
-	// registry for collecting metrics
-	registry metrics.Registry
+	mets         provider.Provider
+	panicCounter metrics.Counter
 }
 
 // NewRPCServer will instantiate a new experimental RPCServer with the given config.
@@ -49,17 +50,22 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 	if cfg.NotFoundHandler != nil {
 		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
-	registry := cfg.MetricsRegistry
-	if registry == nil {
-		registry = metrics.NewRegistry()
+	provider := cfg.MetricsProvider
+	if provider == nil {
+		var err error
+		provider, err = cfg.Metrics.NewProvider()
+		if err != nil {
+			Log.Fatal("unable to init metrics provider:", err)
+		}
 	}
 	return &RPCServer{
-		cfg:      cfg,
-		srvr:     grpc.NewServer(),
-		mux:      mx,
-		exit:     make(chan chan error),
-		monitor:  NewActivityMonitor(),
-		registry: registry,
+		cfg:          cfg,
+		srvr:         grpc.NewServer(),
+		mux:          mx,
+		exit:         make(chan chan error),
+		monitor:      NewActivityMonitor(),
+		mets:         provider,
+		panicCounter: provider.NewCounter("panic", "counting any server panics"),
 	}
 }
 
@@ -76,7 +82,7 @@ func (r *RPCServer) Register(svc Service) error {
 	r.srvr.RegisterService(desc, grpcSvc)
 	// register endpoints
 	for _, mthd := range desc.Methods {
-		registerRPCMetrics(mthd.MethodName, r.registry)
+		registerRPCMetrics(mthd.MethodName, r.mets)
 	}
 
 	// register HTTP
@@ -91,8 +97,8 @@ func (r *RPCServer) Register(svc Service) error {
 			// set the function handle and register is to metrics
 			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
-				endpointName+".STATUS-COUNT", r.registry),
-				endpointName+".DURATION", r.registry),
+				endpointName+".STATUS-COUNT", r.mets),
+				endpointName+".DURATION", r.mets),
 			)
 		}
 	}
@@ -104,9 +110,6 @@ func (r *RPCServer) Register(svc Service) error {
 
 // Start start the RPC server.
 func (r *RPCServer) Start() error {
-
-	StartServerMetrics(r.cfg, r.registry, r.mux)
-
 	// setup RPC
 	registerRPCAccessLogger(r.cfg)
 	rl, err := net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.RPCPort))
@@ -191,8 +194,7 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("PANIC", r.registry)
-			errCntr.Inc(1)
+			r.panicCounter.Add(1)
 
 			// log the panic for all the details later
 			LogWithFields(req).Errorf("rpc server recovered from an HTTP panic\n%v: %v", x, string(debug.Stack()))
@@ -234,10 +236,11 @@ func MetadataToFields(md metadata.MD) logrus.Fields {
 func MonitorRPCRequest() func(ctx context.Context, methodName string, err error) {
 	start := time.Now()
 	return func(ctx context.Context, methodName string, err error) {
+		m := rpcEndpointMetrics["rpc."+methodName]
+
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("RPC PANIC", metrics.DefaultRegistry)
-			errCntr.Inc(1)
+			m.PanicCounter.Add(1)
 
 			// log the panic for all the details later
 			Log.Warningf("rpc server recovered from a panic\n%v: %v", x, string(debug.Stack()))
@@ -245,14 +248,12 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 			// give the users our deepest regrets
 			err = errors.New(string(UnexpectedServerError))
 		}
-
-		m := rpcEndpointMetrics["rpc."+methodName]
 		if err == nil {
-			m.SuccessCounter.Inc(1)
+			m.SuccessCounter.Add(1)
 		} else {
-			m.ErrorCounter.Inc(1)
+			m.ErrorCounter.Add(1)
 		}
-		m.Timer.UpdateSince(start)
+		m.Timer.Observe(time.Since(start))
 
 		if rpcAccessLog != nil {
 			LogRPCWithFields(rpcAccessLog, ctx).WithFields(logrus.Fields{
@@ -267,33 +268,30 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 var rpcEndpointMetrics = map[string]*rpcMetrics{}
 
 type rpcMetrics struct {
-	Timer          metrics.Timer
+	Timer          metrics.TimeHistogram
 	SuccessCounter metrics.Counter
 	ErrorCounter   metrics.Counter
+	PanicCounter   metrics.Counter
 }
 
-func registerRPCMetrics(name string, registry metrics.Registry) {
+func registerRPCMetrics(name string, mets provider.Provider) {
 	name = "rpc." + name
-	m := &rpcMetrics{}
-	m.Timer = metrics.NewTimer()
-	if err := registry.Register(name+".DURATION", m.Timer); nil != err {
-		Log.Warn("unable ot register rpc timer: ", err)
-		return
+	hist, err := mets.NewHistogram(name+".DURATION",
+		fmt.Sprintf("tracking request duration for %q", name),
+		0, 1500000, 4, // 0-15min time range
+		50, 75, 90, 95, 99)
+	if err != nil {
+		panic(fmt.Sprint("invalid histogram settings: ", err))
 	}
-
-	m.SuccessCounter = metrics.NewCounter()
-	if err := registry.Register(name+".ERROR", m.SuccessCounter); nil != err {
-		Log.Warn("unable ot register rpc success counterr: ", err)
-		return
+	rpcEndpointMetrics[name] = &rpcMetrics{
+		Timer: metrics.NewTimeHistogram(time.Millisecond, hist),
+		SuccessCounter: mets.NewCounter(name+".SUCCESS",
+			fmt.Sprintf("counting successful repsonses for %s", name)),
+		ErrorCounter: mets.NewCounter(name+".ERROR",
+			fmt.Sprintf("counting error responses for %s", name)),
+		PanicCounter: mets.NewCounter(name+".PANIC",
+			fmt.Sprintf("counting paniced responses for %s", name)),
 	}
-
-	m.ErrorCounter = metrics.NewCounter()
-	if err := registry.Register(name+".SUCCESS", m.ErrorCounter); nil != err {
-		Log.Warn("unable ot register rpc error counter: ", err)
-		return
-	}
-
-	rpcEndpointMetrics[name] = m
 }
 
 // access logger

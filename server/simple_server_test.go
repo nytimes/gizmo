@@ -10,7 +10,6 @@ import (
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
-	"github.com/rcrowley/go-metrics"
 	"golang.org/x/net/context"
 )
 
@@ -416,23 +415,9 @@ func TestBasicRegistration(t *testing.T) {
 		if err := s.Register(svc); err != nil {
 			t.Errorf("Basic registration of services should not encounter an error: %s\n", err)
 		}
-		// need to unregister metrics in between service registrations
-		s.registry.UnregisterAll()
 	}
 
 	if err := s.Register(&testInvalidService{}); err == nil {
 		t.Error("Invalid services should produce an error in service registration")
-	}
-}
-
-func TestCustomMetricsRegistry(t *testing.T) {
-
-	cfg := &config.Server{MetricsRegistry: metrics.NewRegistry()}
-	_ = metrics.NewRegisteredTimer("test-timer", cfg.MetricsRegistry)
-
-	s := NewSimpleServer(cfg)
-
-	if s.registry.Get("test-timer") == nil {
-		t.Error("Custom metrics registry is failed to register within simple server")
 	}
 }

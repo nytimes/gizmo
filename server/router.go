@@ -13,10 +13,10 @@ import (
 // Router is an interface to wrap different router types to be embedded within
 // Gizmo server.Server implementations.
 type Router interface {
-	Handle(string, string, http.Handler)
-	HandleFunc(string, string, func(http.ResponseWriter, *http.Request))
-	ServeHTTP(http.ResponseWriter, *http.Request)
-	SetNotFoundHandler(http.Handler)
+	Handle(method string, path string, handler http.Handler)
+	HandleFunc(method string, path string, handlerFunc func(http.ResponseWriter, *http.Request))
+	ServeHTTP(w http.ResponseWriter, r *http.Request)
+	SetNotFoundHandler(handler http.Handler)
 }
 
 // NewRouter will return the router specified by the server

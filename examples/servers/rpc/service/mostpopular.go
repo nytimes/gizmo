@@ -6,7 +6,6 @@ import (
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/web"
-	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 )
 
@@ -28,8 +27,8 @@ func (s *RPCService) GetMostPopularJSON(r *http.Request) (int, interface{}, erro
 	res, err := s.GetMostPopular(
 		context.Background(),
 		&MostPopularRequest{
-			mux.Vars(r)["resourceType"],
-			mux.Vars(r)["section"],
+			web.Vars(r)["resourceType"],
+			web.Vars(r)["section"],
 			uint32(web.GetUInt64Var(r, "timeframe")),
 		})
 	if err != nil {

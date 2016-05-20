@@ -4,12 +4,11 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gizmo/web"
-	"github.com/gorilla/mux"
 )
 
 func (s *MixedService) GetMostPopular(r *http.Request) (int, interface{}, error) {
-	resourceType := mux.Vars(r)["resourceType"]
-	section := mux.Vars(r)["section"]
+	resourceType := web.Vars(r)["resourceType"]
+	section := web.Vars(r)["section"]
 	timeframe := web.GetUInt64Var(r, "timeframe")
 	res, err := s.client.GetMostPopular(resourceType, section, uint(timeframe))
 	if err != nil {

@@ -61,7 +61,7 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 				msg, err = iter.Next()
 				if err != nil {
 					s.err = err
-					go iter.Stop()
+					go s.Stop()
 					continue
 				}
 

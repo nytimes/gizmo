@@ -77,6 +77,11 @@ type Server struct {
 	Metrics Metrics
 	// MetricsProvider will override the default server metrics provider if set.
 	MetricsProvider provider.Provider
+
+	// GraphiteHost is DEPRECATED. Please use the
+	// Metrics config with "Type":"graphite" and this
+	// value in the "Addr" field.
+	GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
 }
 
 // LoadServerFromEnv will attempt to load a Server object
@@ -90,6 +95,7 @@ func LoadServerFromEnv() *Server {
 		server.HealthCheckType != "" || server.HealthCheckPath != "" {
 		return &server
 	}
+	server.Metrics = LoadMetricsFromEnv()
 	return nil
 }
 

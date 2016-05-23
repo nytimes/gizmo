@@ -59,6 +59,14 @@ type Metrics struct {
 	Logger log.Logger
 }
 
+// LoadMetricsFromEnv will attempt to load a Metrics object
+// from environment variables.
+func LoadMetricsFromEnv() Metrics {
+	var mets Metrics
+	LoadEnvConfig(&mets)
+	return mets
+}
+
 // NewProvider will use the values in the Metrics config object
 // to generate a new go-kit/metrics/provider.Provider implementation.
 // If no type is given, a no-op implementation will be used.

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
 	"github.com/nu7hatch/gouuid"
 
@@ -251,6 +252,36 @@ func MetricsNamespace() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
+}
+
+func newMetricsProvider(cfg *config.Server) provider.Provider {
+	if cfg.MetricsProvider != nil {
+		return cfg.MetricsProvider
+	}
+	// deal with deprecated GRAPHITE_HOST value
+	if cfg.GraphiteHost != nil {
+		cfg.Metrics.Type = config.Graphite
+		cfg.Metrics.Addr = *cfg.GraphiteHost
+	}
+	// set default metrics prefix
+	// to MetricsNamespace
+	if len(cfg.Metrics.Prefix) == 0 {
+		cfg.Metrics.Prefix = MetricsNamespace() + "."
+	}
+	// set default metrics namespace
+	// to MetricsNamespace
+	if len(cfg.Metrics.Prefix) == 0 {
+		cfg.Metrics.Namespace = MetricsNamespace() + "."
+	}
+	p := cfg.MetricsProvider
+	if p == nil {
+		var err error
+		p, err = cfg.Metrics.NewProvider()
+		if err != nil {
+			Log.Fatal("invalid metrics config:", err)
+		}
+	}
+	return p
 }
 
 // SetLogLevel will set the appropriate logrus log level

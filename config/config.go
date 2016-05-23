@@ -28,6 +28,8 @@ type (
 
 		Kafka *Kafka
 
+		PubSub PubSub
+
 		Oracle *Oracle
 
 		MySQL      *MySQL
@@ -81,6 +83,7 @@ func LoadConfigFromEnv() *Config {
 	app.Cookie = LoadCookieFromEnv()
 	app.Server = LoadServerFromEnv()
 	app.Metrics = LoadMetricsFromEnv()
+	app.PubSub = LoadPubSubFromEnv()
 	return &app
 }
 

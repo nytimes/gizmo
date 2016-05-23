@@ -50,23 +50,15 @@ func NewRPCServer(cfg *config.Server) *RPCServer {
 	if cfg.NotFoundHandler != nil {
 		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
-
-	provider := cfg.MetricsProvider
-	if provider == nil {
-		var err error
-		provider, err = cfg.Metrics.NewProvider()
-		if err != nil {
-			Log.Fatal("unable to init metrics provider:", err)
-		}
-	}
+	mets := newMetricsProvider(cfg)
 	return &RPCServer{
 		cfg:          cfg,
 		srvr:         grpc.NewServer(),
 		mux:          mx,
 		exit:         make(chan chan error),
 		monitor:      NewActivityMonitor(),
-		mets:         provider,
-		panicCounter: provider.NewCounter("panic", "counting any server panics"),
+		mets:         mets,
+		panicCounter: mets.NewCounter("panic", "counting any server panics"),
 	}
 }
 

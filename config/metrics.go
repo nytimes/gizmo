@@ -29,7 +29,6 @@ const (
 // Metrics config can be used to configure and instantiate a new
 // go-kit/kit/metrics/provider.Provider.
 type Metrics struct {
-	// if empty, will server default to "expvar"
 	Type MetricsType `envconfig:"METRICS_TYPE"`
 
 	// Prefix will be prefixed onto

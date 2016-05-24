@@ -8,6 +8,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/cloud"
+	"google.golang.org/cloud/datastore"
 	"google.golang.org/cloud/pubsub"
 )
 
@@ -23,6 +24,10 @@ type (
 		Topic        string
 		Subscription string
 	}
+
+	Datastore struct {
+		GCP
+	}
 )
 
 // LoadPubSubFromEnv will attempt to load a Metrics object
@@ -31,6 +36,14 @@ func LoadPubSubFromEnv() PubSub {
 	var ps PubSub
 	LoadEnvConfig(&ps)
 	return ps
+}
+
+func (d Datastore) NewContext() (context.Context, error) {
+	return d.GCP.NewContext(datastore.ScopeDatastore)
+}
+
+func (d Datastore) NewClient(ctx context.Context) (*datastore.Client, error) {
+	return datastore.NewClient(ctx, d.ProjectID)
 }
 
 func (p PubSub) NewContext() (context.Context, error) {

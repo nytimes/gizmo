@@ -201,9 +201,10 @@ func (s *SimpleServer) Register(svcI Service) error {
 	prefix = strings.TrimRight(prefix, "/")
 
 	var (
-		js JSONService
-		ss SimpleService
-		cs ContextService
+		js   JSONService
+		ss   SimpleService
+		cs   ContextService
+		jscs JSONContextService
 	)
 
 	switch svc := svcI.(type) {
@@ -214,8 +215,13 @@ func (s *SimpleServer) Register(svcI Service) error {
 		ss = svc
 	case JSONService:
 		js = svc
+	case MixedContextService:
+		jscs = svc
+		cs = svc
 	case ContextService:
 		cs = svc
+	case JSONContextService:
+		jscs = svc
 	default:
 		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")
 	}
@@ -286,6 +292,25 @@ func (s *SimpleServer) Register(svcI Service) error {
 							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
 						})
 					}(ep, cs),
+					endpointName+".STATUS-COUNT", s.mets),
+					endpointName+".DURATION", s.mets),
+				)
+			}
+		}
+	}
+
+	if jscs != nil {
+		// register all context endpoints with our wrapper
+		for path, epMethods := range jscs.JSONEndpoints() {
+			for method, ep := range epMethods {
+				endpointName := metricName(prefix, path, method)
+				// set the function handle and register it to metrics
+				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+					jscs.Middleware(ContextToHTTP(s.ctx,
+						jscs.ContextMiddleware(
+							JSONContextToHTTP(jscs.JSONContextMiddleware(ep)),
+						),
+					)),
 					endpointName+".STATUS-COUNT", s.mets),
 					endpointName+".DURATION", s.mets),
 				)

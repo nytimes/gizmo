@@ -37,7 +37,12 @@ type (
 
 		Cookie *Cookie
 
+		// GraphiteHost is DEPRECATED. Please use the
+		// Metrics config with "Type":"graphite" and this
+		// value in the "Addr" field.
 		GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
+
+		Metrics Metrics
 
 		LogLevel *string `envconfig:"APP_LOG_LEVEL"`
 		Log      *string `envconfig:"APP_LOG"`
@@ -75,6 +80,7 @@ func LoadConfigFromEnv() *Config {
 	app.Oracle = LoadOracleFromEnv()
 	app.Cookie = LoadCookieFromEnv()
 	app.Server = LoadServerFromEnv()
+	app.Metrics = LoadMetricsFromEnv()
 	return &app
 }
 

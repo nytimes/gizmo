@@ -11,8 +11,9 @@ import (
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
+	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
-	"github.com/rcrowley/go-metrics"
 	netContext "golang.org/x/net/context"
 )
 
@@ -33,8 +34,9 @@ type SimpleServer struct {
 	// server context
 	ctx netContext.Context
 
-	// registry for collecting metrics
-	registry metrics.Registry
+	// for collecting metrics
+	mets         provider.Provider
+	panicCounter metrics.Counter
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -48,17 +50,15 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 	if cfg.NotFoundHandler != nil {
 		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
-	registry := cfg.MetricsRegistry
-	if registry == nil {
-		registry = metrics.NewRegistry()
-	}
+	mets := newMetricsProvider(cfg)
 	return &SimpleServer{
-		mux:      mx,
-		cfg:      cfg,
-		exit:     make(chan chan error),
-		monitor:  NewActivityMonitor(),
-		ctx:      netContext.Background(),
-		registry: registry,
+		mux:          mx,
+		cfg:          cfg,
+		exit:         make(chan chan error),
+		monitor:      NewActivityMonitor(),
+		ctx:          netContext.Background(),
+		mets:         mets,
+		panicCounter: mets.NewCounter("panic", "counting any server panics"),
 	}
 }
 
@@ -85,8 +85,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
-			errCntr := metrics.GetOrRegisterCounter("PANIC", s.registry)
-			errCntr.Inc(1)
+			s.panicCounter.Add(1)
 
 			// log the panic for all the details later
 			LogWithFields(r).Errorf("simple server recovered from a panic\n%v: %v", x, string(debug.Stack()))
@@ -104,14 +103,18 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 }
 
 // Start will start the SimpleServer at it's configured address.
-// If they are configured, this will start emitting metrics to Graphite,
-// register profiling, health checks and access logging.
+// If they are configured, this will start health checks and access logging.
 func (s *SimpleServer) Start() error {
-
-	StartServerMetrics(s.cfg, s.registry)
-
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
+
+	// if expvar, register on our router
+	if s.cfg.Metrics.Type == config.Expvar {
+		if s.cfg.Metrics.Path == "" {
+			s.cfg.Metrics.Path = "/debug/vars"
+		}
+		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
+	}
 
 	wrappedHandler, err := config.NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {
@@ -161,6 +164,9 @@ func (s *SimpleServer) Start() error {
 		if err := healthHandler.Stop(); err != nil {
 			Log.Warn("health check Stop returned with error: ", err)
 		}
+
+		// flush any remaining metrics and close connections
+		s.mets.Stop()
 
 		// stop the listener
 		exit <- l.Close()
@@ -235,8 +241,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 							ss.Middleware(ep).ServeHTTP(w, r)
 						})
 					}(ep, ss),
-					endpointName+".STATUS-COUNT", s.registry),
-					endpointName+".DURATION", s.registry),
+					endpointName+".STATUS-COUNT", s.mets),
+					endpointName+".DURATION", s.mets),
 				)
 			}
 		}
@@ -250,8 +256,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					endpointName+".STATUS-COUNT", s.registry),
-					endpointName+".DURATION", s.registry),
+					endpointName+".STATUS-COUNT", s.mets),
+					endpointName+".DURATION", s.mets),
 				)
 			}
 		}
@@ -279,8 +285,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
 						})
 					}(ep, cs),
-					endpointName+".STATUS-COUNT", s.registry),
-					endpointName+".DURATION", s.registry),
+					endpointName+".STATUS-COUNT", s.mets),
+					endpointName+".DURATION", s.mets),
 				)
 			}
 		}

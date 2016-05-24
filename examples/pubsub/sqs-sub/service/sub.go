@@ -4,20 +4,17 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/logrotate"
 	"github.com/Sirupsen/logrus"
-	"github.com/cyberdelia/go-metrics-graphite"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
-	"github.com/rcrowley/go-metrics"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
 )
@@ -26,6 +23,8 @@ var (
 	Log = logrus.New()
 
 	sub pubsub.Subscriber
+
+	metrics provider.Provider
 
 	client nyt.Client
 
@@ -58,13 +57,15 @@ func Init() {
 
 	pubsub.Log = Log
 
-	if cfg.GraphiteHost != nil {
-		initMetrics(*cfg.GraphiteHost)
+	var err error
+	cfg.Metrics.Prefix = metricsNamespace()
+	metrics, err = cfg.Metrics.NewProvider()
+	if err != nil {
+		Log.Fatal("unable to init metrics: ", err)
 	}
 
 	client = nyt.NewClient(cfg.MostPopularToken, cfg.SemanticToken)
 
-	var err error
 	sub, err = pubsub.NewSQSSubscriber(cfg.SQS)
 	if err != nil {
 		Log.Fatal("unable to init SQS: ", err)
@@ -73,6 +74,11 @@ func Init() {
 
 func Run() (err error) {
 	stream := sub.Start()
+
+	totalMsgsConsumed := metrics.NewCounter("total-consumed",
+		"total messages consumed by the subscriber")
+	errorCount := metrics.NewCounter("error-count",
+		"number of errors that have occurred in the subscriber")
 
 	go func() {
 		ch := make(chan os.Signal, 1)
@@ -83,11 +89,11 @@ func Run() (err error) {
 
 	var article nyt.SemanticConceptArticle
 	for msg := range stream {
-		totalMsgsConsumed.Inc(1)
+		totalMsgsConsumed.Add(1)
 
 		if err = proto.Unmarshal(msg.Message(), &article); err != nil {
 			Log.Error("unable to unmarshal article from SQS: ", err)
-			errorCount.Inc(1)
+			errorCount.Add(1)
 			if err = msg.Done(); err != nil {
 				Log.Error("unable to delete message from SQS: ", err)
 			}
@@ -110,22 +116,7 @@ func Run() (err error) {
 	return err
 }
 
-var (
-	errorCount        = metrics.NewRegisteredCounter("error-count", metrics.DefaultRegistry)
-	totalMsgsConsumed = metrics.NewRegisteredCounter("total-consumed", metrics.DefaultRegistry)
-)
-
-func initMetrics(graphiteHost string) {
-	Log.Infof("connecting to graphite host: %s", graphiteHost)
-	addr, err := net.ResolveTCPAddr("tcp", graphiteHost)
-	if err != nil {
-		Log.Errorf("unable to resolve graphite host: %s", err)
-		return
-	}
-	go graphite.Graphite(metrics.DefaultRegistry, 30*time.Second, metricsRegistryName(), addr)
-}
-
-func metricsRegistryName() string {
+func metricsNamespace() string {
 	// get only server base name
 	name, _ := os.Hostname()
 	name = strings.SplitN(name, ".", 2)[0]

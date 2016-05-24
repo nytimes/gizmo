@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -15,10 +14,9 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/cyberdelia/go-metrics-graphite"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
 	"github.com/nu7hatch/gouuid"
-	"github.com/rcrowley/go-metrics"
 
 	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
@@ -244,27 +242,9 @@ func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Rout
 	return hch
 }
 
-// StartServerMetrics will start emitting metrics to the provided
-// registry (nil means the DefaultRegistry) if a Graphite host name
-// is given in the config.
-func StartServerMetrics(cfg *config.Server, registry metrics.Registry) {
-	if registry == nil {
-		registry = metrics.DefaultRegistry
-	}
-	if cfg.GraphiteHost == "" {
-		return
-	}
-	Log.Infof("connecting to graphite host: %s", cfg.GraphiteHost)
-	addr, err := net.ResolveTCPAddr("tcp", cfg.GraphiteHost)
-	if err != nil {
-		Log.Warnf("unable to resolve graphite host: %s", err)
-	}
-	go graphite.Graphite(registry, 30*time.Second, MetricsRegistryName(), addr)
-}
-
-// MetricsRegistryName returns "apps.{hostname prefix}", which is
+// MetricsNamespace returns "apps.{hostname prefix}", which is
 // the convention used in NYT ESX environment.
-func MetricsRegistryName() string {
+func MetricsNamespace() string {
 	// get only server base name
 	name, _ := os.Hostname()
 	name = strings.SplitN(name, ".", 2)[0]
@@ -272,6 +252,36 @@ func MetricsRegistryName() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
+}
+
+func newMetricsProvider(cfg *config.Server) provider.Provider {
+	if cfg.MetricsProvider != nil {
+		return cfg.MetricsProvider
+	}
+	// deal with deprecated GRAPHITE_HOST value
+	if cfg.GraphiteHost != nil {
+		cfg.Metrics.Type = config.Graphite
+		cfg.Metrics.Addr = *cfg.GraphiteHost
+	}
+	// set default metrics prefix
+	// to MetricsNamespace
+	if len(cfg.Metrics.Prefix) == 0 {
+		cfg.Metrics.Prefix = MetricsNamespace() + "."
+	}
+	// set default metrics namespace
+	// to MetricsNamespace
+	if len(cfg.Metrics.Prefix) == 0 {
+		cfg.Metrics.Namespace = MetricsNamespace() + "."
+	}
+	p := cfg.MetricsProvider
+	if p == nil {
+		var err error
+		p, err = cfg.Metrics.NewProvider()
+		if err != nil {
+			Log.Fatal("invalid metrics config:", err)
+		}
+	}
+	return p
 }
 
 // SetLogLevel will set the appropriate logrus log level

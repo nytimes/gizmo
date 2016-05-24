@@ -6,6 +6,7 @@ import (
 
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/pubsubtest"
+	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
@@ -44,6 +45,7 @@ func TestRun(t *testing.T) {
 
 		// set test env
 		sub = test.givenSub
+		metrics = provider.NewDiscardProvider()
 
 		Run()
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -39,6 +40,14 @@ func NewKafkaPublisher(cfg *config.Kafka) (*KafkaPublisher, error) {
 	sconfig.Producer.RequiredAcks = KafkaRequiredAcks
 	p.producer, err = sarama.NewSyncProducer(cfg.BrokerHosts, sconfig)
 	return p, err
+}
+
+func (p *KafkaPublisher) CtxPublish(_ context.Context, key string, m proto.Message) error {
+	return p.Publish(key, m)
+}
+
+func (p *KafkaPublisher) CtxPublishRaw(_ context.Context, key string, m []byte) error {
+	return p.PublishRaw(key, m)
 }
 
 // Publish will marshal the proto message and emit it to the Kafka topic.

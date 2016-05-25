@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -53,6 +55,14 @@ func NewSNSPublisher(cfg *config.SNS) (*SNSPublisher, error) {
 		Region:      &cfg.Region,
 	}))
 	return p, nil
+}
+
+func (p *SNSPublisher) CtxPublish(_ context.Context, key string, m proto.Message) error {
+	return p.Publish(key, m)
+}
+
+func (p *SNSPublisher) CtxPublishRaw(_ context.Context, key string, m []byte) error {
+	return p.PublishRaw(key, m)
 }
 
 // Publish will marshal the proto message and emit it to the SNS topic.

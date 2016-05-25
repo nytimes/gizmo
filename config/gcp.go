@@ -47,7 +47,7 @@ func (d Datastore) NewClient(ctx context.Context) (*datastore.Client, error) {
 }
 
 func (p PubSub) NewContext() (context.Context, error) {
-	return p.GCP.NewContext(pubsub.ScopePubSub, pubsub.ScopeCloudPlatform)
+	return p.GCP.NewContext(pubsub.ScopePubSub)
 }
 
 func (g GCP) NewContext(scopes ...string) (context.Context, error) {
@@ -78,5 +78,6 @@ func (g GCP) contextFromJSON(scopes ...string) (context.Context, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return cloud.NewContext(g.ProjectID, conf.Client(oauth2.NoContext)), nil
 }

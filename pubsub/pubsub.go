@@ -3,6 +3,8 @@ package pubsub
 import (
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 )
@@ -18,6 +20,11 @@ type Publisher interface {
 	Publish(string, proto.Message) error
 	// Publish will publish a raw byte array as a message.
 	PublishRaw(string, []byte) error
+
+	// Publish will publish a message with context.
+	CtxPublish(context.Context, string, proto.Message) error
+	// Publish will publish a raw byte array as a message with context.
+	CtxPublishRaw(context.Context, string, []byte) error
 }
 
 // Subscriber is a generic interface to encapsulate how we want our subscribers

@@ -14,15 +14,15 @@ import (
 
 type (
 	GCP struct {
-		ProjectID string
+		ProjectID string `envconfig:"GCP_PROJECT_ID"`
 
-		JSONAuthPath string
+		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH"`
 	}
 
 	PubSub struct {
 		GCP
-		Topic        string
-		Subscription string
+		Topic        string `envconfig:"GCP_PUBSUB_TOPIC"`
+		Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
 	}
 
 	Datastore struct {

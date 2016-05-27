@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"log"
 
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
@@ -17,6 +18,8 @@ type (
 		ProjectID string `envconfig:"GCP_PROJECT_ID"`
 
 		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH"`
+
+		Token string `envconfig:"GCP_AUTH_TOKEN"`
 	}
 
 	PubSub struct {
@@ -38,6 +41,14 @@ func LoadPubSubFromEnv() PubSub {
 	return ps
 }
 
+// LoadDatastoreFromEnv will attempt to load a Metrics object
+// from environment variables.
+func LoadDatastoreFromEnv() Datastore {
+	var ds Datastore
+	LoadEnvConfig(&ds)
+	return ds
+}
+
 func (d Datastore) NewContext() (context.Context, error) {
 	return d.GCP.NewContext(datastore.ScopeDatastore)
 }
@@ -51,8 +62,13 @@ func (p PubSub) NewContext() (context.Context, error) {
 }
 
 func (g GCP) NewContext(scopes ...string) (context.Context, error) {
+	log.Printf("gcp conf? %#v", g)
 	if len(g.JSONAuthPath) > 0 {
 		return g.contextFromJSON(scopes...)
+	}
+
+	if len(g.Token) > 0 {
+		return g.contextFromToken(scopes...)
 	}
 
 	if len(scopes) == 0 {
@@ -64,6 +80,19 @@ func (g GCP) NewContext(scopes ...string) (context.Context, error) {
 		return nil, err
 	}
 	return cloud.NewContext(g.ProjectID, client), nil
+}
+
+func (g GCP) contextFromToken(scopes ...string) (context.Context, error) {
+	conf, err := google.JWTConfigFromJSON(
+		[]byte(g.Token),
+		scopes...,
+	)
+	if err != nil {
+		log.Print("probs with token:", g.Token)
+		return nil, err
+	}
+
+	return cloud.NewContext(g.ProjectID, conf.Client(oauth2.NoContext)), nil
 }
 
 func (g GCP) contextFromJSON(scopes ...string) (context.Context, error) {

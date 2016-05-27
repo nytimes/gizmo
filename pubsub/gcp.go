@@ -10,9 +10,9 @@ import (
 )
 
 type GCPSubscriber struct {
-	handle *pubsub.SubscriptionHandle
-	ctx    context.Context
-	name   string
+	sub  *pubsub.Subscription
+	ctx  context.Context
+	name string
 
 	stop chan chan error
 	err  error
@@ -24,9 +24,9 @@ func NewGCPSubscriber(ctx context.Context, cfg config.PubSub) (Subscriber, error
 		return nil, err
 	}
 	return &GCPSubscriber{
-		handle: client.Subscription(cfg.Subscription),
-		ctx:    ctx,
-		name:   cfg.Subscription,
+		sub:  client.Subscription(cfg.Subscription),
+		ctx:  ctx,
+		name: cfg.Subscription,
 	}, nil
 }
 
@@ -45,7 +45,7 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 			err  error
 		)
 
-		iter, err = s.handle.Pull(s.ctx, defaultGCPMaxMessages, defaultGCPMaxExtension)
+		iter, err = s.sub.Pull(s.ctx, defaultGCPMaxMessages, defaultGCPMaxExtension)
 		if err != nil {
 			s.err = err
 			return
@@ -116,7 +116,6 @@ type GCPPublisher struct {
 func NewGCPPublisher(ctx context.Context, cfg config.PubSub) (Publisher, error) {
 
 	return &GCPPublisher{
-		//		handle: client.Topic(cfg.Topic),
 		topic: cfg.Topic,
 		ctx:   ctx,
 	}, nil

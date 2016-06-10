@@ -28,6 +28,7 @@ type (
 
 		Kafka *Kafka
 
+		GCP    GCP
 		PubSub PubSub
 
 		Oracle *Oracle
@@ -84,6 +85,7 @@ func LoadConfigFromEnv() *Config {
 	app.Server = LoadServerFromEnv()
 	app.Metrics = LoadMetricsFromEnv()
 	app.PubSub = LoadPubSubFromEnv()
+	app.GCP = LoadGCPFromEnv()
 	return &app
 }
 

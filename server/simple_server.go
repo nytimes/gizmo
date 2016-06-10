@@ -31,9 +31,6 @@ type SimpleServer struct {
 	// tracks active requests
 	monitor *ActivityMonitor
 
-	// server context
-	ctx netContext.Context
-
 	// for collecting metrics
 	mets         provider.Provider
 	panicCounter metrics.Counter
@@ -57,7 +54,6 @@ func NewSimpleServer(cfg *config.Server) *SimpleServer {
 		cfg:          cfg,
 		exit:         make(chan chan error),
 		monitor:      NewActivityMonitor(),
-		ctx:          netContext.Background(),
 		mets:         mets,
 		panicCounter: mets.NewCounter("panic", "counting any server panics"),
 	}
@@ -306,7 +302,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
-					jscs.Middleware(ContextToHTTP(s.ctx,
+					jscs.Middleware(ContextToHTTP(netContext.Background(),
 						jscs.ContextMiddleware(
 							JSONContextToHTTP(jscs.JSONContextMiddleware(ep)),
 						),

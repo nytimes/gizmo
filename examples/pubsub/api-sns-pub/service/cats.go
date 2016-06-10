@@ -14,7 +14,7 @@ func (s *JSONPubService) PublishCats(r *http.Request) (int, interface{}, error) 
 		return http.StatusInternalServerError, nil, err
 	}
 
-	err = s.pub.Publish(catArticle.Url, &catArticle)
+	err = s.pub.Publish(nil, catArticle.Url, &catArticle)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

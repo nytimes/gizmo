@@ -9,31 +9,44 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/cloud"
-	"google.golang.org/cloud/datastore"
-	"google.golang.org/cloud/pubsub"
 )
 
 type (
+
+	// GCP holds common Google Cloud Platform credentials.
 	GCP struct {
-		ProjectID string `envconfig:"GCP_PROJECT_ID"`
+		ProjectID string `envconfig:"GCP_PROJECT_ID" json:"GCP_PROJECT_ID"`
 
-		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH"`
+		// JSONAuthPath points to a file containing a JWT JSON config.
+		// This is meant to be a fall back for development environments.
+		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH" json:"GCP_JSON_AUTH_PATH"`
 
-		Token string `envconfig:"GCP_AUTH_TOKEN"`
+		// Token is a JWT JSON config and may be needed for container
+		// environments.
+		Token string `envconfig:"GCP_AUTH_TOKEN" json:"GCP_AUTH_TOKEN"`
 	}
 
+	// PubSub holds common credentials and config values for
+	// working with GCP PubSub.
 	PubSub struct {
 		GCP
-		Topic        string `envconfig:"GCP_PUBSUB_TOPIC"`
-		Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
-	}
 
-	Datastore struct {
-		GCP
+		// For publishing
+		Topic string `envconfig:"GCP_PUBSUB_TOPIC" json:"GCP_PUBSUB_TOPIC"`
+		// For subscribing
+		Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION" json:"GCP_PUBSUB_SUBSCRIPTION"`
 	}
 )
 
-// LoadPubSubFromEnv will attempt to load a Metrics object
+// LoadGCPFromEnv will attempt to load a GCP config
+// from environment variables.
+func LoadGCPFromEnv() GCP {
+	var gcp GCP
+	LoadEnvConfig(&gcp)
+	return gcp
+}
+
+// LoadPubSubFromEnv will attempt to load a PubSub config
 // from environment variables.
 func LoadPubSubFromEnv() PubSub {
 	var ps PubSub
@@ -41,34 +54,16 @@ func LoadPubSubFromEnv() PubSub {
 	return ps
 }
 
-// LoadDatastoreFromEnv will attempt to load a Metrics object
-// from environment variables.
-func LoadDatastoreFromEnv() Datastore {
-	var ds Datastore
-	LoadEnvConfig(&ds)
-	return ds
-}
-
-func (d Datastore) NewContext() (context.Context, error) {
-	return d.GCP.NewContext(datastore.ScopeDatastore)
-}
-
-func (d Datastore) NewClient(ctx context.Context) (*datastore.Client, error) {
-	return datastore.NewClient(ctx, d.ProjectID)
-}
-
-func (p PubSub) NewContext() (context.Context, error) {
-	return p.GCP.NewContext(pubsub.ScopePubSub)
-}
-
+// NewContext will check attempt to create a new context from
+// a the Token or JSONAuthPath fields if provided, otherwise
+// google.DefaultClient will be used.
 func (g GCP) NewContext(scopes ...string) (context.Context, error) {
-	log.Printf("gcp conf? %#v", g)
-	if len(g.JSONAuthPath) > 0 {
-		return g.contextFromJSON(scopes...)
-	}
-
 	if len(g.Token) > 0 {
 		return g.contextFromToken(scopes...)
+	}
+
+	if len(g.JSONAuthPath) > 0 {
+		return g.contextFromJSON(scopes...)
 	}
 
 	if len(scopes) == 0 {

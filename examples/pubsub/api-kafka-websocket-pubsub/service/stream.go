@@ -142,7 +142,7 @@ func (s *StreamService) Stream(w http.ResponseWriter, r *http.Request) {
 					server.LogWithFields(r).WithField("error", err).Error("unable to read payload")
 					return
 				}
-				err = pub.PublishRaw(cfg.Topic, payload)
+				err = pub.PublishRaw(nil, cfg.Topic, payload)
 				if err != nil {
 					server.LogWithFields(r).WithField("error", err).Error("unable to publish payload")
 					return

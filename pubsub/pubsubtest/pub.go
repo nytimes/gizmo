@@ -1,6 +1,9 @@
 package pubsubtest
 
-import "github.com/golang/protobuf/proto"
+import (
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
+)
 
 type (
 	// TestPublisher is a simple implementation of pubsub.Publisher meant to
@@ -27,14 +30,14 @@ type (
 )
 
 // Publish publishes the message, delegating to PublishRaw.
-func (t *TestPublisher) Publish(key string, msg proto.Message) error {
+func (t *TestPublisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	data, err := proto.Marshal(msg)
 	t.FoundError = err
-	return t.PublishRaw(key, data)
+	return t.PublishRaw(ctx, key, data)
 }
 
 // PublishRaw publishes the raw message byte slice.
-func (t *TestPublisher) PublishRaw(key string, msg []byte) error {
+func (t *TestPublisher) PublishRaw(_ context.Context, key string, msg []byte) error {
 	t.Published = append(t.Published, TestPublishMsg{key, msg})
 	return t.GivenError
 }

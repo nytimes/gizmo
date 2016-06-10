@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 func TestSNSPublisher(t *testing.T) {
@@ -17,7 +18,7 @@ func TestSNSPublisher(t *testing.T) {
 
 	test1Key := "yo!"
 	test1 := &TestProto{"hi there!"}
-	err := pub.Publish(test1Key, test1)
+	err := pub.Publish(context.Background(), test1Key, test1)
 	if err != nil {
 		t.Error("Publish returned an unexpected error: ", err)
 	}

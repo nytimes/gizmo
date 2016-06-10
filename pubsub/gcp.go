@@ -115,7 +115,7 @@ type GCPPublisher struct {
 
 func NewGCPPublisher(ctx context.Context, topic string) (Publisher, error) {
 	return &GCPPublisher{
-		topic: string,
+		topic: topic,
 		ctx:   ctx,
 	}, nil
 }

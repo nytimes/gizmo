@@ -42,16 +42,8 @@ func NewKafkaPublisher(cfg *config.Kafka) (*KafkaPublisher, error) {
 	return p, err
 }
 
-func (p *KafkaPublisher) CtxPublish(_ context.Context, key string, m proto.Message) error {
-	return p.Publish(key, m)
-}
-
-func (p *KafkaPublisher) CtxPublishRaw(_ context.Context, key string, m []byte) error {
-	return p.PublishRaw(key, m)
-}
-
 // Publish will marshal the proto message and emit it to the Kafka topic.
-func (p *KafkaPublisher) Publish(key string, m proto.Message) error {
+func (p *KafkaPublisher) Publish(_ context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -60,7 +52,7 @@ func (p *KafkaPublisher) Publish(key string, m proto.Message) error {
 }
 
 // PublishRaw will emit the byte array to the Kafka topic.
-func (p *KafkaPublisher) PublishRaw(key string, m []byte) error {
+func (p *KafkaPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,
 		Key:   sarama.StringEncoder(key),

@@ -57,17 +57,9 @@ func NewSNSPublisher(cfg *config.SNS) (*SNSPublisher, error) {
 	return p, nil
 }
 
-func (p *SNSPublisher) CtxPublish(_ context.Context, key string, m proto.Message) error {
-	return p.Publish(key, m)
-}
-
-func (p *SNSPublisher) CtxPublishRaw(_ context.Context, key string, m []byte) error {
-	return p.PublishRaw(key, m)
-}
-
 // Publish will marshal the proto message and emit it to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) Publish(key string, m proto.Message) error {
+func (p *SNSPublisher) Publish(_ context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -78,7 +70,7 @@ func (p *SNSPublisher) Publish(key string, m proto.Message) error {
 
 // PublishRaw will emit the byte array to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) PublishRaw(key string, m []byte) error {
+func (p *SNSPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
 		Subject:  &key,

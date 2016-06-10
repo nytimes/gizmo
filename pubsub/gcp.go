@@ -1,6 +1,7 @@
 package pubsub
 
 import (
+	"sync"
 	"time"
 
 	"github.com/NYTimes/gizmo/config"
@@ -12,12 +13,14 @@ import (
 // GCPSubscriber is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Subscriber interface.
 type GCPSubscriber struct {
-	sub  *pubsub.Subscription
+	sub  gcpSubscription
 	ctx  context.Context
 	name string
 
-	stop chan chan error
-	err  error
+	mtxStop sync.Mutex
+	stop    chan chan error
+	stopped bool
+	err     error
 }
 
 // NewGCPSubscriber will instantiate a new Subscriber that wraps
@@ -28,9 +31,10 @@ func NewGCPSubscriber(ctx context.Context, cfg config.PubSub) (Subscriber, error
 		return nil, err
 	}
 	return &GCPSubscriber{
-		sub:  client.Subscription(cfg.Subscription),
+		sub:  gcpSubscriptionImpl{sub: client.Subscription(cfg.Subscription)},
 		ctx:  ctx,
 		name: cfg.Subscription,
+		stop: make(chan chan error, 1),
 	}, nil
 }
 
@@ -45,15 +49,15 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 	go func(s *GCPSubscriber, output chan SubscriberMessage) {
 		defer close(output)
 		var (
-			iter *pubsub.Iterator
-			msg  *pubsub.Message
+			iter gcpIterator
+			msg  gcpMessage
 			err  error
 		)
 
 		iter, err = s.sub.Pull(s.ctx, defaultGCPMaxMessages, defaultGCPMaxExtension)
 		if err != nil {
+			go s.Stop()
 			s.err = err
-			return
 		}
 
 		for {
@@ -89,6 +93,12 @@ func (s *GCPSubscriber) Err() error {
 
 // Stop will block until the consumer has stopped consuming messages.
 func (s *GCPSubscriber) Stop() error {
+	s.mtxStop.Lock()
+	defer s.mtxStop.Unlock()
+	if s.stopped {
+		return nil
+	}
+	s.stopped = true
 	exit := make(chan error)
 	s.stop <- exit
 	return <-exit
@@ -96,25 +106,25 @@ func (s *GCPSubscriber) Stop() error {
 
 // GCPSubMessage pubsub implementation of pubsub.SubscriberMessage.
 type GCPSubMessage struct {
-	msg *pubsub.Message
+	msg gcpMessage
 	ctx context.Context
 	sub string
 }
 
 // Message will return the data of the pubsub Message.
 func (m *GCPSubMessage) Message() []byte {
-	return m.msg.Data
+	return m.msg.MsgData()
 }
 
 // ExtendDoneDeadline will call the deprecated ModifyAckDeadline for a pubsub
 // Message. This likely should not be called.
 func (m *GCPSubMessage) ExtendDoneDeadline(dur time.Duration) error {
-	return pubsub.ModifyAckDeadline(m.ctx, m.sub, m.msg.ID, dur)
+	return pubsub.ModifyAckDeadline(m.ctx, m.sub, m.msg.ID(), dur)
 }
 
 // Done will acknowledge the pubsub Message.
 func (m *GCPSubMessage) Done() error {
-	m.msg.Done(true)
+	m.msg.Done()
 	return nil
 }
 
@@ -147,4 +157,60 @@ func (p GCPPublisher) PublishRaw(ctx context.Context, key string, m []byte) erro
 		Attributes: map[string]string{"key": key},
 	})
 	return err
+}
+
+// interfaces and types to make this more testable
+type (
+	gcpSubscription interface {
+		Pull(ctx context.Context, opts ...pubsub.PullOption) (gcpIterator, error)
+	}
+	gcpIterator interface {
+		Next() (gcpMessage, error)
+		Stop()
+	}
+	gcpMessage interface {
+		ID() string
+		MsgData() []byte
+		Done()
+	}
+
+	gcpSubscriptionImpl struct {
+		sub *pubsub.Subscription
+	}
+	gcpIteratorImpl struct {
+		iter *pubsub.Iterator
+	}
+	gcpMessageImpl struct {
+		msg *pubsub.Message
+	}
+)
+
+func (m gcpMessageImpl) ID() string {
+	return m.msg.ID
+}
+
+func (m gcpMessageImpl) MsgData() []byte {
+	return m.msg.Data
+}
+
+func (m gcpMessageImpl) Done() {
+	m.msg.Done(true)
+}
+
+func (i gcpIteratorImpl) Next() (gcpMessage, error) {
+	msg, err := i.iter.Next()
+	return gcpMessageImpl{msg}, err
+}
+
+func (i gcpIteratorImpl) Stop() {
+	i.iter.Stop()
+}
+
+func (s gcpSubscriptionImpl) Pull(ctx context.Context, opts ...pubsub.PullOption) (gcpIterator, error) {
+	iter, err := s.sub.Pull(ctx, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return gcpIteratorImpl{iter: iter}, nil
 }

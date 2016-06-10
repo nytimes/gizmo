@@ -10,79 +10,10 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-type (
-	// Config is a generic struct to hold information for applications that
-	// need to connect to databases, handle cookies, log events or emit metrics.
-	// If you have a use case that does not fit this struct, you can
-	// make a struct containing just the types that suit your needs and use
-	// some of the helper functions in this package to load it from the environment.
-	Config struct {
-		Server *Server
-
-		AWS         *AWS
-		SQS         *SQS
-		SNS         *SNS
-		S3          *S3
-		DynamoDB    *DynamoDB
-		ElastiCache *ElastiCache
-
-		Kafka *Kafka
-
-		Oracle *Oracle
-
-		MySQL      *MySQL
-		MySQLSlave *MySQL
-
-		MongoDB *MongoDB
-
-		Cookie *Cookie
-
-		// GraphiteHost is DEPRECATED. Please use the
-		// Metrics config with "Type":"graphite" and this
-		// value in the "Addr" field.
-		GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
-
-		Metrics Metrics
-
-		LogLevel *string `envconfig:"APP_LOG_LEVEL"`
-		Log      *string `envconfig:"APP_LOG"`
-	}
-
-	// Cookie holds information for creating
-	// a secure cookie.
-	Cookie struct {
-		HashKey  string `envconfig:"COOKIE_HASH_KEY"`
-		BlockKey string `envconfig:"COOKIE_BLOCK_KEY"`
-		Domain   string `envconfig:"COOKIE_DOMAIN"`
-		Name     string `envconfig:"COOKIE_NAME"`
-	}
-)
-
 // EnvAppName is used as a prefix for environment variable
 // names when using the LoadXFromEnv funcs.
 // It defaults to empty.
 var EnvAppName = ""
-
-// LoadConfigFromEnv will attempt to inspect the environment
-// of any valid config options and will return a populated
-// Config struct with what it found.
-// If you need a unique config object and want to use envconfig, you
-// will need to run the LoadXXFromEnv for each child struct in
-// your config struct. For an example on how to do this, check out the
-// guts of this function.
-func LoadConfigFromEnv() *Config {
-	var app Config
-	LoadEnvConfig(&app)
-	app.AWS, app.SNS, app.SQS, app.S3, app.DynamoDB, app.ElastiCache = LoadAWSFromEnv()
-	app.MongoDB = LoadMongoDBFromEnv()
-	app.Kafka = LoadKafkaFromEnv()
-	app.MySQL = LoadMySQLFromEnv()
-	app.Oracle = LoadOracleFromEnv()
-	app.Cookie = LoadCookieFromEnv()
-	app.Server = LoadServerFromEnv()
-	app.Metrics = LoadMetricsFromEnv()
-	return &app
-}
 
 // LoadEnvConfig will use envconfig to load the
 // given config struct from the environment.
@@ -91,18 +22,6 @@ func LoadEnvConfig(c interface{}) {
 	if err != nil {
 		log.Fatal("unable to load env variable: ", err)
 	}
-}
-
-// LoadCookieFromEnv will attempt to load an Cookie object
-// from environment variables. If not populated, nil
-// is returned.
-func LoadCookieFromEnv() *Cookie {
-	var cookie Cookie
-	LoadEnvConfig(&cookie)
-	if cookie.Name != "" {
-		return &cookie
-	}
-	return nil
 }
 
 // LoadJSONFile is a helper function to read a config file into whatever
@@ -149,23 +68,4 @@ func LoadJSONFromConsulKV(configKeyParameter string, cfg interface{}) interface{
 		log.Fatalf("Unable to parse JSON in Consul KV for key '%s': %s", configKey, err)
 	}
 	return cfg
-}
-
-// NewConfig will attempt to unmarshal the contents
-// of the given JSON string source into a Config struct.
-// The value of fileName can be either the path to a JSON
-// file or a path to a JSON string found in Consul's Key
-// Value storage (using the format consul:path/to/JSON/string).
-// If the value of fileName is empty, a blank Config will
-// be returned.
-func NewConfig(fileName string) *Config {
-	var c Config
-	if fileName == "" {
-		return &c
-	}
-	if strings.HasPrefix(fileName, "consul") {
-		return LoadJSONFromConsulKV(fileName, &c).(*Config)
-	}
-	LoadJSONFile(fileName, &c)
-	return &c
 }

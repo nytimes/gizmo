@@ -1,4 +1,4 @@
-package pubsub
+package aws
 
 import (
 	"encoding/base64"
@@ -11,9 +11,9 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func TestSNSPublisher(t *testing.T) {
+func TestPublisher(t *testing.T) {
 	snstest := &TestSNSAPI{}
-	pub := &SNSPublisher{sns: snstest}
+	pub := &publisher{sns: snstest}
 
 	test1Key := "yo!"
 	test1 := &TestProto{"hi there!"}

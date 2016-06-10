@@ -1,35 +1,37 @@
-package config
+package metrics
 
 import (
 	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics/provider"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
-// MetricsType acts as an 'enum' type to represent
+// Type acts as an 'enum' type to represent
 // the available metrics providers
-type MetricsType string
+type Type string
 
 const (
 	// Statsd is used by config to indicate use of the statsdProvider.
-	Statsd MetricsType = "statsd"
+	Statsd Type = "statsd"
 	// DogStatsd is used by config to indicate use of the dogstatsdProvider.
-	DogStatsd MetricsType = "dogstatsd"
+	DogStatsd Type = "dogstatsd"
 	// Prometheus is used by config to indicate use of the prometheusProvider.
-	Prometheus MetricsType = "prometheus"
+	Prometheus Type = "prometheus"
 	// Graphite is used by config to indicate use of the graphiteProvider.
-	Graphite MetricsType = "graphite"
+	Graphite Type = "graphite"
 	// Expvar is used by config to indicate use of the expvarProvider.
-	Expvar MetricsType = "expvar"
+	Expvar Type = "expvar"
 	// Discard is used by config to indicate use of the discardProvider.
-	Discard MetricsType = "discard"
+	Discard Type = "discard"
 )
 
 // Metrics config can be used to configure and instantiate a new
 // go-kit/kit/metrics/provider.Provider.
 type Metrics struct {
-	Type MetricsType `envconfig:"METRICS_TYPE"`
+	Type Type `envconfig:"METRICS_TYPE"`
 
 	// Prefix will be prefixed onto
 	// any metric name.
@@ -58,11 +60,11 @@ type Metrics struct {
 	Logger log.Logger
 }
 
-// LoadMetricsFromEnv will attempt to load a Metrics object
+// LoadFromEnv will attempt to load a Metrics object
 // from environment variables.
-func LoadMetricsFromEnv() Metrics {
+func LoadFromEnv() Metrics {
 	var mets Metrics
-	LoadEnvConfig(&mets)
+	config.LoadEnvConfig(&mets)
 	return mets
 }
 

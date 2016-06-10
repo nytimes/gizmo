@@ -1,8 +1,10 @@
-package config
+package oracle
 
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
 // Oracle holds everything you need to
@@ -42,13 +44,9 @@ func (o *Oracle) String() string {
 }
 
 // LoadOracleFromEnv will attempt to load an OracleCreds object
-// from environment variables. If not populated, nil
-// is returned.
-func LoadOracleFromEnv() *Oracle {
+// from environment variables.
+func LoadOracleFromEnv() Oracle {
 	var ora Oracle
-	LoadEnvConfig(&ora)
-	if ora.Host == "" {
-		return nil
-	}
-	return &ora
+	config.LoadEnvConfig(&ora)
+	return ora
 }

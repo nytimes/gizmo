@@ -1,10 +1,10 @@
-package config
+package aws
 
 import (
 	"fmt"
 	"log"
-	"time"
 
+	"github.com/NYTimes/gizmo/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -26,30 +26,6 @@ type (
 		AccessKey string `envconfig:"AWS_ACCESS_KEY"`
 
 		Region string `envconfig:"AWS_REGION"`
-	}
-
-	// SQS holds the info required to work with Amazon SQS
-	SQS struct {
-		AWS
-		QueueName string `envconfig:"AWS_SQS_NAME"`
-		// MaxMessages will override the DefaultSQSMaxMessages.
-		MaxMessages *int64 `envconfig:"AWS_SQS_MAX_MESSAGES"`
-		// TimeoutSeconds will override the DefaultSQSTimeoutSeconds.
-		TimeoutSeconds *int64 `envconfig:"AWS_SQS_TIMEOUT_SECONDS"`
-		// SleepInterval will override the DefaultSQSSleepInterval.
-		SleepInterval *time.Duration `envconfig:"AWS_SQS_SLEEP_INTERVAL"`
-		// DeleteBufferSize will override the DefaultSQSDeleteBufferSize.
-		DeleteBufferSize *int `envconfig:"AWS_SQS_DELETE_BUFFER_SIZE"`
-		// ConsumeBase64 is a flag to signal the subscriber to base64 decode the payload
-		// before returning it. If it is not set in the config, the flag will default
-		// to 'true'.
-		ConsumeBase64 *bool `envconfig:"AWS_SQS_CONSUME_BASE64"`
-	}
-
-	// SNS holds the info required to work with Amazon SNS.
-	SNS struct {
-		AWS
-		Topic string `envconfig:"AWS_SNS_TOPIC"`
 	}
 
 	// S3 holds the info required to work with Amazon S3.
@@ -107,41 +83,35 @@ func (e *ElastiCache) MustClient() *memcache.Client {
 	return memcache.New(nodes...)
 }
 
-// LoadAWSFromEnv will attempt to load the AWS structs
+// LoadAWSFromEnv will attempt to load the AWS struct
+// from environment variables.
+func LoadAWSFromEnv() AWS {
+	var aws AWS
+	config.LoadEnvConfig(&aws)
+	return aws
+}
+
+// LoadDynamoDBFromEnv will attempt to load the AWS struct
 // from environment variables. If not populated, nil
 // is returned.
-func LoadAWSFromEnv() (*AWS, *SNS, *SQS, *S3, *DynamoDB, *ElastiCache) {
-	var (
-		aws = &AWS{}
-		sns = &SNS{}
-		sqs = &SQS{}
-		s3  = &S3{}
-		ddb = &DynamoDB{}
-		ec  = &ElastiCache{}
-	)
-	LoadEnvConfig(aws)
-	if aws.AccessKey == "" {
-		aws = nil
-	}
-	LoadEnvConfig(sns)
-	if sns.Topic == "" {
-		sns = nil
-	}
-	LoadEnvConfig(sqs)
-	if sqs.QueueName == "" {
-		sqs = nil
-	}
-	LoadEnvConfig(s3)
-	if s3.Bucket == "" {
-		s3 = nil
-	}
-	LoadEnvConfig(ddb)
-	if ddb.TableName == "" {
-		ddb = nil
-	}
-	LoadEnvConfig(ec)
-	if ec.ClusterID == "" {
-		ec = nil
-	}
-	return aws, sns, sqs, s3, ddb, ec
+func LoadDynamoDBFromEnv() DynamoDB {
+	var ddb DynamoDB
+	config.LoadEnvConfig(&ddb)
+	return ddb
+}
+
+// LoadS3FromEnv will attempt to load the AWS struct
+// from environment variables.
+func LoadS3FromEnv() S3 {
+	var s3 S3
+	config.LoadEnvConfig(&s3)
+	return s3
+}
+
+// LoadElastiCacheFromEnv will attempt to load the AWS struct
+// from environment variables.
+func LoadElastiCacheFromEnv() ElastiCache {
+	var el ElastiCache
+	config.LoadEnvConfig(&el)
+	return el
 }

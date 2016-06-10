@@ -6,7 +6,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
 )
 
@@ -22,7 +21,7 @@ type Router interface {
 // NewRouter will return the router specified by the server
 // config. If no Router value is supplied, the server
 // will default to using Gorilla mux.
-func NewRouter(cfg *config.Server) Router {
+func NewRouter(cfg *Config) Router {
 	switch cfg.RouterType {
 	case "fast", "httprouter":
 		return &FastRouter{httprouter.New()}

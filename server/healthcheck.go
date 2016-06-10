@@ -57,7 +57,7 @@ func NewCustomHealthCheck(path string, handler http.Handler) *CustomHealthCheck 
 }
 
 // CustomHealthCheck is a HealthCheckHandler that uses
-// a custom http.Handler provided to the server via `config.Server.CustomHealthCheckHandler`.
+// a custom http.Handler provided to the server via `config.CustomHealthCheckHandler`.
 type CustomHealthCheck struct {
 	path    string
 	handler http.Handler

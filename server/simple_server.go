@@ -9,18 +9,19 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/web"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
 	netContext "golang.org/x/net/context"
+
+	metricscfg "github.com/NYTimes/gizmo/config/metrics"
+	"github.com/NYTimes/gizmo/web"
 )
 
 // SimpleServer is a basic http Server implementation for
 // serving SimpleService, JSONService or MixedService implementations.
 type SimpleServer struct {
-	cfg *config.Server
+	cfg *Config
 
 	// exit chan for graceful shutdown
 	exit chan chan error
@@ -42,9 +43,9 @@ type SimpleServer struct {
 // NewSimpleServer will init the mux, exit channel and
 // build the address from the given port. It will register the HealthCheckHandler
 // at the given path and set up the shutDownHandler to be called on Stop().
-func NewSimpleServer(cfg *config.Server) *SimpleServer {
+func NewSimpleServer(cfg *Config) *SimpleServer {
 	if cfg == nil {
-		cfg = &config.Server{}
+		cfg = &Config{}
 	}
 	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
@@ -109,14 +110,14 @@ func (s *SimpleServer) Start() error {
 	s.cfg.HealthCheckPath = healthHandler.Path()
 
 	// if expvar, register on our router
-	if s.cfg.Metrics.Type == config.Expvar {
+	if s.cfg.Metrics.Type == metricscfg.Expvar {
 		if s.cfg.Metrics.Path == "" {
 			s.cfg.Metrics.Path = "/debug/vars"
 		}
 		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
 	}
 
-	wrappedHandler, err := config.NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
+	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {
 		Log.Fatalf("unable to create http access log: %s", err)
 	}

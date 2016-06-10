@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -18,7 +17,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/nu7hatch/gouuid"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/gizmo/web"
 	"github.com/NYTimes/logrotate"
 )
@@ -56,8 +55,8 @@ var (
 )
 
 // Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
-// this func will set it to a `SimpleServer` listening on `Config.Server.HTTPPort`.
-func Init(name string, scfg *config.Server) {
+// this func will set it to a `SimpleServer` listening on `Config.HTTPPort`.
+func Init(name string, scfg *Config) {
 	// generate a unique ID for the server
 	id, _ := uuid.NewV4()
 	Name = name + "-" + Version + "-" + id.String()
@@ -66,10 +65,8 @@ func Init(name string, scfg *config.Server) {
 	// the environment.
 	if scfg == nil {
 		// allow the default config to be overridden by CLI
-		flag.Parse()
-		cfg := config.NewConfig(*config.ConfigLocationCLI)
-		config.SetServerOverrides(cfg.Server)
-		scfg = cfg.Server
+		scfg = LoadConfigFromEnv()
+		SetConfigOverrides(scfg)
 	}
 
 	if scfg.GOMAXPROCS != nil {
@@ -175,7 +172,7 @@ func ContextFields(r *http.Request) map[string]interface{} {
 
 // NewServer will inspect the config and generate
 // the appropriate Server implementation.
-func NewServer(cfg *config.Server) Server {
+func NewServer(cfg *Config) Server {
 	switch cfg.ServerType {
 	case "simple":
 		return NewSimpleServer(cfg)
@@ -188,7 +185,7 @@ func NewServer(cfg *config.Server) Server {
 
 // NewHealthCheckHandler will inspect the config to generate
 // the appropriate HealthCheckHandler.
-func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
+func NewHealthCheckHandler(cfg *Config) (HealthCheckHandler, error) {
 	// default the status path if not set
 	if cfg.HealthCheckPath == "" {
 		cfg.HealthCheckPath = "/status.txt"
@@ -200,7 +197,7 @@ func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
 		return NewESXHealthCheck(), nil
 	case "custom":
 		if cfg.CustomHealthCheckHandler == nil {
-			return nil, errors.New("health check type is set to 'custom', but no config.Server.CustomHealthCheckHandler provided")
+			return nil, errors.New("health check type is set to 'custom', but no Config.CustomHealthCheckHandler provided")
 		}
 		return NewCustomHealthCheck(cfg.HealthCheckPath, cfg.CustomHealthCheckHandler), nil
 	default:
@@ -210,7 +207,7 @@ func NewHealthCheckHandler(cfg *config.Server) (HealthCheckHandler, error) {
 
 // RegisterProfiler will add handlers for pprof endpoints if
 // the config has them enabled.
-func RegisterProfiler(cfg *config.Server, mx Router) {
+func RegisterProfiler(cfg *Config, mx Router) {
 	if !cfg.EnablePProf {
 		return
 	}
@@ -228,7 +225,7 @@ func RegisterProfiler(cfg *config.Server, mx Router) {
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *config.Server, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
+func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
 	// register health check
 	hch, err := NewHealthCheckHandler(cfg)
 	if err != nil {
@@ -254,13 +251,13 @@ func MetricsNamespace() string {
 	return "apps." + name
 }
 
-func newMetricsProvider(cfg *config.Server) provider.Provider {
+func newMetricsProvider(cfg *Config) provider.Provider {
 	if cfg.MetricsProvider != nil {
 		return cfg.MetricsProvider
 	}
 	// deal with deprecated GRAPHITE_HOST value
 	if cfg.GraphiteHost != nil {
-		cfg.Metrics.Type = config.Graphite
+		cfg.Metrics.Type = metrics.Graphite
 		cfg.Metrics.Addr = *cfg.GraphiteHost
 	}
 	// set default metrics prefix
@@ -286,7 +283,7 @@ func newMetricsProvider(cfg *config.Server) provider.Provider {
 
 // SetLogLevel will set the appropriate logrus log level
 // given the server config.
-func SetLogLevel(scfg *config.Server) {
+func SetLogLevel(scfg *Config) {
 	if lvl, err := logrus.ParseLevel(scfg.LogLevel); err != nil {
 		Log.Level = logrus.InfoLevel
 	} else {

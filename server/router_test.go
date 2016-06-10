@@ -4,12 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/NYTimes/gizmo/config"
 )
 
 func TestFastRoute(t *testing.T) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{true})
@@ -31,7 +29,7 @@ func TestFastRoute(t *testing.T) {
 }
 
 func TestGorillaRoute(t *testing.T) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{true})

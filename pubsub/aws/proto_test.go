@@ -11,7 +11,7 @@ It is generated from these files:
 It has these top-level messages:
 	TestProto
 */
-package pubsub
+package aws
 
 import proto "github.com/golang/protobuf/proto"
 

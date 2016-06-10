@@ -1,4 +1,4 @@
-package config
+package mongodb
 
 import (
 	"log"
@@ -6,6 +6,8 @@ import (
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
 // MongoDB holds the information required for connecting
@@ -53,15 +55,11 @@ func (m *MongoDB) must(host string) *mgo.Session {
 	return s
 }
 
-// LoadMongoDBFromEnv will attempt to load a MongoCreds object
-// from environment variables. If not populated, nil
-// is returned.
-func LoadMongoDBFromEnv() *MongoDB {
+// LoadFromEnv will attempt to load a MongoCreds object
+// from environment variables.
+func LoadFromEnv() *MongoDB {
 	var mongo MongoDB
-	LoadEnvConfig(&mongo)
-	if mongo.Hosts == "" {
-		return nil
-	}
+	config.LoadEnvConfig(&mongo)
 	return &mongo
 }
 

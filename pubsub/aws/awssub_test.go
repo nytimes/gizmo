@@ -1,4 +1,4 @@
-package pubsub
+package aws
 
 import (
 	"encoding/base64"
@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/golang/protobuf/proto"
 )
 
-func TestSQSSubscriberNoBase64(t *testing.T) {
+func TestSubscriberNoBase64(t *testing.T) {
 	test1 := "hey hey hey!"
 	test2 := "ho ho ho!"
 	test3 := "yessir!"
@@ -45,9 +45,9 @@ func TestSQSSubscriberNoBase64(t *testing.T) {
 	}
 
 	fals := false
-	cfg := &config.SQS{ConsumeBase64: &fals}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{ConsumeBase64: &fals}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
@@ -69,9 +69,9 @@ func TestSQSReceiveError(t *testing.T) {
 	}
 
 	fals := false
-	cfg := &config.SQS{ConsumeBase64: &fals}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{ConsumeBase64: &fals}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
@@ -87,7 +87,7 @@ func TestSQSReceiveError(t *testing.T) {
 	sub.Stop()
 
 	if sub.Err() != wantErr {
-		t.Errorf("expected SQSSubscriber to return error '%s'; got '%s'",
+		t.Errorf("expected subscriber to return error '%s'; got '%s'",
 			wantErr, sub.Err())
 	}
 
@@ -106,9 +106,9 @@ func TestSQSDoneAfterStop(t *testing.T) {
 	}
 
 	fals := false
-	cfg := &config.SQS{ConsumeBase64: &fals}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{ConsumeBase64: &fals}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
@@ -122,11 +122,11 @@ func TestSQSDoneAfterStop(t *testing.T) {
 	gotRaw.Done()
 	// do all the other normal verifications
 	if len(sqstest.Deleted) != 1 {
-		t.Errorf("SQSSubscriber expected %d deleted message, got: %d", 1, len(sqstest.Deleted))
+		t.Errorf("subscriber expected %d deleted message, got: %d", 1, len(sqstest.Deleted))
 	}
 
 	if *sqstest.Deleted[0].ReceiptHandle != test {
-		t.Errorf("SQSSubscriber expected receipt handle of \"%s\" , got:+ \"%s\"",
+		t.Errorf("subscriber expected receipt handle of \"%s\" , got:+ \"%s\"",
 			test,
 			*sqstest.Deleted[0].ReceiptHandle)
 	}
@@ -145,9 +145,9 @@ func TestExtendDoneTimeout(t *testing.T) {
 	}
 
 	fals := false
-	cfg := &config.SQS{ConsumeBase64: &fals}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{ConsumeBase64: &fals}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
@@ -159,34 +159,34 @@ func TestExtendDoneTimeout(t *testing.T) {
 	gotRaw := <-queue
 	gotRaw.ExtendDoneDeadline(time.Hour)
 	if len(sqstest.Extended) != 1 {
-		t.Errorf("SQSSubscriber expected %d extended message, got %d", 1, len(sqstest.Extended))
+		t.Errorf("subscriber expected %d extended message, got %d", 1, len(sqstest.Extended))
 	}
 
 	if *sqstest.Extended[0].ReceiptHandle != test {
-		t.Errorf("SQSSubscriber expected receipt handle of %q , got:+ %q", test, *sqstest.Extended[0].ReceiptHandle)
+		t.Errorf("subscriber expected receipt handle of %q , got:+ %q", test, *sqstest.Extended[0].ReceiptHandle)
 	}
 }
 
-func verifySQSSub(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQSAPI, want string, index int) {
+func verifySQSSub(t *testing.T, queue <-chan pubsub.SubscriberMessage, testsqs *TestSQSAPI, want string, index int) {
 	gotRaw := <-queue
 	got := string(gotRaw.Message())
 	if got != want {
-		t.Errorf("SQSSubscriber expected:\n%#v\ngot:\n%#v", want, got)
+		t.Errorf("subscriber expected:\n%#v\ngot:\n%#v", want, got)
 	}
 	gotRaw.Done()
 
 	if len(testsqs.Deleted) != (index + 1) {
-		t.Errorf("SQSSubscriber expected %d deleted message, got: %d", index+1, len(testsqs.Deleted))
+		t.Errorf("subscriber expected %d deleted message, got: %d", index+1, len(testsqs.Deleted))
 	}
 
 	if *testsqs.Deleted[index].ReceiptHandle != want {
-		t.Errorf("SQSSubscriber expected receipt handle of \"%s\" , got: \"%s\"",
+		t.Errorf("subscriber expected receipt handle of \"%s\" , got: \"%s\"",
 			want,
 			*testsqs.Deleted[index].ReceiptHandle)
 	}
 }
 
-func TestSQSSubscriber(t *testing.T) {
+func TestSubscriber(t *testing.T) {
 	test1 := &TestProto{"hey hey hey!"}
 	test2 := &TestProto{"ho ho ho!"}
 	test3 := &TestProto{"yessir!"}
@@ -216,9 +216,9 @@ func TestSQSSubscriber(t *testing.T) {
 		},
 	}
 
-	cfg := &config.SQS{}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
@@ -235,20 +235,20 @@ func TestSQSSubscriber(t *testing.T) {
 	sub.Stop()
 }
 
-func verifySQSSubProto(t *testing.T, queue <-chan SubscriberMessage, testsqs *TestSQSAPI, want *TestProto, index int) {
+func verifySQSSubProto(t *testing.T, queue <-chan pubsub.SubscriberMessage, testsqs *TestSQSAPI, want *TestProto, index int) {
 	gotRaw := <-queue
 	got := makeProto(gotRaw.Message())
 	if !reflect.DeepEqual(got, want) {
-		t.Errorf("SQSSubscriber expected:\n%#v\ngot:\n%#v", want, got)
+		t.Errorf("subscriber expected:\n%#v\ngot:\n%#v", want, got)
 	}
 	gotRaw.Done()
 
 	if len(testsqs.Deleted) != (index + 1) {
-		t.Errorf("SQSSubscriber expected %d deleted message, got: %d", index+1, len(testsqs.Deleted))
+		t.Errorf("subscriber expected %d deleted message, got: %d", index+1, len(testsqs.Deleted))
 	}
 
 	if *testsqs.Deleted[index].ReceiptHandle != want.Value {
-		t.Errorf("SQSSubscriber expected receipt handle of \"%s\" , got: \"%s\"",
+		t.Errorf("subscriber expected receipt handle of \"%s\" , got: \"%s\"",
 			want.Value,
 			*testsqs.Deleted[index].ReceiptHandle)
 	}
@@ -274,7 +274,7 @@ func makeProto(b []byte) *TestProto {
  1000000	     14248 ns/op	    1491 B/op	      31 allocs/op
  2000000	     14138 ns/op	    1489 B/op	      31 allocs/op
 */
-func BenchmarkSQSSubscriber_Proto(b *testing.B) {
+func Benchmarksubscriber_Proto(b *testing.B) {
 	test1 := &TestProto{"hey hey hey!"}
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{
@@ -301,9 +301,9 @@ func BenchmarkSQSSubscriber_Proto(b *testing.B) {
 
 	}
 
-	cfg := &config.SQS{}
-	defaultSQSConfig(cfg)
-	sub := &SQSSubscriber{
+	cfg := SQSConfig{}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
 		sqs:      sqstest,
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),

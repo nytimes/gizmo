@@ -8,13 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/web"
 	"golang.org/x/net/context"
 )
 
 func BenchmarkFastSimpleServer_NoParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{true})
@@ -29,7 +28,7 @@ func BenchmarkFastSimpleServer_NoParam(b *testing.B) {
 }
 
 func BenchmarkFastSimpleServer_WithParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{true})
@@ -44,7 +43,7 @@ func BenchmarkFastSimpleServer_WithParam(b *testing.B) {
 }
 
 func BenchmarkSimpleServer_NoParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{})
@@ -59,7 +58,7 @@ func BenchmarkSimpleServer_NoParam(b *testing.B) {
 }
 
 func BenchmarkSimpleServer_WithParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkSimpleService{})
@@ -106,7 +105,7 @@ func (s *benchmarkSimpleService) GetSimpleNoParam(w http.ResponseWriter, r *http
 }
 
 func BenchmarkFastJSONServer_JSONPayload(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{true})
@@ -120,7 +119,7 @@ func BenchmarkFastJSONServer_JSONPayload(b *testing.B) {
 	}
 }
 func BenchmarkFastJSONServer_NoParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{true})
@@ -134,7 +133,7 @@ func BenchmarkFastJSONServer_NoParam(b *testing.B) {
 	}
 }
 func BenchmarkFastJSONServer_WithParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{true})
@@ -149,7 +148,7 @@ func BenchmarkFastJSONServer_WithParam(b *testing.B) {
 }
 
 func BenchmarkJSONServer_JSONPayload(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{})
@@ -164,7 +163,7 @@ func BenchmarkJSONServer_JSONPayload(b *testing.B) {
 }
 
 func BenchmarkJSONServer_NoParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{})
@@ -178,7 +177,7 @@ func BenchmarkJSONServer_NoParam(b *testing.B) {
 	}
 }
 func BenchmarkJSONServer_WithParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkJSONService{})
@@ -241,7 +240,7 @@ func (s *benchmarkJSONService) GetJSONParam(r *http.Request) (int, interface{}, 
 }
 
 func BenchmarkFastContextSimpleServer_NoParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkContextService{true})
@@ -256,7 +255,7 @@ func BenchmarkFastContextSimpleServer_NoParam(b *testing.B) {
 }
 
 func BenchmarkFastContextSimpleServer_WithParam(b *testing.B) {
-	cfg := &config.Server{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{RouterType: "fast", HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkContextService{true})
@@ -271,7 +270,7 @@ func BenchmarkFastContextSimpleServer_WithParam(b *testing.B) {
 }
 
 func BenchmarkContextSimpleServer_NoParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkContextService{})
@@ -286,7 +285,7 @@ func BenchmarkContextSimpleServer_NoParam(b *testing.B) {
 }
 
 func BenchmarkContextSimpleServer_WithParam(b *testing.B) {
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
 	srvr.Register(&benchmarkContextService{})
@@ -396,7 +395,7 @@ func (s *testInvalidService) Middleware(h http.Handler) http.Handler {
 
 func TestFactory(*testing.T) {
 	// with config:
-	cfg := &config.Server{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	NewSimpleServer(cfg)
 
 	// without config:

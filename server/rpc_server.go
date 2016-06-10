@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
@@ -23,7 +22,7 @@ import (
 // RPCServer is an experimental server that serves a gRPC server on one
 // port and the same endpoints via JSON on another port.
 type RPCServer struct {
-	cfg *config.Server
+	cfg *Config
 
 	// exit chan for graceful shutdown
 	exit chan chan error
@@ -42,9 +41,9 @@ type RPCServer struct {
 }
 
 // NewRPCServer will instantiate a new experimental RPCServer with the given config.
-func NewRPCServer(cfg *config.Server) *RPCServer {
+func NewRPCServer(cfg *Config) *RPCServer {
 	if cfg == nil {
-		cfg = &config.Server{}
+		cfg = &Config{}
 	}
 	mx := NewRouter(cfg)
 	if cfg.NotFoundHandler != nil {
@@ -122,7 +121,7 @@ func (r *RPCServer) Start() error {
 	healthHandler := RegisterHealthHandler(r.cfg, r.monitor, r.mux)
 	r.cfg.HealthCheckPath = healthHandler.Path()
 
-	wrappedHandler, err := config.NewAccessLogMiddleware(r.cfg.RPCAccessLog, r)
+	wrappedHandler, err := NewAccessLogMiddleware(r.cfg.RPCAccessLog, r)
 	if err != nil {
 		Log.Fatalf("unable to create http access log: %s", err)
 	}
@@ -290,7 +289,7 @@ func registerRPCMetrics(name string, mets provider.Provider) {
 // access logger
 var rpcAccessLog *logrus.Logger
 
-func registerRPCAccessLogger(cfg *config.Server) {
+func registerRPCAccessLogger(cfg *Config) {
 	// gRPC doesn't have a hook à la http.Handler-middleware
 	// so some of this duplicates logic from config.NewAccessLogMiddleware
 	if cfg.RPCAccessLog == nil {

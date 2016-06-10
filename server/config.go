@@ -1,6 +1,7 @@
-package config
+package server
 
 import (
+	"flag"
 	"io"
 	"net/http"
 	"os"
@@ -8,10 +9,13 @@ import (
 	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/handlers"
+
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/metrics"
 )
 
-// Server holds info required to configure a gizmo server.Server.
-type Server struct {
+// Config holds info required to configure a gizmo server.Server.
+type Config struct {
 	// Server will tell the server package which type of server to init. If
 	// empty, this will default to 'simple'.
 	ServerType string `envconfig:"GIZMO_SERVER_TYPE"`
@@ -74,7 +78,7 @@ type Server struct {
 	// Metrics encapsulates the configurations required for a Gizmo
 	// Server to emit metrics. If your application has additional metrics,
 	// you should provide a MetricsFactory instead.
-	Metrics Metrics
+	Metrics metrics.Metrics
 	// MetricsProvider will override the default server metrics provider if set.
 	MetricsProvider provider.Provider
 
@@ -84,19 +88,14 @@ type Server struct {
 	GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
 }
 
-// LoadServerFromEnv will attempt to load a Server object
+// LoadConfigFromEnv will attempt to load a Server object
 // from environment variables. If not populated, nil
 // is returned.
-func LoadServerFromEnv() *Server {
-	var server Server
-	LoadEnvConfig(&server)
-	if server.HTTPPort != 0 || server.RPCPort != 0 ||
-		server.HTTPAccessLog != nil || server.RPCAccessLog != nil ||
-		server.HealthCheckType != "" || server.HealthCheckPath != "" {
-		return &server
-	}
-	server.Metrics = LoadMetricsFromEnv()
-	return nil
+func LoadConfigFromEnv() *Config {
+	var server Config
+	config.LoadEnvConfig(&server)
+	server.Metrics = metrics.LoadFromEnv()
+	return &server
 }
 
 // NewAccessLogMiddleware will wrap a logrotate-aware Apache-style access log handler
@@ -118,4 +117,42 @@ func NewAccessLogMiddleware(logLocation *string, handler http.Handler) (http.Han
 		}
 	}
 	return handlers.CombinedLoggingHandler(lw, handler), nil
+}
+
+// SetConfigOverrides will check the *CLI variables for any values
+// and override the values in the given config if they are set.
+// If LogCLI is set to "dev", the given `Log` pointer will be set to an
+// empty string.
+func SetConfigOverrides(c *Config) {
+	// HTTPAccessLogCLI is a pointer to the value of the '-http-access-log' command line flag. It is meant to
+	// declare an access log location for HTTP services.
+	HTTPAccessLogCLI := flag.String("http-access-log", "", "HTTP access log location")
+	// RPCAccessLogCLI is a pointer to the value of the '-rpc-access-log' command line flag. It is meant to
+	// declare an acces log location for RPC services.
+	RPCAccessLogCLI := flag.String("rpc-access-log", "", "RPC access log location")
+	// HTTPPortCLI is a pointer to the value for the '-http' flag. It is meant to declare the port
+	// number to serve HTTP services.
+	HTTPPortCLI := flag.Int("http", 0, "Port to run an HTTP server on")
+	// RPCPortCLI is a pointer to the value for the '-rpc' flag. It is meant to declare the port
+	// number to serve RPC services.
+	RPCPortCLI := flag.Int("rpc", 0, "Port to run an RPC server on")
+	flag.Parse()
+
+	config.SetLogOverride(&c.Log)
+
+	if *HTTPAccessLogCLI != "" {
+		c.HTTPAccessLog = HTTPAccessLogCLI
+	}
+
+	if *RPCAccessLogCLI != "" {
+		c.RPCAccessLog = RPCAccessLogCLI
+	}
+
+	if *HTTPPortCLI > 0 {
+		c.HTTPPort = *HTTPPortCLI
+	}
+
+	if *RPCPortCLI > 0 {
+		c.RPCPort = *RPCPortCLI
+	}
 }

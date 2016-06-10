@@ -1,9 +1,11 @@
-package config
+package mysql
 
 import (
 	"database/sql"
 	"fmt"
 	"net/url"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
 // MySQL holds everything you need to
@@ -70,12 +72,12 @@ func (m *MySQL) String() string {
 	)
 }
 
-// LoadMySQLFromEnv will attempt to load a MySQL object
+// LoadFromEnv will attempt to load a MySQL object
 // from environment variables. If not populated, nil
 // is returned.
-func LoadMySQLFromEnv() *MySQL {
+func LoadFromEnv() *MySQL {
 	var mysql MySQL
-	LoadEnvConfig(&mysql)
+	config.LoadEnvConfig(&mysql)
 	if mysql.Host != "" {
 		return &mysql
 	}

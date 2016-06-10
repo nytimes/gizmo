@@ -1,4 +1,4 @@
-package pubsub
+package aws
 
 import (
 	"encoding/base64"
@@ -17,22 +17,22 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/golang/protobuf/proto"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/pubsub"
 )
 
-// SNSPublisher will accept AWS credentials and an SNS topic name
+// publisher will accept AWS credentials and an SNS topic name
 // and it will emit any publish events to it.
-type SNSPublisher struct {
+type publisher struct {
 	sns   snsiface.SNSAPI
 	topic string
 }
 
-// NewSNSPublisher will initiate the SNS client.
+// NewPublisher will initiate the SNS client.
 // If no credentials are passed in with the config,
 // the publisher is instantiated with the AWS_ACCESS_KEY
 // and the AWS_SECRET_KEY environment variables.
-func NewSNSPublisher(cfg *config.SNS) (*SNSPublisher, error) {
-	p := &SNSPublisher{}
+func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
+	p := &publisher{}
 
 	if cfg.Topic == "" {
 		return p, errors.New("SNS topic name is required")
@@ -83,14 +83,14 @@ func (p *SNSPublisher) PublishRaw(_ context.Context, key string, m []byte) error
 
 var (
 	// defaultSQSMaxMessages is default the number of bulk messages
-	// the SQSSubscriber will attempt to fetch on each
+	// the subscriber will attempt to fetch on each
 	// receive.
 	defaultSQSMaxMessages int64 = 10
 	// defaultSQSTimeoutSeconds is the default number of seconds the
 	// SQS client will wait before timing out.
 	defaultSQSTimeoutSeconds int64 = 2
 	// defaultSQSSleepInterval is the default time.Duration the
-	// SQSSubscriber will wait if it sees no messages
+	// subscriber will wait if it sees no messages
 	// on the queue.
 	defaultSQSSleepInterval = 2 * time.Second
 
@@ -102,7 +102,7 @@ var (
 	defaultSQSConsumeBase64 = true
 )
 
-func defaultSQSConfig(cfg *config.SQS) {
+func defaultSQSConfig(cfg *SQSConfig) {
 	if cfg.MaxMessages == nil {
 		cfg.MaxMessages = &defaultSQSMaxMessages
 	}
@@ -125,12 +125,12 @@ func defaultSQSConfig(cfg *config.SQS) {
 }
 
 type (
-	// SQSSubscriber is an SQS client that allows a user to
+	// subscriber is an SQS client that allows a user to
 	// consume messages via the pubsub.Subscriber interface.
-	SQSSubscriber struct {
+	subscriber struct {
 		sqs sqsiface.SQSAPI
 
-		cfg      *config.SQS
+		cfg      SQSConfig
 		queueURL *string
 
 		toDelete chan *deleteRequest
@@ -144,8 +144,8 @@ type (
 	}
 
 	// SQSMessage is the SQS implementation of `SubscriberMessage`.
-	SQSMessage struct {
-		sub     *SQSSubscriber
+	subscriberMessage struct {
+		sub     *subscriber
 		message *sqs.Message
 	}
 
@@ -156,28 +156,28 @@ type (
 )
 
 // incrementInflight will increment the add in flight count.
-func (s *SQSSubscriber) incrementInFlight() {
+func (s *subscriber) incrementInFlight() {
 	atomic.AddUint64(&s.inFlight, 1)
 }
 
 // removeInfFlight will decrement the in flight count.
-func (s *SQSSubscriber) decrementInFlight() {
+func (s *subscriber) decrementInFlight() {
 	atomic.AddUint64(&s.inFlight, ^uint64(0))
 }
 
 // inFlightCount returns the number of in-flight requests currently
 // running on this server.
-func (s *SQSSubscriber) inFlightCount() uint64 {
+func (s *subscriber) inFlightCount() uint64 {
 	return atomic.LoadUint64(&s.inFlight)
 }
 
-// NewSQSSubscriber will initiate a new Decrypter for the subscriber
+// NewSubscriber will initiate a new Decrypter for the subscriber
 // if a key file is provided. It will also fetch the SQS Queue Url
 // and set up the SQS client.
-func NewSQSSubscriber(cfg *config.SQS) (*SQSSubscriber, error) {
+func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	var err error
-	defaultSQSConfig(cfg)
-	s := &SQSSubscriber{
+	defaultSQSConfig(&cfg)
+	s := &subscriber{
 		cfg:      cfg,
 		toDelete: make(chan *deleteRequest),
 		stop:     make(chan chan error, 1),
@@ -213,14 +213,14 @@ func NewSQSSubscriber(cfg *config.SQS) (*SQSSubscriber, error) {
 
 // Message will decode protobufed message bodies and simply return
 // a byte slice containing the message body for all others types.
-func (m *SQSMessage) Message() []byte {
+func (m *subscriberMessage) Message() []byte {
 	if !*m.sub.cfg.ConsumeBase64 {
 		return []byte(*m.message.Body)
 	}
 
 	msgBody, err := base64.StdEncoding.DecodeString(*m.message.Body)
 	if err != nil {
-		Log.Warnf("unable to parse message body: %s", err)
+		pubsub.Log.Warnf("unable to parse message body: %s", err)
 	}
 	return msgBody
 }
@@ -228,7 +228,7 @@ func (m *SQSMessage) Message() []byte {
 // ExtendDoneDeadline changes the visibility timeout of the underlying SQS
 // message. It will set the visibility timeout of the message to the given
 // duration.
-func (m *SQSMessage) ExtendDoneDeadline(d time.Duration) error {
+func (m *subscriberMessage) ExtendDoneDeadline(d time.Duration) error {
 	_, err := m.sub.sqs.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
 		QueueUrl:          m.sub.queueURL,
 		ReceiptHandle:     m.message.ReceiptHandle,
@@ -240,7 +240,7 @@ func (m *SQSMessage) ExtendDoneDeadline(d time.Duration) error {
 // Done will queue up a message to be deleted. By default,
 // the `SQSDeleteBufferSize` will be 0, so this will block until the
 // message has been deleted.
-func (m *SQSMessage) Done() error {
+func (m *subscriberMessage) Done() error {
 	defer m.sub.decrementInFlight()
 	receipt := make(chan error)
 	m.sub.toDelete <- &deleteRequest{
@@ -257,10 +257,10 @@ func (m *SQSMessage) Done() error {
 // and emit any messages to the returned channel.
 // If it encounters any issues, it will populate the Err() error
 // and close the returned channel.
-func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
-	output := make(chan SubscriberMessage)
+func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
+	output := make(chan pubsub.SubscriberMessage)
 	go s.handleDeletes()
-	go func(s *SQSSubscriber, output chan SubscriberMessage) {
+	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
 		var (
 			resp *sqs.ReceiveMessageOutput
@@ -273,7 +273,7 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 				return
 			default:
 				// get messages
-				Log.Infof("receiving messages")
+				pubsub.Log.Infof("receiving messages")
 				resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
 					MaxNumberOfMessages: s.cfg.MaxMessages,
 					QueueUrl:            s.queueURL,
@@ -290,16 +290,16 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 
 				// if we didn't get any messages, lets chill out for a sec
 				if len(resp.Messages) == 0 {
-					Log.Infof("no messages found. sleeping for %s", s.cfg.SleepInterval)
+					pubsub.Log.Infof("no messages found. sleeping for %s", s.cfg.SleepInterval)
 					time.Sleep(*s.cfg.SleepInterval)
 					continue
 				}
 
-				Log.Infof("found %d messages", len(resp.Messages))
+				pubsub.Log.Infof("found %d messages", len(resp.Messages))
 
 				// for each message, pass to output
 				for _, msg := range resp.Messages {
-					output <- &SQSMessage{
+					output <- &subscriberMessage{
 						sub:     s,
 						message: msg,
 					}
@@ -311,7 +311,7 @@ func (s *SQSSubscriber) Start() <-chan SubscriberMessage {
 	return output
 }
 
-func (s *SQSSubscriber) handleDeletes() {
+func (s *subscriber) handleDeletes() {
 	batchInput := &sqs.DeleteMessageBatchInput{
 		QueueUrl: s.queueURL,
 	}
@@ -345,13 +345,13 @@ func (s *SQSSubscriber) handleDeletes() {
 	}
 }
 
-func (s *SQSSubscriber) isStopped() bool {
+func (s *subscriber) isStopped() bool {
 	return atomic.LoadUint32(&s.stopped) == 1
 }
 
 // Stop will block until the consumer has stopped consuming
 // messages.
-func (s *SQSSubscriber) Stop() error {
+func (s *subscriber) Stop() error {
 	if s.isStopped() {
 		return errors.New("sqs subscriber is already stopped")
 	}
@@ -364,6 +364,6 @@ func (s *SQSSubscriber) Stop() error {
 // Err will contain any errors that occurred during
 // consumption. This method should be checked after
 // a user encounters a closed channel.
-func (s *SQSSubscriber) Err() error {
+func (s *subscriber) Err() error {
 	return s.sqsErr
 }

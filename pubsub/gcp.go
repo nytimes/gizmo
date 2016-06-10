@@ -113,31 +113,25 @@ type GCPPublisher struct {
 	ctx   context.Context
 }
 
-func NewGCPPublisher(ctx context.Context, cfg config.PubSub) (Publisher, error) {
-
+func NewGCPPublisher(ctx context.Context, topic string) (Publisher, error) {
 	return &GCPPublisher{
-		topic: cfg.Topic,
+		topic: string,
 		ctx:   ctx,
 	}, nil
 }
 
-func (p *GCPPublisher) CtxPublish(ctx context.Context, key string, msg proto.Message) error {
+func (p *GCPPublisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	mb, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
-	return p.CtxPublishRaw(ctx, key, mb)
+	return p.PublishRaw(ctx, key, mb)
 }
 
-func (p *GCPPublisher) CtxPublishRaw(ctx context.Context, key string, m []byte) error {
-	_, err := pubsub.Publish(ctx, p.topic, &pubsub.Message{Data: m})
+func (p *GCPPublisher) PublishRaw(ctx context.Context, key string, m []byte) error {
+	_, err := pubsub.Publish(ctx, p.topic, &pubsub.Message{
+		Data:       m,
+		Attributes: map[string]string{"key": key},
+	})
 	return err
-}
-
-func (p *GCPPublisher) Publish(key string, msg proto.Message) error {
-	return p.CtxPublish(p.ctx, key, msg)
-}
-
-func (p *GCPPublisher) PublishRaw(key string, data []byte) error {
-	return p.CtxPublishRaw(p.ctx, key, data)
 }

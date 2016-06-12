@@ -10,7 +10,7 @@ import (
 type (
 	// SQSConfig holds the info required to work with Amazon SQS
 	SQSConfig struct {
-		aws.AWS
+		aws.Config
 
 		QueueName string `envconfig:"AWS_SQS_NAME"`
 		// MaxMessages will override the DefaultSQSMaxMessages.
@@ -29,25 +29,25 @@ type (
 
 	// SNSConfig holds the info required to work with Amazon SNS.
 	SNSConfig struct {
-		aws.AWS
+		aws.Config
 
 		Topic string `envconfig:"AWS_SNS_TOPIC"`
 	}
 )
 
-// LoadSQSFromEnv will attempt to load the AWS struct
+// LoadSQSConfigFromEnv will attempt to load the SQSConfig struct
 // from environment variables. If not populated, nil
 // is returned.
-func LoadSQSFromEnv() SQSConfig {
+func LoadSQSConfigFromEnv() SQSConfig {
 	var cfg SQSConfig
 	config.LoadEnvConfig(&cfg)
 	return cfg
 }
 
-// LoadSNSFromEnv will attempt to load the AWS struct
+// LoadSNSConfigFromEnv will attempt to load the SNSConfig struct
 // from environment variables. If not populated, nil
 // is returned.
-func LoadSNSFromEnv() SNSConfig {
+func LoadSNSConfigFromEnv() SNSConfig {
 	var cfg SNSConfig
 	config.LoadEnvConfig(&cfg)
 	return cfg

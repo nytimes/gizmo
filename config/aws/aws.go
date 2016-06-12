@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	// AWSRegionUSEast1 is a helper constant for AWS configs.
-	AWSRegionUSEast1 = "us-east-1"
-	// AWSRegionUSWest is a helper constant for AWS configs.
-	AWSRegionUSWest = "us-west-1"
+	// RegionUSEast1 is a helper constant for AWS configs.
+	RegionUSEast1 = "us-east-1"
+	// RegionUSWest is a helper constant for AWS configs.
+	RegionUSWest = "us-west-1"
 )
 
 type (
-	// AWS holds common AWS credentials and keys.
-	AWS struct {
+	// Config holds common AWS credentials and keys.
+	Config struct {
 		SecretKey string `envconfig:"AWS_SECRET_KEY"`
 		AccessKey string `envconfig:"AWS_ACCESS_KEY"`
 
@@ -30,20 +30,20 @@ type (
 
 	// S3 holds the info required to work with Amazon S3.
 	S3 struct {
-		AWS
+		Config
 		Bucket string `envconfig:"AWS_S3_BUCKET_NAME"`
 	}
 
 	// DynamoDB holds some basic info required to work with Amazon DynamoDB.
 	DynamoDB struct {
-		AWS
+		Config
 		TableName string `envconfig:"AWS_DYNAMODB_TABLE_NAME"`
 	}
 
 	// ElastiCache holds the basic info required to work with
 	// Amazon ElastiCache.
 	ElastiCache struct {
-		AWS
+		Config
 		ClusterID string `envconfig:"AWS_ELASTICACHE_CLUSTER_ID"`
 	}
 )
@@ -83,15 +83,15 @@ func (e *ElastiCache) MustClient() *memcache.Client {
 	return memcache.New(nodes...)
 }
 
-// LoadAWSFromEnv will attempt to load the AWS struct
+// LoadConfigFromEnv will attempt to load the Config struct
 // from environment variables.
-func LoadAWSFromEnv() AWS {
-	var aws AWS
+func LoadConfigFromEnv() Config {
+	var aws Config
 	config.LoadEnvConfig(&aws)
 	return aws
 }
 
-// LoadDynamoDBFromEnv will attempt to load the AWS struct
+// LoadDynamoDBFromEnv will attempt to load the DynamoDB struct
 // from environment variables. If not populated, nil
 // is returned.
 func LoadDynamoDBFromEnv() DynamoDB {
@@ -100,7 +100,7 @@ func LoadDynamoDBFromEnv() DynamoDB {
 	return ddb
 }
 
-// LoadS3FromEnv will attempt to load the AWS struct
+// LoadS3FromEnv will attempt to load the S3 struct
 // from environment variables.
 func LoadS3FromEnv() S3 {
 	var s3 S3
@@ -108,7 +108,7 @@ func LoadS3FromEnv() S3 {
 	return s3
 }
 
-// LoadElastiCacheFromEnv will attempt to load the AWS struct
+// LoadElastiCacheFromEnv will attempt to load the ElasiCache struct
 // from environment variables.
 func LoadElastiCacheFromEnv() ElastiCache {
 	var el ElastiCache

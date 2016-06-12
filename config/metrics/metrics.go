@@ -28,9 +28,9 @@ const (
 	Discard Type = "discard"
 )
 
-// Metrics config can be used to configure and instantiate a new
+// Config can be used to configure and instantiate a new
 // go-kit/kit/metrics/provider.Provider.
-type Metrics struct {
+type Config struct {
 	Type Type `envconfig:"METRICS_TYPE"`
 
 	// Prefix will be prefixed onto
@@ -60,10 +60,10 @@ type Metrics struct {
 	Logger log.Logger
 }
 
-// LoadFromEnv will attempt to load a Metrics object
+// LoadConfigFromEnv will attempt to load a Metrics object
 // from environment variables.
-func LoadFromEnv() Metrics {
-	var mets Metrics
+func LoadConfigFromEnv() Config {
+	var mets Config
 	config.LoadEnvConfig(&mets)
 	return mets
 }
@@ -71,7 +71,7 @@ func LoadFromEnv() Metrics {
 // NewProvider will use the values in the Metrics config object
 // to generate a new go-kit/metrics/provider.Provider implementation.
 // If no type is given, a no-op implementation will be used.
-func (cfg Metrics) NewProvider() (provider.Provider, error) {
+func (cfg Config) NewProvider() (provider.Provider, error) {
 	if cfg.Logger == nil {
 		cfg.Logger = log.NewNopLogger()
 	}

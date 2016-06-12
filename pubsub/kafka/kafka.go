@@ -1,11 +1,10 @@
-package pubsub
+package kafka
 
 import (
 	"errors"
 	"log"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/pubsub"
 
 	"github.com/Shopify/sarama"
@@ -13,9 +12,9 @@ import (
 )
 
 var (
-	// KafkaRequiredAcks will be used in Kafka configs
+	// RequiredAcks will be used in Kafka configs
 	// to set the 'RequiredAcks' value.
-	KafkaRequiredAcks = sarama.WaitForAll
+	RequiredAcks = sarama.WaitForAll
 )
 
 // publisher is an experimental publisher that provides an implementation for
@@ -26,7 +25,7 @@ type publisher struct {
 }
 
 // NewPublisher will initiate a new experimental Kafka publisher.
-func NewPublisher(cfg *config.Kafka) (pubsub.Publisher, error) {
+func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 	var err error
 	p := &publisher{}
 
@@ -37,7 +36,7 @@ func NewPublisher(cfg *config.Kafka) (pubsub.Publisher, error) {
 
 	sconfig := sarama.NewConfig()
 	sconfig.Producer.Retry.Max = cfg.MaxRetry
-	sconfig.Producer.RequiredAcks = KafkaRequiredAcks
+	sconfig.Producer.RequiredAcks = RequiredAcks
 	p.producer, err = sarama.NewSyncProducer(cfg.BrokerHosts, sconfig)
 	return p, err
 }
@@ -109,7 +108,7 @@ func (m *subMessage) Done() error {
 }
 
 // Newsubscriber will initiate a the experimental Kafka consumer.
-func Newsubscriber(cfg *config.Kafka, offsetProvider func() int64, offsetBroadcast func(int64)) (pubsub.Subscriber, error) {
+func Newsubscriber(cfg *Config, offsetProvider func() int64, offsetBroadcast func(int64)) (pubsub.Subscriber, error) {
 	var (
 		err error
 	)

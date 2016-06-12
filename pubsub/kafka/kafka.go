@@ -17,9 +17,9 @@ var (
 	RequiredAcks = sarama.WaitForAll
 )
 
-// publisher is an experimental publisher that provides an implementation for
+// Publisher is an experimental publisher that provides an implementation for
 // Kafka using the Shopify/sarama library.
-type publisher struct {
+type Publisher struct {
 	producer sarama.SyncProducer
 	topic    string
 }
@@ -27,7 +27,7 @@ type publisher struct {
 // NewPublisher will initiate a new experimental Kafka publisher.
 func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 	var err error
-	p := &publisher{}
+	p := &Publisher{}
 
 	if len(cfg.Topic) == 0 {
 		return p, errors.New("topic name is required")
@@ -42,7 +42,7 @@ func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 }
 
 // Publish will marshal the proto message and emit it to the Kafka topic.
-func (p *publisher) Publish(key string, m proto.Message) error {
+func (p *Publisher) Publish(key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (p *publisher) Publish(key string, m proto.Message) error {
 }
 
 // PublishRaw will emit the byte array to the Kafka topic.
-func (p *publisher) PublishRaw(key string, m []byte) error {
+func (p *Publisher) PublishRaw(key string, m []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,
 		Key:   sarama.StringEncoder(key),
@@ -63,7 +63,7 @@ func (p *publisher) PublishRaw(key string, m []byte) error {
 }
 
 // Stop will close the pub connection.
-func (p *publisher) Stop() error {
+func (p *Publisher) Stop() error {
 	return p.producer.Close()
 }
 
@@ -107,8 +107,8 @@ func (m *subMessage) Done() error {
 	return nil
 }
 
-// Newsubscriber will initiate a the experimental Kafka consumer.
-func Newsubscriber(cfg *Config, offsetProvider func() int64, offsetBroadcast func(int64)) (pubsub.Subscriber, error) {
+// NewSubscriber will initiate a the experimental Kafka consumer.
+func NewSubscriber(cfg *Config, offsetProvider func() int64, offsetBroadcast func(int64)) (pubsub.Subscriber, error) {
 	var (
 		err error
 	)

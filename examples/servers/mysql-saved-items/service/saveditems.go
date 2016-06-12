@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/mysql"
 	"github.com/NYTimes/sqliface"
 )
 
@@ -35,7 +35,7 @@ type (
 
 // NewSavedItemsRepo will attempt to connect to to MySQL and
 // return a SavedItemsRepo implementation.
-func NewSavedItemsRepo(cfg *config.MySQL) (SavedItemsRepo, error) {
+func NewSavedItemsRepo(cfg *mysql.Config) (SavedItemsRepo, error) {
 	db, err := cfg.DB()
 	if err != nil {
 		return nil, err

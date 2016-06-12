@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/combined"
 	"github.com/NYTimes/gizmo/server"
 	_ "github.com/go-sql-driver/mysql"
 
@@ -12,11 +12,11 @@ import (
 
 func main() {
 	// load from the local JSON file into a config.Config struct
-	cfg := config.NewConfig("./config.json")
+	cfg := combined.NewConfig("./config.json")
 	flag.Parse()
-	// SetServerOverrides will allow us to override some of the values in
+	// SetConfigOverrides will allow us to override some of the values in
 	// the JSON file with CLI flags.
-	config.SetServerOverrides(cfg.Server)
+	server.SetConfigOverrides(cfg.Server)
 
 	// initialize Gizmo’s server with given configs
 	server.Init("nyt-saved-items", cfg.Server)

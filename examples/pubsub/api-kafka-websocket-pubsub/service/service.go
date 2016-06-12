@@ -3,7 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/pubsub/kafka"
 	"github.com/NYTimes/gizmo/server"
 )
 
@@ -12,14 +12,14 @@ import (
 // to host a web page that provides a demo.
 type StreamService struct {
 	port int
-	cfg  *config.Kafka
+	cfg  *kafka.Config
 }
 
 // NewStreamService will return a new stream service instance.
 // If the given config is empty, it will default to localhost.
-func NewStreamService(port int, cfg *config.Kafka) *StreamService {
+func NewStreamService(port int, cfg *kafka.Config) *StreamService {
 	if cfg == nil {
-		cfg = &config.Kafka{BrokerHosts: []string{"localhost:9092"}}
+		cfg = &kafka.Config{BrokerHosts: []string{"localhost:9092"}}
 	}
 	return &StreamService{port, cfg}
 }

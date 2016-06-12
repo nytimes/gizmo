@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// showing 1 way of managing gizmo/config: importing from the environment
-	cfg := service.Config{Server: &config.Server{}}
+	var cfg service.Config
 	config.LoadEnvConfig(&cfg)
 	config.LoadEnvConfig(cfg.Server)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/NYTimes/gizmo/pubsub"
+	"github.com/NYTimes/gizmo/pubsub/kafka"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/web"
 )
@@ -26,7 +27,7 @@ var (
 func zeroOffset() int64          { return 0 }
 func discardOffset(offset int64) {}
 
-// Stream will init a new pubsub.KafkaPublisher and pubsub.KafkaSubscriber
+// Stream will init a new pubsub.Publisher and pubsub.Subscriber
 // then upgrade the current request to a websocket connection. Any messages
 // consumed from Kafka will be published to the web socket and vice versa.
 func (s *StreamService) Stream(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func (s *StreamService) Stream(w http.ResponseWriter, r *http.Request) {
 	cfg.Topic = topicName(web.GetInt64Var(r, "stream_id"))
 	server.LogWithFields(r).WithField("topic", cfg.Topic).Info("new stream req")
 
-	sub, err := pubsub.NewKafkaSubscriber(&cfg, zeroOffset, discardOffset)
+	sub, err := kafka.NewSubscriber(&cfg, zeroOffset, discardOffset)
 	if err != nil {
 		server.LogWithFields(r).WithField("error", err).Error("unable to create sub")
 		http.Error(w, "unable to create subscriber: "+err.Error(), http.StatusBadRequest)
@@ -46,16 +47,19 @@ func (s *StreamService) Stream(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	var pub *pubsub.KafkaPublisher
-	pub, err = pubsub.NewKafkaPublisher(&cfg)
+	var pub pubsub.Publisher
+	pub, err = kafka.NewPublisher(&cfg)
 	if err != nil {
 		server.LogWithFields(r).WithField("error", err).Error("unable to create pub")
 		http.Error(w, "unable to create publisher: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	defer func() {
-		if err := pub.Stop(); err != nil {
-			server.LogWithFields(r).WithField("error", err).Error("unable to stop pub")
+		kpub, ok := pub.(*kafka.Publisher)
+		if ok {
+			if err := kpub.Stop(); err != nil {
+				server.LogWithFields(r).WithField("error", err).Error("unable to stop pub")
+			}
 		}
 	}()
 	var ws *websocket.Conn

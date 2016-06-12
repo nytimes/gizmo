@@ -19,7 +19,7 @@ type (
 	// Config is a struct to contain all the needed
 	// configuration for our JSONService
 	Config struct {
-		*server.Config
+		Server           *server.Config
 		MostPopularToken string
 		SemanticToken    string
 	}

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/mysql"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/context"
@@ -17,7 +17,7 @@ type SavedItemsService struct {
 }
 
 // NewSavedItemsService will attempt to instantiate a new repository and service.
-func NewSavedItemsService(cfg *config.MySQL) (*SavedItemsService, error) {
+func NewSavedItemsService(cfg *mysql.Config) (*SavedItemsService, error) {
 	repo, err := NewSavedItemsRepo(cfg)
 	if err != nil {
 		return nil, err

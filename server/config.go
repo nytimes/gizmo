@@ -78,7 +78,7 @@ type Config struct {
 	// Metrics encapsulates the configurations required for a Gizmo
 	// Server to emit metrics. If your application has additional metrics,
 	// you should provide a MetricsFactory instead.
-	Metrics metrics.Metrics
+	Metrics metrics.Config
 	// MetricsProvider will override the default server metrics provider if set.
 	MetricsProvider provider.Provider
 
@@ -94,7 +94,7 @@ type Config struct {
 func LoadConfigFromEnv() *Config {
 	var server Config
 	config.LoadEnvConfig(&server)
-	server.Metrics = metrics.LoadFromEnv()
+	server.Metrics = metrics.LoadConfigFromEnv()
 	return &server
 }
 

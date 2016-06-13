@@ -1,16 +1,16 @@
 /*
-Package config contains a handful of structs meant for managing common configuration options and credentials. There are currently configs for:
+The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
 
-    * MySQL
-    * MongoDB
-    * Oracle
-    * AWS (SNS, SQS, S3, DynamoDB)
-    * Kafka
-    * Gorilla's `securecookie`
-    * Gizmo Servers
+The subpackages contain structs meant for managing common configuration options and credentials. There are currently configs for:
 
-The package also has a generic `Config` type that contains all of the above types. It's meant to be a 'catch all' struct that most applications should be able to use.
+* Go Kit Metrics
+* MySQL
+* MongoDB
+* Oracle
+* AWS (S3, DynamoDB, ElastiCache)
+* GCP
+* Gorilla's `securecookie`
 
-This package also contains functions to load these config structs from JSON files, JSON blobs in Consul k/v or environment variables.
+The package also has a generic `Config` type in the `config/combined` package that contains all of the above types. It's meant to be a 'catch all' convenience struct that many applications should be able to use.
 */
 package config

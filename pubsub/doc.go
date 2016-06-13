@@ -26,12 +26,12 @@ Package pubsub contains two generic interfaces for publishing data to queues and
 
 Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implementation in `pubsub` to see how they behave.
 
-There are currently 2 implementations of each type of `pubsub` interfaces:
+There are currently 3 implementations of each type of `pubsub` interfaces:
 
-For pubsub via Amazon's SNS/SQS, you can use the `SNSPublisher` and the `SQSSubscriber`.
+For pubsub via Amazon's SNS/SQS, you can use the `pubsub/aws` package.
 
-For pubsub via GCP's Pubsub, you can use the `GCPPublisher` and the `GCPSubscriber`.
+For pubsub via Google's Pubsub, you can use the `pubsub/gcp` package.
 
-For pubsub via Kafka topics, you can use the `KakfaPublisher` and the `KafkaSubscriber`.
+For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 */
 package pubsub

@@ -1,5 +1,5 @@
 /*
-Package server is the bulk of the toolkit and relies on `config` for any managing `Server` implementations. A server must implement the following interface:
+Package server is the bulk of the toolkit and relies on `server.Config` for any managing `Server` implementations. A server must implement the following interface:
 
     // Server is the basic interface that defines what expect from any server.
     type Server interface {

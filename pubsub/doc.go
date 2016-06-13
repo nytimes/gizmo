@@ -6,9 +6,9 @@ Package pubsub contains two generic interfaces for publishing data to queues and
     // to emit protobufs.
     type Publisher interface {
         // Publish will publish a message.
-        Publish(string, proto.Message) error
+        Publish(ctx context.Context, key string, msg proto.Message) error
         // Publish will publish a []byte message.
-        PublishRaw(string, []byte) error
+        PublishRaw(ctx context.Context, key string, msg []byte) error
     }
 
     // Subscriber is a generic interface to encapsulate how we want our subscribers
@@ -29,6 +29,8 @@ Where a `SubscriberMessage` is an interface that gives implementations a hook fo
 There are currently 2 implementations of each type of `pubsub` interfaces:
 
 For pubsub via Amazon's SNS/SQS, you can use the `SNSPublisher` and the `SQSSubscriber`.
+
+For pubsub via GCP's Pubsub, you can use the `GCPPublisher` and the `GCPSubscriber`.
 
 For pubsub via Kafka topics, you can use the `KakfaPublisher` and the `KafkaSubscriber`.
 */

@@ -4,10 +4,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/cloud/pubsub"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
 // GCPSubscriber is a Google Cloud Platform PubSub client that allows a user to
@@ -21,6 +22,9 @@ type GCPSubscriber struct {
 	stop    chan chan error
 	stopped bool
 	err     error
+
+	mtxIter sync.Mutex
+	iter    gcpIterator
 }
 
 // NewGCPSubscriber will instantiate a new Subscriber that wraps
@@ -49,12 +53,13 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 	go func(s *GCPSubscriber, output chan SubscriberMessage) {
 		defer close(output)
 		var (
-			iter gcpIterator
-			msg  gcpMessage
-			err  error
+			msg gcpMessage
+			err error
 		)
 
-		iter, err = s.sub.Pull(s.ctx, defaultGCPMaxMessages, defaultGCPMaxExtension)
+		s.mtxIter.Lock()
+		s.iter, err = s.sub.Pull(s.ctx, defaultGCPMaxMessages, defaultGCPMaxExtension)
+		s.mtxIter.Unlock()
 		if err != nil {
 			go s.Stop()
 			s.err = err
@@ -63,17 +68,14 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 		for {
 			select {
 			case exit := <-s.stop:
-				if iter != nil {
-					iter.Stop()
-				}
 				exit <- nil
 				return
 			default:
 				// we need to let the stop block hit
-				if iter == nil {
+				if s.iter == nil {
 					continue
 				}
-				msg, err = iter.Next()
+				msg, err = s.iter.Next()
 				if err != nil {
 					s.err = err
 					go s.Stop()
@@ -89,7 +91,6 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 		}
 	}(s, output)
 	return output
-
 }
 
 // Err will contain any error the Subscriber has encountered while processing.
@@ -101,13 +102,21 @@ func (s *GCPSubscriber) Err() error {
 func (s *GCPSubscriber) Stop() error {
 	s.mtxStop.Lock()
 	defer s.mtxStop.Unlock()
+
+	s.mtxIter.Lock()
+	defer s.mtxIter.Unlock()
+	if s.iter != nil {
+		s.iter.Stop()
+	}
+
 	if s.stopped {
 		return nil
 	}
 	s.stopped = true
-	exit := make(chan error)
+	exit := make(chan error, 1)
 	s.stop <- exit
-	return <-exit
+	e := <-exit
+	return e
 }
 
 // GCPSubMessage pubsub implementation of pubsub.SubscriberMessage.

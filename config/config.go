@@ -64,6 +64,8 @@ type (
 // EnvAppName is used as a prefix for environment variable
 // names when using the LoadXFromEnv funcs.
 // It defaults to empty.
+// Keep in mind that if you leave it empty, 
+// environment variable name should start with "_", like "_APP_LOG"
 var EnvAppName = ""
 
 // LoadConfigFromEnv will attempt to inspect the environment

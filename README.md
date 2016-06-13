@@ -22,6 +22,7 @@ This package contains a handful of structs meant for managing common configurati
 * MongoDB
 * Oracle
 * AWS (SNS, SQS, S3, DynamoDB, ElastiCache)
+* GCP
 * Kafka
 * Gorilla's `securecookie`
 * Gizmo Servers
@@ -80,15 +81,6 @@ type JSONService interface {
     JSONMiddleware(JSONEndpoint) JSONEndpoint
 }
 
-type ContextService interface {
-	Service
-
-	// route - method - func
-	ContextEndpoints() map[string]map[string]ContextHandlerFunc
-	// ContextMiddleware provides a hook for service-wide middleware around ContextHandler
-	ContextMiddleware(ContextHandler) ContextHandler
-}
-
 type MixedService interface {
     Service
 
@@ -102,12 +94,39 @@ type MixedService interface {
     // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
     JSONMiddleware(JSONEndpoint) JSONEndpoint
 }
+
+type ContextService interface {
+	Service
+
+	// route - method - func
+	ContextEndpoints() map[string]map[string]ContextHandlerFunc
+	// ContextMiddleware provides a hook for service-wide middleware around ContextHandler
+	ContextMiddleware(ContextHandler) ContextHandler
+}
+
+type JSONContextService interface {
+	ContextService
+
+	// route - method - func
+	JSONEndpoints() map[string]map[string]JSONContextEndpoint
+	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
+}
+
+type MixedContextService interface {
+	ContextService
+
+	// route - method - func
+	JSONEndpoints() map[string]map[string]JSONContextEndpoint
+	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
+}
 ```
 
-Where a `JSONEndpoint`, `ContextHandler` and `ContextHandlerFunc` are defined as:
+Where `JSONEndpoint`, `JSONContextEndpoint`, `ContextHandler` and `ContextHandlerFunc` are defined as:
 
 ```go
 type JSONEndpoint func(*http.Request) (int, interface{}, error)
+
+type JSONContextEndpoint func(context.Context, *http.Request) (int, interface{}, error)
 
 type ContextHandler interface {
 	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
@@ -145,9 +164,9 @@ This package contains two generic interfaces for publishing data to queues and s
 // to emit protobufs.
 type Publisher interface {
     // Publish will publish a message.
-    Publish(string, proto.Message) error
+    Publish(ctx context.Context, key string, msg proto.Message) error
     // Publish will publish a []byte message.
-    PublishRaw(string, []byte) error
+    PublishRaw(ctx context.Context, key string, msg []byte) error
 }
 
 // Subscriber is a generic interface to encapsulate how we want our subscribers
@@ -169,6 +188,8 @@ Where a `SubscriberMessage` is an interface that gives implementations a hook fo
 There are currently 2 implementations of each type of `pubsub` interfaces:
 
 For pubsub via Amazon's SNS/SQS, you can use the `SNSPublisher` and the `SQSSubscriber`.
+
+For pubsub via Google's Pubsub, you can use the `GCPPublisher` and the `GCPSubscriber`.
 
 For pubsub via Kafka topics, you can use the `KakfaPublisher` and the `KafkaSubscriber`.
 

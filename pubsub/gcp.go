@@ -63,10 +63,16 @@ func (s *GCPSubscriber) Start() <-chan SubscriberMessage {
 		for {
 			select {
 			case exit := <-s.stop:
-				iter.Stop()
+				if iter != nil {
+					iter.Stop()
+				}
 				exit <- nil
 				return
 			default:
+				// we need to let the stop block hit
+				if iter == nil {
+					continue
+				}
 				msg, err = iter.Next()
 				if err != nil {
 					s.err = err

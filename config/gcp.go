@@ -15,15 +15,15 @@ type (
 
 	// GCP holds common Google Cloud Platform credentials.
 	GCP struct {
-		ProjectID string `envconfig:"GCP_PROJECT_ID" json:"GCP_PROJECT_ID"`
+		ProjectID string `envconfig:"GCP_PROJECT_ID"`
 
 		// JSONAuthPath points to a file containing a JWT JSON config.
 		// This is meant to be a fall back for development environments.
-		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH" json:"GCP_JSON_AUTH_PATH"`
+		JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH"`
 
 		// Token is a JWT JSON config and may be needed for container
 		// environments.
-		Token string `envconfig:"GCP_AUTH_TOKEN" json:"GCP_AUTH_TOKEN"`
+		Token string `envconfig:"GCP_AUTH_TOKEN"`
 	}
 
 	// PubSub holds common credentials and config values for
@@ -32,9 +32,9 @@ type (
 		GCP
 
 		// For publishing
-		Topic string `envconfig:"GCP_PUBSUB_TOPIC" json:"GCP_PUBSUB_TOPIC"`
+		Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
 		// For subscribing
-		Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION" json:"GCP_PUBSUB_SUBSCRIPTION"`
+		Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
 	}
 )
 
@@ -51,6 +51,7 @@ func LoadGCPFromEnv() GCP {
 func LoadPubSubFromEnv() PubSub {
 	var ps PubSub
 	LoadEnvConfig(&ps)
+	ps.GCP = LoadGCPFromEnv()
 	return ps
 }
 
@@ -58,6 +59,7 @@ func LoadPubSubFromEnv() PubSub {
 // a the Token or JSONAuthPath fields if provided, otherwise
 // google.DefaultClient will be used.
 func (g GCP) NewContext(scopes ...string) (context.Context, error) {
+	log.Printf("%#v", g)
 	if len(g.Token) > 0 {
 		return g.contextFromToken(scopes...)
 	}

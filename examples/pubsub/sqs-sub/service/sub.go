@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -40,8 +39,6 @@ type Config struct {
 }
 
 func Init() {
-	flag.Parse()
-
 	var cfg *Config
 	config.LoadJSONFile("./config.json", &cfg)
 	config.SetLogOverride(cfg.Log)

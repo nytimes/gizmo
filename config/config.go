@@ -20,7 +20,7 @@ var EnvAppName = ""
 func LoadEnvConfig(c interface{}) {
 	err := envconfig.Process(EnvAppName, c)
 	if err != nil {
-		log.Fatal("unable to load env variable: ", err)
+		log.Fatalf("unable to load env variable for %T: %s", c, err)
 	}
 }
 

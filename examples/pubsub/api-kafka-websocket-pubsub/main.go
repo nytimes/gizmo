@@ -1,8 +1,6 @@
 package main
 
 import (
-	"flag"
-
 	"github.com/NYTimes/gizmo/config/combined"
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/server"
@@ -17,7 +15,6 @@ func main() {
 	pubsub.Log = server.Log
 
 	// in case we want to override the port or log location via CLI
-	flag.Parse()
 	server.SetConfigOverrides(cfg.Server)
 
 	server.Init("gamestream-example", cfg.Server)

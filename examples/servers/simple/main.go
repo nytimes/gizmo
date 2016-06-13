@@ -11,6 +11,7 @@ func main() {
 	// showing 1 way of managing gizmo/config: importing from the environment
 	var cfg service.Config
 	config.LoadEnvConfig(&cfg)
+	cfg.Server = &server.Config{}
 	config.LoadEnvConfig(cfg.Server)
 
 	server.Init("nyt-simple-proxy", cfg.Server)

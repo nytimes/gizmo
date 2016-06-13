@@ -1,8 +1,6 @@
 package main
 
 import (
-	"flag"
-
 	"github.com/NYTimes/gizmo/config/combined"
 	"github.com/NYTimes/gizmo/server"
 	_ "github.com/go-sql-driver/mysql"
@@ -13,7 +11,6 @@ import (
 func main() {
 	// load from the local JSON file into a config.Config struct
 	cfg := combined.NewConfig("./config.json")
-	flag.Parse()
 	// SetConfigOverrides will allow us to override some of the values in
 	// the JSON file with CLI flags.
 	server.SetConfigOverrides(cfg.Server)

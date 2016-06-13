@@ -136,7 +136,6 @@ func SetConfigOverrides(c *Config) {
 	// RPCPortCLI is a pointer to the value for the '-rpc' flag. It is meant to declare the port
 	// number to serve RPC services.
 	RPCPortCLI := flag.Int("rpc", 0, "Port to run an RPC server on")
-	flag.Parse()
 
 	config.SetLogOverride(&c.Log)
 

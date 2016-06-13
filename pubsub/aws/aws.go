@@ -59,7 +59,7 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 
 // Publish will marshal the proto message and emit it to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) Publish(ctx context.Context, key string, m proto.Message) error {
+func (p *publisher) Publish(ctx context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -70,7 +70,7 @@ func (p *SNSPublisher) Publish(ctx context.Context, key string, m proto.Message)
 
 // PublishRaw will emit the byte array to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
+func (p *publisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
 		Subject:  &key,

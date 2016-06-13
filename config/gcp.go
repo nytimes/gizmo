@@ -59,7 +59,6 @@ func LoadPubSubFromEnv() PubSub {
 // a the Token or JSONAuthPath fields if provided, otherwise
 // google.DefaultClient will be used.
 func (g GCP) NewContext(scopes ...string) (context.Context, error) {
-	log.Printf("%#v", g)
 	if len(g.Token) > 0 {
 		return g.contextFromToken(scopes...)
 	}

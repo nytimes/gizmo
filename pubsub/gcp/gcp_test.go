@@ -1,4 +1,4 @@
-package pubsub
+package gcp
 
 import (
 	"errors"
@@ -9,20 +9,20 @@ import (
 )
 
 func TestGCPSubscriber(t *testing.T) {
-	msgs := []*testGCPMessage{
-		&testGCPMessage{data: []byte("1")},
-		&testGCPMessage{data: []byte("2")},
-		&testGCPMessage{data: []byte("3")},
-		&testGCPMessage{data: []byte("4")},
-		&testGCPMessage{data: []byte("5")},
-		&testGCPMessage{data: []byte("6")},
-		&testGCPMessage{data: []byte("7")},
+	msgs := []*testMessage{
+		&testMessage{data: []byte("1")},
+		&testMessage{data: []byte("2")},
+		&testMessage{data: []byte("3")},
+		&testMessage{data: []byte("4")},
+		&testMessage{data: []byte("5")},
+		&testMessage{data: []byte("6")},
+		&testMessage{data: []byte("7")},
 	}
-	gcpSub := testGCPSubscription{
-		iter: &testGCPIterator{msgs: msgs},
+	gcpSub := testSubscription{
+		iter: &testIterator{msgs: msgs},
 	}
 
-	testSub := &GCPSubscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
 
 	pipe := testSub.Start()
 
@@ -43,13 +43,13 @@ func TestGCPSubscriber(t *testing.T) {
 	}
 }
 
-func TestGCPSubscriberWithErr(t *testing.T) {
-	gcpSub := testGCPSubscription{
-		iter:     &testGCPIterator{},
+func TestSubscriberWithErr(t *testing.T) {
+	gcpSub := testSubscription{
+		iter:     &testIterator{},
 		givenErr: errors.New("something's wrong"),
 	}
 
-	testSub := &GCPSubscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
 	pipe := testSub.Start()
 
 	msg, ok := <-pipe
@@ -65,36 +65,36 @@ func TestGCPSubscriberWithErr(t *testing.T) {
 }
 
 type (
-	testGCPMessage struct {
+	testMessage struct {
 		data  []byte
 		doned bool
 	}
 
-	testGCPIterator struct {
+	testIterator struct {
 		index   int
-		msgs    []*testGCPMessage
+		msgs    []*testMessage
 		stopped bool
 	}
 
-	testGCPSubscription struct {
-		iter     *testGCPIterator
+	testSubscription struct {
+		iter     *testIterator
 		givenErr error
 	}
 )
 
-func (m *testGCPMessage) ID() string {
+func (m *testMessage) ID() string {
 	return "test"
 }
 
-func (m *testGCPMessage) MsgData() []byte {
+func (m *testMessage) MsgData() []byte {
 	return m.data
 }
 
-func (m *testGCPMessage) Done() {
+func (m *testMessage) Done() {
 	m.doned = true
 }
 
-func (i *testGCPIterator) Next() (gcpMessage, error) {
+func (i *testIterator) Next() (message, error) {
 	if i.index >= len(i.msgs) {
 		return nil, errors.New("no more messages in test iterator")
 	}
@@ -104,10 +104,10 @@ func (i *testGCPIterator) Next() (gcpMessage, error) {
 	return msg, nil
 }
 
-func (i *testGCPIterator) Stop() {
+func (i *testIterator) Stop() {
 	i.stopped = true
 }
 
-func (s testGCPSubscription) Pull(ctx context.Context, opts ...pubsub.PullOption) (gcpIterator, error) {
+func (s testSubscription) Pull(ctx context.Context, opts ...pubsub.PullOption) (iterator, error) {
 	return s.iter, s.givenErr
 }

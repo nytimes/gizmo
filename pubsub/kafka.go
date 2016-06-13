@@ -9,6 +9,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -42,16 +43,16 @@ func NewKafkaPublisher(cfg *config.Kafka) (*KafkaPublisher, error) {
 }
 
 // Publish will marshal the proto message and emit it to the Kafka topic.
-func (p *KafkaPublisher) Publish(key string, m proto.Message) error {
+func (p *KafkaPublisher) Publish(ctx context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
 	}
-	return p.PublishRaw(key, mb)
+	return p.PublishRaw(ctx, key, mb)
 }
 
 // PublishRaw will emit the byte array to the Kafka topic.
-func (p *KafkaPublisher) PublishRaw(key string, m []byte) error {
+func (p *KafkaPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,
 		Key:   sarama.StringEncoder(key),

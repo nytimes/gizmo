@@ -28,6 +28,9 @@ type (
 
 		Kafka *Kafka
 
+		GCP    GCP
+		PubSub PubSub
+
 		Oracle *Oracle
 
 		MySQL      *MySQL
@@ -81,6 +84,8 @@ func LoadConfigFromEnv() *Config {
 	app.Cookie = LoadCookieFromEnv()
 	app.Server = LoadServerFromEnv()
 	app.Metrics = LoadMetricsFromEnv()
+	app.PubSub = LoadPubSubFromEnv()
+	app.GCP = LoadGCPFromEnv()
 	return &app
 }
 

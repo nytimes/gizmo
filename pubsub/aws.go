@@ -6,6 +6,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -57,18 +59,18 @@ func NewSNSPublisher(cfg *config.SNS) (*SNSPublisher, error) {
 
 // Publish will marshal the proto message and emit it to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) Publish(key string, m proto.Message) error {
+func (p *SNSPublisher) Publish(ctx context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
 	}
 
-	return p.PublishRaw(key, mb)
+	return p.PublishRaw(ctx, key, mb)
 }
 
 // PublishRaw will emit the byte array to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *SNSPublisher) PublishRaw(key string, m []byte) error {
+func (p *SNSPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
 		Subject:  &key,

@@ -3,6 +3,8 @@ package pubsub
 import (
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
 )
@@ -14,10 +16,10 @@ var Log = logrus.New()
 // to behave. Until we find reason to change, we're forcing all pubslishers
 // to emit protobufs.
 type Publisher interface {
-	// Publish will publish a message.
-	Publish(string, proto.Message) error
-	// Publish will publish a raw byte array as a message.
-	PublishRaw(string, []byte) error
+	// Publish will publish a message with context.
+	Publish(context.Context, string, proto.Message) error
+	// Publish will publish a raw byte array as a message with context.
+	PublishRaw(context.Context, string, []byte) error
 }
 
 // Subscriber is a generic interface to encapsulate how we want our subscribers

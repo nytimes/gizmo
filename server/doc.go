@@ -57,9 +57,42 @@ The 3 service types that are accepted and hostable on the `SimpleServer`:
         JSONMiddleware(JSONEndpoint) JSONEndpoint
     }
 
-Where a `JSONEndpoint` is defined as:
+    type ContextService interface {
+        Service
+
+        // route - method - func
+        ContextEndpoints() map[string]map[string]ContextHandlerFunc
+        // ContextMiddleware provides a hook for service-wide middleware around ContextHandler
+        ContextMiddleware(ContextHandler) ContextHandler
+    }
+
+    type JSONContextService interface {
+        ContextService
+
+        // route - method - func
+        JSONEndpoints() map[string]map[string]JSONContextEndpoint
+        JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
+    }
+
+    type MixedContextService interface {
+        ContextService
+
+        // route - method - func
+        JSONEndpoints() map[string]map[string]JSONContextEndpoint
+        JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
+    }
+
+Where `JSONEndpoint`, `JSONContextEndpoint`, `ContextHandler` and `ContextHandlerFunc` are defined as:
 
     type JSONEndpoint func(*http.Request) (int, interface{}, error)
+
+    type JSONContextEndpoint func(context.Context, *http.Request) (int, interface{}, error)
+
+    type ContextHandler interface {
+        ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
+    }
+
+    type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
 
 Also, the one service type that works with an `RPCServer`:
 

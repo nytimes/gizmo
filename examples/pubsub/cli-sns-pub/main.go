@@ -23,7 +23,7 @@ func main() {
 		Url:    "http://www.nytimes.com/2015/11/25/its-a-cat-world",
 	}
 
-	err = pub.Publish(catArticle.Url, catArticle)
+	err = pub.Publish(nil, catArticle.Url, catArticle)
 	if err != nil {
 		pubsub.Log.WithFields(logrus.Fields{
 			"error": err,

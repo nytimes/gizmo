@@ -1,5 +1,5 @@
 /*
-The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
+Package config contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
 
 The subpackages contain structs meant for managing common configuration options and credentials. There are currently configs for:
 

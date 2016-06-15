@@ -1,11 +1,11 @@
-package pubsub
+package kafka
 
 import (
 	"errors"
 	"log"
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/pubsub"
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
@@ -13,22 +13,22 @@ import (
 )
 
 var (
-	// KafkaRequiredAcks will be used in Kafka configs
+	// RequiredAcks will be used in Kafka configs
 	// to set the 'RequiredAcks' value.
-	KafkaRequiredAcks = sarama.WaitForAll
+	RequiredAcks = sarama.WaitForAll
 )
 
-// KafkaPublisher is an experimental publisher that provides an implementation for
+// Publisher is an experimental publisher that provides an implementation for
 // Kafka using the Shopify/sarama library.
-type KafkaPublisher struct {
+type Publisher struct {
 	producer sarama.SyncProducer
 	topic    string
 }
 
-// NewKafkaPublisher will initiate a new experimental Kafka publisher.
-func NewKafkaPublisher(cfg *config.Kafka) (*KafkaPublisher, error) {
+// NewPublisher will initiate a new experimental Kafka publisher.
+func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 	var err error
-	p := &KafkaPublisher{}
+	p := &Publisher{}
 
 	if len(cfg.Topic) == 0 {
 		return p, errors.New("topic name is required")
@@ -37,13 +37,13 @@ func NewKafkaPublisher(cfg *config.Kafka) (*KafkaPublisher, error) {
 
 	sconfig := sarama.NewConfig()
 	sconfig.Producer.Retry.Max = cfg.MaxRetry
-	sconfig.Producer.RequiredAcks = KafkaRequiredAcks
+	sconfig.Producer.RequiredAcks = RequiredAcks
 	p.producer, err = sarama.NewSyncProducer(cfg.BrokerHosts, sconfig)
 	return p, err
 }
 
 // Publish will marshal the proto message and emit it to the Kafka topic.
-func (p *KafkaPublisher) Publish(ctx context.Context, key string, m proto.Message) error {
+func (p *Publisher) Publish(ctx context.Context, key string, m proto.Message) error {
 	mb, err := proto.Marshal(m)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func (p *KafkaPublisher) Publish(ctx context.Context, key string, m proto.Messag
 }
 
 // PublishRaw will emit the byte array to the Kafka topic.
-func (p *KafkaPublisher) PublishRaw(_ context.Context, key string, m []byte) error {
+func (p *Publisher) PublishRaw(_ context.Context, key string, m []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: p.topic,
 		Key:   sarama.StringEncoder(key),
@@ -64,14 +64,14 @@ func (p *KafkaPublisher) PublishRaw(_ context.Context, key string, m []byte) err
 }
 
 // Stop will close the pub connection.
-func (p *KafkaPublisher) Stop() error {
+func (p *Publisher) Stop() error {
 	return p.producer.Close()
 }
 
 type (
-	// KafkaSubscriber is an experimental subscriber implementation for Kafka. It is only capable of consuming a
+	// subscriber is an experimental subscriber implementation for Kafka. It is only capable of consuming a
 	// single partition so multiple may be required depending on your setup.
-	KafkaSubscriber struct {
+	subscriber struct {
 		cnsmr     sarama.Consumer
 		topic     string
 		partition int32
@@ -84,36 +84,36 @@ type (
 		stop chan chan error
 	}
 
-	// KafkaSubMessage is an SubscriberMessage implementation
+	// subMessage is an SubscriberMessage implementation
 	// that will broadcast the message's offset when Done().
-	KafkaSubMessage struct {
+	subMessage struct {
 		message         *sarama.ConsumerMessage
 		broadcastOffset func(int64)
 	}
 )
 
 // Message will return the message payload.
-func (m *KafkaSubMessage) Message() []byte {
+func (m *subMessage) Message() []byte {
 	return m.message.Value
 }
 
-// ExtendDoneDeadline has no effect on KafkaSubMessage.
-func (m *KafkaSubMessage) ExtendDoneDeadline(time.Duration) error {
+// ExtendDoneDeadline has no effect on subMessage.
+func (m *subMessage) ExtendDoneDeadline(time.Duration) error {
 	return nil
 }
 
 // Done will emit the message's offset.
-func (m *KafkaSubMessage) Done() error {
+func (m *subMessage) Done() error {
 	m.broadcastOffset(m.message.Offset)
 	return nil
 }
 
-// NewKafkaSubscriber will initiate a the experimental Kafka consumer.
-func NewKafkaSubscriber(cfg *config.Kafka, offsetProvider func() int64, offsetBroadcast func(int64)) (*KafkaSubscriber, error) {
+// NewSubscriber will initiate a the experimental Kafka consumer.
+func NewSubscriber(cfg *Config, offsetProvider func() int64, offsetBroadcast func(int64)) (pubsub.Subscriber, error) {
 	var (
 		err error
 	)
-	s := &KafkaSubscriber{
+	s := &subscriber{
 		offset:          offsetProvider,
 		broadcastOffset: offsetBroadcast,
 		partition:       cfg.Partition,
@@ -141,8 +141,8 @@ func NewKafkaSubscriber(cfg *config.Kafka, offsetProvider func() int64, offsetBr
 // to lookup the offset to start at.
 // If it encounters any issues, it will populate the Err() error
 // and close the returned channel.
-func (s *KafkaSubscriber) Start() <-chan SubscriberMessage {
-	output := make(chan SubscriberMessage)
+func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
+	output := make(chan pubsub.SubscriberMessage)
 
 	pCnsmr, err := s.cnsmr.ConsumePartition(s.topic, s.partition, s.offset())
 	if err != nil {
@@ -152,7 +152,7 @@ func (s *KafkaSubscriber) Start() <-chan SubscriberMessage {
 		return output
 	}
 
-	go func(s *KafkaSubscriber, c sarama.PartitionConsumer, output chan SubscriberMessage) {
+	go func(s *subscriber, c sarama.PartitionConsumer, output chan pubsub.SubscriberMessage) {
 		defer close(output)
 		var msg *sarama.ConsumerMessage
 		errs := c.Errors()
@@ -166,7 +166,7 @@ func (s *KafkaSubscriber) Start() <-chan SubscriberMessage {
 				s.kerr = kerr
 				return
 			case msg = <-msgs:
-				output <- &KafkaSubMessage{
+				output <- &subMessage{
 					message:         msg,
 					broadcastOffset: s.broadcastOffset,
 				}
@@ -179,7 +179,7 @@ func (s *KafkaSubscriber) Start() <-chan SubscriberMessage {
 
 // Stop willablock until the consumer has stopped consuming messages
 // and return any errors seen on consumer close.
-func (s *KafkaSubscriber) Stop() error {
+func (s *subscriber) Stop() error {
 	exit := make(chan error)
 	s.stop <- exit
 	// close result from the partition consumer
@@ -193,13 +193,13 @@ func (s *KafkaSubscriber) Stop() error {
 // Err will contain any  errors that occurred during
 // consumption. This method should be checked after
 // a user encounters a closed channel.
-func (s *KafkaSubscriber) Err() error {
+func (s *subscriber) Err() error {
 	return s.kerr
 }
 
-// GetKafkaPartitions is a helper function to look up which partitions are available
+// GetPartitions is a helper function to look up which partitions are available
 // via the given brokers for the given topic. This should be called only on startup.
-func GetKafkaPartitions(brokerHosts []string, topic string) (partitions []int32, err error) {
+func GetPartitions(brokerHosts []string, topic string) (partitions []int32, err error) {
 	if len(brokerHosts) == 0 {
 		return partitions, errors.New("at least 1 broker host is required")
 	}

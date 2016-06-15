@@ -1,9 +1,13 @@
-package config
+package kafka
 
-import "strings"
+import (
+	"strings"
 
-// Kafka holds the basic information for working with Kafka.
-type Kafka struct {
+	"github.com/NYTimes/gizmo/config"
+)
+
+// Config holds the basic information for working with Kafka.
+type Config struct {
 	BrokerHosts []string
 	// BrokerHostsString is used when loading the list from environment variables.
 	// If loaded via the LoadEnvConfig() func, BrokerHosts will get updated with these
@@ -16,12 +20,12 @@ type Kafka struct {
 	MaxRetry int `envconfig:"KAFKA_MAX_RETRY"`
 }
 
-// LoadKafkaFromEnv will attempt to load an Kafka object
+// LoadConfigFromEnv will attempt to load an Kafka object
 // from environment variables. If not populated, nil
 // is returned.
-func LoadKafkaFromEnv() *Kafka {
-	var kafka Kafka
-	LoadEnvConfig(&kafka)
+func LoadConfigFromEnv() *Config {
+	var kafka Config
+	config.LoadEnvConfig(&kafka)
 	if kafka.BrokerHostsString == "" {
 		return nil
 	}

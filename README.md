@@ -14,26 +14,25 @@ This toolkit provides packages to put together server and pubsub daemons with th
 
 In this toolkit, you will find:
 
-## The `config` package
+## The `config` packages
 
-This package contains a handful of structs meant for managing common configuration options and credentials. There are currently configs for:
+The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
 
+The subpackages contain structs meant for managing common configuration options and credentials. There are currently configs for:
+
+* Go Kit Metrics
 * MySQL
 * MongoDB
 * Oracle
-* AWS (SNS, SQS, S3, DynamoDB, ElastiCache)
+* AWS (S3, DynamoDB, ElastiCache)
 * GCP
-* Kafka
 * Gorilla's `securecookie`
-* Gizmo Servers
 
-The package also has a generic `Config` type that contains all of the above types. It's meant to be a 'catch all' struct that most applications should be able to use.
-
-`config` also contains functions to load these config structs from JSON files, JSON blobs in Consul k/v or environment variables.
+The package also has a generic `Config` type in the `config/combined` subpackage that contains all of the above types. It's meant to be a 'catch all' convenience struct that many applications should be able to use.
 
 ## The `server` package
 
-This package is the bulk of the toolkit and relies on `config` for any managing `Server` implementations. A server must implement the following interface:
+This package is the bulk of the toolkit and relies on `server.Config` for any managing `Server` implementations. A server must implement the following interface:
 
 ```go
 // Server is the basic interface that defines what expect from any server.
@@ -154,9 +153,9 @@ type RPCService interface {
 
 The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
-## The `pubsub` package
+## The `pubsub` packages
 
-This package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
+The base `pubsub` package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 
 ```go
 // Publisher is a generic interface to encapsulate how we want our publishers
@@ -185,13 +184,13 @@ type Subscriber interface {
 
 Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implementation in `pubsub` to see how they behave.
 
-There are currently 2 implementations of each type of `pubsub` interfaces:
+There are currently 3 implementations of each type of `pubsub` interfaces:
 
-For pubsub via Amazon's SNS/SQS, you can use the `SNSPublisher` and the `SQSSubscriber`.
+For pubsub via Amazon's SNS/SQS, you can use the `pubsub/aws` package.
 
-For pubsub via Google's Pubsub, you can use the `GCPPublisher` and the `GCPSubscriber`.
+For pubsub via Google's Pubsub, you can use the `pubsub/gcp` package.
 
-For pubsub via Kafka topics, you can use the `KakfaPublisher` and the `KafkaSubscriber`.
+For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 
 ## The `pubsub/pubsubtest` package
 

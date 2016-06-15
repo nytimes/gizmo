@@ -1,14 +1,16 @@
-package config
+package mysql
 
 import (
 	"database/sql"
 	"fmt"
 	"net/url"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
-// MySQL holds everything you need to
+// Config holds everything you need to
 // connect and interact with a MySQL DB.
-type MySQL struct {
+type Config struct {
 	User     string `envconfig:"MYSQL_USER"`
 	Pw       string `envconfig:"MYSQL_PW"`
 	Host     string `envconfig:"MYSQL_HOST_NAME"`
@@ -25,12 +27,12 @@ const (
 )
 
 var (
-	// MySQLMaxOpenConns will be used to set a MySQL
+	// MaxOpenConns will be used to set a MySQL
 	// drivers MaxOpenConns value.
-	MySQLMaxOpenConns = 1
-	// MySQLMaxIdleConns will be used to set a MySQL
+	MaxOpenConns = 1
+	// MaxIdleConns will be used to set a MySQL
 	// drivers MaxIdleConns value.
-	MySQLMaxIdleConns = 1
+	MaxIdleConns = 1
 )
 
 // DB will attempt to open a sql connection with
@@ -38,18 +40,18 @@ var (
 // and MySQLMaxIdleConns values.
 // Users must import a mysql driver in their
 // main to use this.
-func (m *MySQL) DB() (*sql.DB, error) {
+func (m *Config) DB() (*sql.DB, error) {
 	db, err := sql.Open("mysql", m.String())
 	if err != nil {
 		return db, err
 	}
-	db.SetMaxIdleConns(MySQLMaxIdleConns)
-	db.SetMaxOpenConns(MySQLMaxOpenConns)
+	db.SetMaxIdleConns(MaxIdleConns)
+	db.SetMaxOpenConns(MaxOpenConns)
 	return db, nil
 }
 
 // String will return the MySQL connection string.
-func (m *MySQL) String() string {
+func (m *Config) String() string {
 	if m.Port == 0 {
 		m.Port = DefaultMySQLPort
 	}
@@ -70,12 +72,12 @@ func (m *MySQL) String() string {
 	)
 }
 
-// LoadMySQLFromEnv will attempt to load a MySQL object
+// LoadConfigFromEnv will attempt to load a MySQL object
 // from environment variables. If not populated, nil
 // is returned.
-func LoadMySQLFromEnv() *MySQL {
-	var mysql MySQL
-	LoadEnvConfig(&mysql)
+func LoadConfigFromEnv() *Config {
+	var mysql Config
+	config.LoadEnvConfig(&mysql)
 	if mysql.Host != "" {
 		return &mysql
 	}

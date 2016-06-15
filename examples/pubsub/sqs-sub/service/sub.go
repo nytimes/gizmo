@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -10,7 +9,9 @@ import (
 	"syscall"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/combined"
 	"github.com/NYTimes/gizmo/pubsub"
+	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/logrotate"
 	"github.com/Sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
@@ -32,14 +33,12 @@ var (
 )
 
 type Config struct {
-	*config.Config
+	*combined.Config
 	MostPopularToken string
 	SemanticToken    string
 }
 
 func Init() {
-	flag.Parse()
-
 	var cfg *Config
 	config.LoadJSONFile("./config.json", &cfg)
 	config.SetLogOverride(cfg.Log)
@@ -66,7 +65,7 @@ func Init() {
 
 	client = nyt.NewClient(cfg.MostPopularToken, cfg.SemanticToken)
 
-	sub, err = pubsub.NewSQSSubscriber(cfg.SQS)
+	sub, err = aws.NewSubscriber(cfg.SQS)
 	if err != nil {
 		Log.Fatal("unable to init SQS: ", err)
 	}

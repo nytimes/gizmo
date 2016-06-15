@@ -1,16 +1,16 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/pubsub"
+	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/Sirupsen/logrus"
 )
 
 func main() {
-	cfg := config.LoadConfigFromEnv()
+	cfg := aws.LoadSNSConfigFromEnv()
 
-	pub, err := pubsub.NewSNSPublisher(cfg.SNS)
+	pub, err := aws.NewPublisher(cfg)
 	if err != nil {
 		pubsub.Log.WithFields(logrus.Fields{
 			"error": err,

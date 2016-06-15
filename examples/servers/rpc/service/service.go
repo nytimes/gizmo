@@ -3,7 +3,6 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gziphandler"
 	"github.com/Sirupsen/logrus"
@@ -21,7 +20,7 @@ type (
 	// Config is a struct to contain all the needed
 	// configuration for our RPCService
 	Config struct {
-		*config.Server
+		Server           *server.Config
 		MostPopularToken string
 		SemanticToken    string
 	}

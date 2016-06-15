@@ -1,4 +1,4 @@
-package config
+package mongodb
 
 import (
 	"log"
@@ -6,11 +6,13 @@ import (
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/NYTimes/gizmo/config"
 )
 
-// MongoDB holds the information required for connecting
+// Config holds the information required for connecting
 // to a MongoDB replicaset.
-type MongoDB struct {
+type Config struct {
 	User       string         `envconfig:"MONGODB_USER"`
 	Pw         string         `envconfig:"MONGODB_PW"`
 	Hosts      string         `envconfig:"MONGODB_HOSTS"`
@@ -23,17 +25,17 @@ type MongoDB struct {
 
 // Must will attempt to initiate a new mgo.Session
 // with the replicaset and will panic if it encounters any issues.
-func (m *MongoDB) Must() *mgo.Session {
+func (m *Config) Must() *mgo.Session {
 	return m.must(m.Hosts)
 }
 
 // MustMaster will attempt to initiate a new mgo.Session
 // with the Master host and will panic if it encounters any issues.
-func (m *MongoDB) MustMaster() *mgo.Session {
+func (m *Config) MustMaster() *mgo.Session {
 	return m.must(m.MasterHost)
 }
 
-func (m *MongoDB) must(host string) *mgo.Session {
+func (m *Config) must(host string) *mgo.Session {
 	s, err := mgo.Dial(host)
 	if err != nil {
 		log.Fatal(err)
@@ -53,19 +55,15 @@ func (m *MongoDB) must(host string) *mgo.Session {
 	return s
 }
 
-// LoadMongoDBFromEnv will attempt to load a MongoCreds object
-// from environment variables. If not populated, nil
-// is returned.
-func LoadMongoDBFromEnv() *MongoDB {
-	var mongo MongoDB
-	LoadEnvConfig(&mongo)
-	if mongo.Hosts == "" {
-		return nil
-	}
+// LoadConfigFromEnv will attempt to load a MongoCreds object
+// from environment variables.
+func LoadConfigFromEnv() *Config {
+	var mongo Config
+	config.LoadEnvConfig(&mongo)
 	return &mongo
 }
 
-func (m *MongoDB) setMode(s *mgo.Session) {
+func (m *Config) setMode(s *mgo.Session) {
 	if m.Mode == "" {
 		return
 	}
@@ -96,7 +94,7 @@ func (m *MongoDB) setMode(s *mgo.Session) {
 	s.SetMode(mode, false)
 }
 
-func (m *MongoDB) setSelectServers(s *mgo.Session) {
+func (m *Config) setSelectServers(s *mgo.Session) {
 	if len(m.Tags) == 0 {
 		return
 	}

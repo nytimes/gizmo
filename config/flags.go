@@ -24,3 +24,18 @@ func SetLogOverride(log *string) {
 		}
 	}
 }
+
+// SetFlagOverrides will add and check a `log` and `config` CLI flag to the
+// current process, call flag.Parse() and will overwrite the passed in string
+// pointer if the flag exists.
+func SetFlagOverrides(log *string, config *string) {
+	// create the flag
+	cfg := flag.String("config", "", "Application log location")
+	SetLogOverride(log)
+
+	// if a user passes in 'dev' log flag, override the
+	// App log to signal for stderr logging.
+	if *cfg != "" {
+		*config = *cfg
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/appengine"
 	"google.golang.org/cloud"
 
 	"github.com/NYTimes/gizmo/config"
@@ -15,15 +16,19 @@ import (
 
 // Config holds common Google Cloud Platform credentials.
 type Config struct {
-	ProjectID string `envconfig:"GCP_PROJECT_ID" json:"GCP_PROJECT_ID"`
+	ProjectID string `envconfig:"GCP_PROJECT_ID"`
 
 	// JSONAuthPath points to a file containing a JWT JSON config.
 	// This is meant to be a fall back for development environments.
-	JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH" json:"GCP_JSON_AUTH_PATH"`
+	JSONAuthPath string `envconfig:"GCP_JSON_AUTH_PATH"`
 
 	// Token is a JWT JSON config and may be needed for container
 	// environments.
-	Token string `envconfig:"GCP_AUTH_TOKEN" json:"GCP_AUTH_TOKEN"`
+	Token string `envconfig:"GCP_AUTH_TOKEN"`
+
+	// FlexibleVM tells the config we are using a 'flexible' App Engine VM
+	// and to use appengine.BackgroundContext()
+	FlexibleVM bool `envconfig:"GCP_FLEXIBLE_VM"`
 }
 
 // LoadConfigFromEnv will attempt to load a GCP config
@@ -34,9 +39,11 @@ func LoadConfigFromEnv() Config {
 	return gcp
 }
 
-// NewContext will check attempt to create a new context from
-// a the Token or JSONAuthPath fields if provided, otherwise
-// google.DefaultClient will be used.
+// NewContext will attempt create a new context from
+// a the Token or JSONAuthPath fields if provided. If the FlexibleAE flag
+// is set to designate this is a 'flexible' App Engine VM,
+// appengine.BackgroundContext() will be used. Otherwise, google.DefaultClient
+// will be used, which should work for standard App Engine environments and GCE.
 func (g Config) NewContext(scopes ...string) (context.Context, error) {
 	if len(g.Token) > 0 {
 		return g.contextFromToken(scopes...)
@@ -44,6 +51,10 @@ func (g Config) NewContext(scopes ...string) (context.Context, error) {
 
 	if len(g.JSONAuthPath) > 0 {
 		return g.contextFromJSON(scopes...)
+	}
+
+	if g.FlexibleVM {
+		return appengine.BackgroundContext(), nil
 	}
 
 	if len(scopes) == 0 {

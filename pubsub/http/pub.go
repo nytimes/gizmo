@@ -23,7 +23,7 @@ type gcpPublisher struct {
 }
 
 // NewPublisher will return a pubsub.Publisher that simply posts the payload to
-// the given URL. If no http.Client is provided, the default one use a 5 second
+// the given URL. If no http.Client is provided, the default one has a 5 second
 // timeout.
 func NewPublisher(url string, client *http.Client) pubsub.Publisher {
 	if client == nil {
@@ -37,7 +37,7 @@ func NewPublisher(url string, client *http.Client) pubsub.Publisher {
 // NewGCPStylePublisher will return a pubsub.Publisher that wraps the payload
 // in a GCP pubsub.Message-like object that will make this publisher emulate
 // Google's PubSub posting messages to a server.
-// If no http.Client is provided, the default one use a 5 second
+// If no http.Client is provided, the default one has a 5 second
 // timeout.
 func NewGCPStylePublisher(url string, client *http.Client) pubsub.Publisher {
 	return gcpPublisher{NewPublisher(url, client)}

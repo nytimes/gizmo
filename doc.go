@@ -175,6 +175,8 @@ For pubsub via Google's Pubsub, you can use the `pubsub/gcp` package.
 
 For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 
+For publishing via HTTP, you can use the `pubsub/http` package.
+
 The `pubsub/pubsubtest` package
 
 This package contains 'test' implementations of the `pubsub.Publisher` and `pubsub.Subscriber` interfaces that will allow developers to easily mock out and test their `pubsub` implementations:

@@ -23,8 +23,8 @@ func (s *RPCService) GetCats(ctx context.Context, r *CatsRequest) (*CatsResponse
 	return &CatsResponse{res}, nil
 }
 
-func (s *RPCService) GetCatsJSON(r *http.Request) (int, interface{}, error) {
-	res, err := s.GetCats(context.Background(), &CatsRequest{})
+func (s *RPCService) GetCatsJSON(ctx context.Context, r *http.Request) (int, interface{}, error) {
+	res, err := s.GetCats(ctx, &CatsRequest{})
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

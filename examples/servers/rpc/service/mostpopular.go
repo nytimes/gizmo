@@ -23,9 +23,9 @@ func (s *RPCService) GetMostPopular(ctx context.Context, r *MostPopularRequest) 
 	return &MostPopularResponse{res}, nil
 }
 
-func (s *RPCService) GetMostPopularJSON(r *http.Request) (int, interface{}, error) {
+func (s *RPCService) GetMostPopularJSON(ctx context.Context, r *http.Request) (int, interface{}, error) {
 	res, err := s.GetMostPopular(
-		context.Background(),
+		ctx,
 		&MostPopularRequest{
 			web.Vars(r)["resourceType"],
 			web.Vars(r)["section"],

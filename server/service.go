@@ -54,17 +54,17 @@ type MixedService interface {
 }
 
 // RPCService is an interface defining an grpc-compatible service that
-// offers JSONEndpoints.
+// also offers JSONContextEndpoints and ContextHandlerFuncs.
 type RPCService interface {
-	Service
+	ContextService
 
 	Service() (*grpc.ServiceDesc, interface{})
 
 	// Ensure that the route syntax is compatible with the router
 	// implementation chosen in cfg.RouterType.
 	// route - method - func
-	JSONEndpoints() map[string]map[string]JSONEndpoint
-	JSONMiddleware(JSONEndpoint) JSONEndpoint
+	JSONEndpoints() map[string]map[string]JSONContextEndpoint
+	JSONMiddleware(JSONContextEndpoint) JSONContextEndpoint
 }
 
 // JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc.
@@ -74,23 +74,13 @@ type JSONEndpoint func(*http.Request) (int, interface{}, error)
 type JSONContextEndpoint func(context.Context, *http.Request) (int, interface{}, error)
 
 // ContextService is an interface defining a service that
-// is made up of ContextHandler.
+// is made up of ContextHandlerFuncs.
 type ContextService interface {
 	Service
 
 	// route - method - func
 	ContextEndpoints() map[string]map[string]ContextHandlerFunc
 	ContextMiddleware(ContextHandler) ContextHandler
-}
-
-// JSONContextService is an interface defining a service that
-// is made up of JSONContextEndpoints.
-type JSONContextService interface {
-	ContextService
-
-	// route - method - func
-	JSONEndpoints() map[string]map[string]JSONContextEndpoint
-	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
 }
 
 // MixedContextService is an interface defining a service that

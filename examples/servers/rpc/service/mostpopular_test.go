@@ -77,7 +77,7 @@ func TestGetMostPopular(t *testing.T) {
 
 	for _, test := range tests {
 
-		srvr := server.NewSimpleServer(nil)
+		srvr := server.NewRPCServer(nil)
 		srvr.Register(&RPCService{client: test.givenClient})
 
 		r, _ := http.NewRequest("GET", test.givenURI, nil)

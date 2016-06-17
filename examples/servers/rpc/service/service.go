@@ -6,6 +6,7 @@ import (
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gziphandler"
 	"github.com/Sirupsen/logrus"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
@@ -53,13 +54,18 @@ func (s *RPCService) Middleware(h http.Handler) http.Handler {
 	return gziphandler.GzipHandler(h)
 }
 
-// JSONMiddleware provides a JSONEndpoint hook wrapped around all requests.
+// ContextMiddleware provides a server.ContextHAndler hook wrapped around all
+// requests. This could be handy if you need to decorate the request context.
+func (s *RPCService) ContextMiddleware(h server.ContextHandler) server.ContextHandler {
+	return h
+}
+
+// JSONMiddleware provides a JSONContextEndpoint hook wrapped around all requests.
 // In this implementation, we're using it to provide application logging and to check errors
 // and provide generic responses.
-func (s *RPCService) JSONMiddleware(j server.JSONEndpoint) server.JSONEndpoint {
-	return func(r *http.Request) (int, interface{}, error) {
-
-		status, res, err := j(r)
+func (s *RPCService) JSONMiddleware(j server.JSONContextEndpoint) server.JSONContextEndpoint {
+	return func(ctx context.Context, r *http.Request) (int, interface{}, error) {
+		status, res, err := j(ctx, r)
 		if err != nil {
 			server.LogWithFields(r).WithFields(logrus.Fields{
 				"error": err,
@@ -72,13 +78,20 @@ func (s *RPCService) JSONMiddleware(j server.JSONEndpoint) server.JSONEndpoint {
 	}
 }
 
-// JSONEndpoints is a listing of all endpoints available in the RPCService.
-func (s *RPCService) JSONEndpoints() map[string]map[string]server.JSONEndpoint {
-	return map[string]map[string]server.JSONEndpoint{
-		"/most-popular/{resourceType}/{section}/{timeframe}": map[string]server.JSONEndpoint{
+// ContextEndpoints may be needed if your server has any non-RPC-able
+// endpoints. In this case, we have none but still need this method to
+// satisfy the server.RPCService interface.
+func (s *RPCService) ContextEndpoints() map[string]map[string]server.ContextHandlerFunc {
+	return map[string]map[string]server.ContextHandlerFunc{}
+}
+
+// JSONContextEndpoints is a listing of all endpoints available in the RPCService.
+func (s *RPCService) JSONEndpoints() map[string]map[string]server.JSONContextEndpoint {
+	return map[string]map[string]server.JSONContextEndpoint{
+		"/most-popular/{resourceType}/{section}/{timeframe}": map[string]server.JSONContextEndpoint{
 			"GET": s.GetMostPopularJSON,
 		},
-		"/cats": map[string]server.JSONEndpoint{
+		"/cats": map[string]server.JSONContextEndpoint{
 			"GET": s.GetCatsJSON,
 		},
 	}

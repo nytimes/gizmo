@@ -2,7 +2,9 @@
     "MostPopularToken": "YOUR-MOST-POPULAR-API-TOKEN",
     "SemanticToken": "YOUR-SEMANTIC-API-TOKEN",
 
-    "HTTPPort": 8080,
-    "Log": "/var/nyt/logs/api-proxy/app.log",
-    "HTTPAccessLog": "/var/nyt/logs/api-proxy/access.log"
+    "Server": {
+        "HTTPPort": 8080,
+        "Log": "/var/nyt/logs/api-proxy/app.log",
+        "HTTPAccessLog": "/var/nyt/logs/api-proxy/access.log"
+    }
 }

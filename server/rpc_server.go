@@ -83,12 +83,42 @@ func (r *RPCServer) Register(svc Service) error {
 	// quick fix for backwards compatibility
 	prefix = strings.TrimRight(prefix, "/")
 
+	// register all context endpoints with our wrapper
+	for path, epMethods := range rpcsvc.ContextEndpoints() {
+		for method, ep := range epMethods {
+			endpointName := metricName(prefix, path, method)
+			// set the function handle and register it to metrics
+			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+				func(ep ContextHandlerFunc, cs ContextService) http.Handler {
+					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						if r.Body != nil {
+							defer func() {
+								if err := r.Body.Close(); err != nil {
+									Log.Warn("unable to close request body: ", err)
+								}
+							}()
+						}
+						ctx := context.Background()
+						rpcsvc.Middleware(ContextToHTTP(ctx, rpcsvc.ContextMiddleware(ep))).ServeHTTP(w, r)
+					})
+				}(ep, rpcsvc),
+				endpointName+".STATUS-COUNT", r.mets),
+				endpointName+".DURATION", r.mets),
+			)
+		}
+	}
+
+	// register all JSON context endpoints with our wrapper
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			endpointName := metricName(prefix, path, method)
-			// set the function handle and register is to metrics
+			// set the function handle and register it to metrics
 			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
-				rpcsvc.Middleware(JSONToHTTP(rpcsvc.JSONMiddleware(ep))),
+				rpcsvc.Middleware(ContextToHTTP(context.Background(),
+					rpcsvc.ContextMiddleware(
+						JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
+					),
+				)),
 				endpointName+".STATUS-COUNT", r.mets),
 				endpointName+".DURATION", r.mets),
 			)

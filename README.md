@@ -45,7 +45,7 @@ type Server interface {
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 4 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService` and `MixedService`. A service and these implementations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 4 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`. A service and these implementations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -103,14 +103,6 @@ type ContextService interface {
 	ContextMiddleware(ContextHandler) ContextHandler
 }
 
-type JSONContextService interface {
-	ContextService
-
-	// route - method - func
-	JSONEndpoints() map[string]map[string]JSONContextEndpoint
-	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
-}
-
 type MixedContextService interface {
 	ContextService
 
@@ -138,16 +130,16 @@ Also, the one service type that works with an `RPCServer`:
 
 ```go
 type RPCService interface {
-    Service
+    ContextService
 
     Service() (grpc.ServiceDesc, interface{})
 
     // Ensure that the route syntax is compatible with the router
     // implementation chosen in cfg.RouterType.
     // route - method - func
-    JSONEndpoints() map[string]map[string]JSONEndpoint
-    // JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
-    JSONMiddlware(JSONEndpoint) JSONEndpoint
+    JSONEndpoints() map[string]map[string]JSONContextEndpoint
+    // JSONMiddleware provides a hook for service-wide middleware around JSONContextEndpoints.
+    JSONMiddlware(JSONContextEndpoint) JSONContextEndpoint
 }
 ```
 

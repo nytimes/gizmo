@@ -37,7 +37,7 @@ This package is the bulk of the toolkit and relies on `server.Config` for any ma
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, and `MixedService`. A service and these implenetations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 3 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and `MixedContextService`. A service and these implenetations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -93,14 +93,6 @@ The 3 service types that are accepted and hostable on the `SimpleServer`:
 		ContextMiddleware(ContextHandler) ContextHandler
 	}
 
-	type JSONContextService interface {
-		ContextService
-
-		// route - method - func
-		JSONEndpoints() map[string]map[string]JSONContextEndpoint
-		JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
-	}
-
 	type MixedContextService interface {
 		ContextService
 
@@ -131,9 +123,9 @@ Also, the one service type that works with an `RPCServer`:
 		// Ensure that the route syntax is compatible with the router
 		// implementation chosen in cfg.RouterType.
 		// route - method - func
-		JSONEndpoints() map[string]map[string]JSONEndpoint
-		// JSONMiddleware provides a hook for service-wide middleware around JSONEndpoints.
-		JSONMiddlware(JSONEndpoint) JSONEndpoint
+		JSONEndpoints() map[string]map[string]JSONContextEndpoint
+		// JSONMiddleware provides a hook for service-wide middleware around JSONContextEndpoints.
+		JSONMiddlware(JSONContextEndpoint) JSONContextEndpoint
 	}
 
 The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)

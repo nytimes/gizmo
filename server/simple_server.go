@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"runtime/debug"
@@ -35,6 +36,8 @@ type SimpleServer struct {
 	// for collecting metrics
 	mets         provider.Provider
 	panicCounter metrics.Counter
+
+	healthHandler HealthCheckHandler
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -100,11 +103,9 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	s.mux.ServeHTTP(w, r)
 }
 
-// Start will start the SimpleServer at it's configured address.
-// If they are configured, this will start health checks and access logging.
-func (s *SimpleServer) Start() error {
-	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
-	s.cfg.HealthCheckPath = healthHandler.Path()
+func (s *SimpleServer) init() {
+	s.healthHandler = RegisterHealthHandler(s.cfg, s.monitor, s.mux)
+	s.cfg.HealthCheckPath = s.healthHandler.Path()
 
 	// if expvar, register on our router
 	if s.cfg.Metrics.Type == metricscfg.Expvar {
@@ -113,7 +114,11 @@ func (s *SimpleServer) Start() error {
 		}
 		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
 	}
+}
 
+// Start will start the SimpleServer at it's configured address.
+// If they are configured, this will start health checks and access logging.
+func (s *SimpleServer) Start() error {
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {
 		Log.Fatalf("unable to create http access log: %s", err)
@@ -126,6 +131,7 @@ func (s *SimpleServer) Start() error {
 		WriteTimeout:   writeTimeout,
 	}
 
+	log.Print("da fuq?")
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
 	if err != nil {
 		return err
@@ -158,9 +164,11 @@ func (s *SimpleServer) Start() error {
 	go func() {
 		exit := <-s.exit
 
-		// let the health check clean up if it needs to
-		if err := healthHandler.Stop(); err != nil {
-			Log.Warn("health check Stop returned with error: ", err)
+		if s.healthHandler != nil {
+			// let the health check clean up if it needs to
+			if err := s.healthHandler.Stop(); err != nil {
+				Log.Warn("health check Stop returned with error: ", err)
+			}
 		}
 
 		// flush any remaining metrics and close connections

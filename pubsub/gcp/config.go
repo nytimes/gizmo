@@ -11,9 +11,9 @@ type Config struct {
 	gcp.Config
 
 	// For publishing
-	Topic string `envconfig:"GCP_PUBSUB_TOPIC" json:"GCP_PUBSUB_TOPIC"`
+	Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
 	// For subscribing
-	Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION" json:"GCP_PUBSUB_SUBSCRIPTION"`
+	Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
 }
 
 // LoadConfigFromEnv will attempt to load a PubSub config

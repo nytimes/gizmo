@@ -86,6 +86,10 @@ type Config struct {
 	// Metrics config with "Type":"graphite" and this
 	// value in the "Addr" field.
 	GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
+
+	// this flag is for internal use. mainly to tell the SimpleServer
+	// to act like it's on an App Engine Flexible VM.
+	appEngine bool
 }
 
 // LoadConfigFromEnv will attempt to load a Server object

@@ -27,7 +27,6 @@ var Version string
 
 // Server is the basic interface that defines what to expect from any server.
 type Server interface {
-	http.Handler
 	Register(Service) error
 	Start() error
 	Stop() error
@@ -57,7 +56,7 @@ var (
 
 // Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
 // this func will set it to a `SimpleServer` listening on `Config.HTTPPort`.
-func Init(name string, scfg *Config) http.Handler {
+func Init(name string, scfg *Config) {
 	// generate a unique ID for the server
 	id, _ := uuid.NewV4()
 	Name = name + "-" + Version + "-" + id.String()
@@ -115,10 +114,6 @@ func Init(name string, scfg *Config) http.Handler {
 	SetLogLevel(scfg)
 
 	server = NewServer(scfg)
-	if ss, ok := server.(*SimpleServer); ok {
-		ss.init()
-	}
-	return server
 }
 
 // Register will add a new Service to the DefaultServer.
@@ -183,6 +178,9 @@ func NewServer(cfg *Config) Server {
 		return NewSimpleServer(cfg)
 	case "rpc":
 		return NewRPCServer(cfg)
+	case "appengine":
+		cfg.appEngine = true
+		return NewSimpleServer(cfg)
 	default:
 		return NewSimpleServer(cfg)
 	}

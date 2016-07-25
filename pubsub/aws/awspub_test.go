@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sns"
+	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
@@ -60,6 +61,8 @@ type TestSNSAPI struct {
 	Published []*sns.PublishInput
 }
 
+var _ snsiface.SNSAPI = &TestSNSAPI{}
+
 func (t *TestSNSAPI) Publish(i *sns.PublishInput) (*sns.PublishOutput, error) {
 	t.Published = append(t.Published, i)
 	return &sns.PublishOutput{}, t.Error
@@ -71,6 +74,44 @@ func (t *TestSNSAPI) Publish(i *sns.PublishInput) (*sns.PublishOutput, error) {
 
 var errNotImpl = errors.New("method not implemented")
 
+func (t *TestSNSAPI) SetSMSAttributesRequest(*sns.SetSMSAttributesInput) (*request.Request, *sns.SetSMSAttributesOutput) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) SetSMSAttributes(*sns.SetSMSAttributesInput) (*sns.SetSMSAttributesOutput, error) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) OptInPhoneNumberRequest(*sns.OptInPhoneNumberInput) (*request.Request, *sns.OptInPhoneNumberOutput) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) OptInPhoneNumber(*sns.OptInPhoneNumberInput) (*sns.OptInPhoneNumberOutput, error) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) ListPhoneNumbersOptedOutRequest(*sns.ListPhoneNumbersOptedOutInput) (*request.Request, *sns.ListPhoneNumbersOptedOutOutput) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) ListPhoneNumbersOptedOut(*sns.ListPhoneNumbersOptedOutInput) (*sns.ListPhoneNumbersOptedOutOutput, error) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) GetSMSAttributesRequest(*sns.GetSMSAttributesInput) (*request.Request, *sns.GetSMSAttributesOutput) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) GetSMSAttributes(*sns.GetSMSAttributesInput) (*sns.GetSMSAttributesOutput, error) {
+	return nil, nil
+}
+
+func (t *TestSNSAPI) CheckIfPhoneNumberIsOptedOutRequest(*sns.CheckIfPhoneNumberIsOptedOutInput) (*request.Request, *sns.CheckIfPhoneNumberIsOptedOutOutput) {
+	return nil, nil
+}
+func (t *TestSNSAPI) CheckIfPhoneNumberIsOptedOut(*sns.CheckIfPhoneNumberIsOptedOutInput) (*sns.CheckIfPhoneNumberIsOptedOutOutput, error) {
+	return nil, nil
+}
 func (t *TestSNSAPI) AddPermissionRequest(*sns.AddPermissionInput) (*request.Request, *sns.AddPermissionOutput) {
 	return nil, nil
 }

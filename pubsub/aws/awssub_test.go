@@ -11,6 +11,7 @@ import (
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -327,6 +328,8 @@ type TestSQSAPI struct {
 	Extended []*sqs.ChangeMessageVisibilityInput
 	Err      error
 }
+
+var _ sqsiface.SQSAPI = &TestSQSAPI{}
 
 func (s *TestSQSAPI) ReceiveMessage(*sqs.ReceiveMessageInput) (*sqs.ReceiveMessageOutput, error) {
 	if s.Offset >= len(s.Messages) {

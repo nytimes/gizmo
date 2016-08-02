@@ -1,7 +1,6 @@
 package gcp
 
 import (
-	"log"
 	"sync"
 	"time"
 
@@ -65,7 +64,6 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 		for {
 			select {
 			case exit := <-s.stop:
-				log.Print("stopping iterator")
 				if iter != nil {
 					iter.Stop()
 				}

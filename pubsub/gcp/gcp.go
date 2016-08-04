@@ -64,10 +64,17 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 		for {
 			select {
 			case exit := <-s.stop:
-				iter.Stop()
+				if iter != nil {
+					iter.Stop()
+				}
 				exit <- nil
 				return
 			default:
+				// something's wrong and we're on the way to stopping
+				if iter == nil {
+					continue
+				}
+
 				msg, err = iter.Next()
 				if err != nil {
 					s.err = err

@@ -13,6 +13,7 @@ import (
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
 	netContext "golang.org/x/net/context"
+	"google.golang.org/appengine"
 
 	metricscfg "github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/gizmo/web"
@@ -112,6 +113,13 @@ func (s *SimpleServer) Start() error {
 			s.cfg.Metrics.Path = "/debug/vars"
 		}
 		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
+	}
+
+	// if this is an App Engine setup, just run it here
+	if s.cfg.appEngine {
+		http.Handle("/", s)
+		appengine.Main()
+		return nil
 	}
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)

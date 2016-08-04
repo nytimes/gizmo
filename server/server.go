@@ -178,6 +178,9 @@ func NewServer(cfg *Config) Server {
 		return NewSimpleServer(cfg)
 	case "rpc":
 		return NewRPCServer(cfg)
+	case "appengine":
+		cfg.appEngine = true
+		return NewSimpleServer(cfg)
 	default:
 		return NewSimpleServer(cfg)
 	}

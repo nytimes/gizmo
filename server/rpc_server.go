@@ -86,7 +86,7 @@ func (r *RPCServer) Register(svc Service) error {
 	// register all context endpoints with our wrapper
 	for path, epMethods := range rpcsvc.ContextEndpoints() {
 		for method, ep := range epMethods {
-			endpointName := metricName(prefix, path, method)
+			endpointName := metricName(strings.TrimPrefix(prefix+path, "/"), method)
 			// set the function handle and register it to metrics
 			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 				func(ep ContextHandlerFunc, cs ContextService) http.Handler {
@@ -111,7 +111,7 @@ func (r *RPCServer) Register(svc Service) error {
 	// register all JSON context endpoints with our wrapper
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
-			endpointName := metricName(prefix, path, method)
+			endpointName := metricName(strings.TrimPrefix(prefix+path, "/"), method)
 			// set the function handle and register it to metrics
 			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
 				rpcsvc.Middleware(ContextToHTTP(context.Background(),

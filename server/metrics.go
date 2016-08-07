@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +107,7 @@ func (c *CounterByStatusXX) ServeHTTP(w0 http.ResponseWriter, r *http.Request) {
 // Timer is an http.Handler that counts requests via go-kit/kit/metrics.
 type Timer struct {
 	metrics.TimeHistogram
+	isProm  bool
 	handler http.Handler
 }
 
@@ -129,6 +132,38 @@ func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
 // ServeHTTP starts a timer, passes the request to the underlying http.Handler,
 // stops the timer, and updates the timer via go-kit/kit/metrics.
 func (t *Timer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer func(start time.Time) { t.Observe(time.Since(start)) }(time.Now())
+	if !t.isProm {
+		defer func(start time.Time) {
+			t.Observe(time.Since(start))
+		}(time.Now())
+	}
 	t.handler.ServeHTTP(w, r)
+}
+
+func metricName(fullPath, method string) string {
+	// replace slashes
+	fullPath = strings.Replace(fullPath, "/", "-", -1)
+	// replace periods
+	fullPath = strings.Replace(fullPath, ".", "-", -1)
+	return fmt.Sprintf("routes.%s-%s", fullPath, method)
+}
+
+// TimedAndCounted wraps a http.Handler with Timed and a CountedByStatusXXX or, if the
+// metrics provider is of type Prometheus, via a prometheus.InstrumentHandler
+func TimedAndCounted(handler http.Handler, fullPath string, method string, p provider.Provider) *Timer {
+	switch fmt.Sprintf("%T", p) {
+	case "provider.prometheusProvider":
+		return PrometheusTimedAndCounted(handler, fullPath)
+	default:
+		mn := metricName(fullPath, method)
+		return Timed(CountedByStatusXX(handler, mn + ".STATUS-COUNT", p), mn + ".DURATION", p)
+	}
+}
+
+// PrometheusTimedAndCounted wraps a http.Handler with via prometheus.InstrumentHandler
+func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
+	return &Timer{
+		isProm:  true,
+		handler: prometheus.InstrumentHandler(name, handler),
+	}
 }

@@ -4,8 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"cloud.google.com/go/pubsub"
+
 	"golang.org/x/net/context"
-	"google.golang.org/cloud/pubsub"
 )
 
 func TestGCPSubscriber(t *testing.T) {

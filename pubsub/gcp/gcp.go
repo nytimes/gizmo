@@ -1,12 +1,15 @@
 package gcp
 
 import (
+	"errors"
 	"sync"
 	"time"
 
+	"google.golang.org/api/option"
+
+	gpubsub "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	gpubsub "google.golang.org/cloud/pubsub"
 
 	"github.com/NYTimes/gizmo/pubsub"
 )
@@ -26,15 +29,15 @@ type subscriber struct {
 
 // NewSubscriber will instantiate a new Subscriber that wraps
 // a pubsub.Iterator.
-func NewSubscriber(ctx context.Context, cfg Config) (pubsub.Subscriber, error) {
-	client, err := gpubsub.NewClient(ctx, cfg.ProjectID)
+func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (pubsub.Subscriber, error) {
+	client, err := gpubsub.NewClient(ctx, projID, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return &subscriber{
-		sub:  subscriptionImpl{sub: client.Subscription(cfg.Subscription)},
+		sub:  subscriptionImpl{sub: client.Subscription(subscription)},
 		ctx:  ctx,
-		name: cfg.Subscription,
+		name: subscription,
 		stop: make(chan chan error, 1),
 	}, nil
 }
@@ -120,7 +123,7 @@ func (m *subMessage) Message() []byte {
 // ExtendDoneDeadline will call the deprecated ModifyAckDeadline for a pubsub
 // Message. This likely should not be called.
 func (m *subMessage) ExtendDoneDeadline(dur time.Duration) error {
-	return gpubsub.ModifyAckDeadline(m.ctx, m.sub, m.msg.ID(), dur)
+	return errors.New("not suppported")
 }
 
 // Done will acknowledge the pubsub Message.
@@ -132,13 +135,18 @@ func (m *subMessage) Done() error {
 // publisher is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Publisher interface.
 type publisher struct {
-	topic string
+	topic *gpubsub.Topic
 }
 
 // NewPublisher will instantiate a new GCP Publisher.
-func NewPublisher(topic string) (pubsub.Publisher, error) {
+func NewPublisher(ctx context.Context, projID, topic string, opts ...option.ClientOption) (pubsub.Publisher, error) {
+	client, err := gpubsub.NewClient(ctx, projID, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	return publisher{
-		topic: topic,
+		topic: client.Topic(topic),
 	}, nil
 }
 
@@ -153,7 +161,7 @@ func (p publisher) Publish(ctx context.Context, key string, msg proto.Message) e
 
 // PublishRaw will publish the message to GCP pubsub.
 func (p publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
-	_, err := gpubsub.Publish(ctx, p.topic, &gpubsub.Message{
+	_, err := p.topic.Publish(ctx, &gpubsub.Message{
 		Data:       m,
 		Attributes: map[string]string{"key": key},
 	})

@@ -5,11 +5,9 @@ import (
 	"log"
 
 	"golang.org/x/net/context"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
-	"google.golang.org/appengine"
-	"google.golang.org/cloud"
+	"google.golang.org/api/option"
 
 	"github.com/NYTimes/gizmo/config"
 )
@@ -39,36 +37,32 @@ func LoadConfigFromEnv() Config {
 	return gcp
 }
 
-// NewContext will attempt create a new context from
+// ClientOption will attempt create a new option.ClientOption from
 // a the Token or JSONAuthPath fields if provided. If the FlexibleAE flag
 // is set to designate this is a 'flexible' App Engine VM,
-// appengine.BackgroundContext() will be used. Otherwise, google.DefaultClient
-// will be used, which should work for standard App Engine environments and GCE.
-func (g Config) NewContext(scopes ...string) (context.Context, error) {
+// just the scope passed in will be used. Otherwise, this function
+// assumes you're running on GCE and tacks on a compute.ComputeScope.
+func (g Config) ClientOption(scopes ...string) (option.ClientOption, error) {
 	if len(g.Token) > 0 {
-		return g.contextFromToken(scopes...)
+		return g.optionFromToken(scopes...)
 	}
 
 	if len(g.JSONAuthPath) > 0 {
-		return g.contextFromJSON(scopes...)
+		return g.optionFromJSON(scopes...)
 	}
 
 	if g.FlexibleVM {
-		return appengine.BackgroundContext(), nil
+		return option.WithScopes(scopes...), nil
 	}
 
 	if len(scopes) == 0 {
 		scopes = append(scopes, compute.ComputeScope)
 	}
 
-	client, err := google.DefaultClient(oauth2.NoContext, scopes...)
-	if err != nil {
-		return nil, err
-	}
-	return cloud.NewContext(g.ProjectID, client), nil
+	return option.WithScopes(scopes...), nil
 }
 
-func (g Config) contextFromToken(scopes ...string) (context.Context, error) {
+func (g Config) optionFromToken(scopes ...string) (option.ClientOption, error) {
 	conf, err := google.JWTConfigFromJSON(
 		[]byte(g.Token),
 		scopes...,
@@ -78,10 +72,10 @@ func (g Config) contextFromToken(scopes ...string) (context.Context, error) {
 		return nil, err
 	}
 
-	return cloud.NewContext(g.ProjectID, conf.Client(oauth2.NoContext)), nil
+	return option.WithTokenSource(conf.TokenSource(context.Background())), nil
 }
 
-func (g Config) contextFromJSON(scopes ...string) (context.Context, error) {
+func (g Config) optionFromJSON(scopes ...string) (option.ClientOption, error) {
 	jsonKey, err := ioutil.ReadFile(g.JSONAuthPath)
 	if err != nil {
 		return nil, err
@@ -93,6 +87,5 @@ func (g Config) contextFromJSON(scopes ...string) (context.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return cloud.NewContext(g.ProjectID, conf.Client(oauth2.NoContext)), nil
+	return option.WithTokenSource(conf.TokenSource(context.Background())), nil
 }

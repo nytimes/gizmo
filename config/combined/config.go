@@ -10,6 +10,7 @@ import (
 	"github.com/NYTimes/gizmo/config/mongodb"
 	"github.com/NYTimes/gizmo/config/mysql"
 	"github.com/NYTimes/gizmo/config/oracle"
+	"github.com/NYTimes/gizmo/config/postgresql"
 	awsps "github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/gizmo/pubsub/kafka"
 	"github.com/NYTimes/gizmo/server"
@@ -33,6 +34,8 @@ type Config struct {
 	Kafka *kafka.Config
 
 	Oracle oracle.Config
+
+	PostgreSQL *postgresql.Config
 
 	MySQL      *mysql.Config
 	MySQLSlave *mysql.Config
@@ -71,6 +74,7 @@ func LoadConfigFromEnv() *Config {
 	app.MongoDB = mongodb.LoadConfigFromEnv()
 	app.Kafka = kafka.LoadConfigFromEnv()
 	app.MySQL = mysql.LoadConfigFromEnv()
+	app.PostgreSQL = postgresql.LoadConfigFromEnv()
 	app.Oracle = oracle.LoadConfigFromEnv()
 	app.Cookie = cookie.LoadConfigFromEnv()
 	app.Server = server.LoadConfigFromEnv()

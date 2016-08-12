@@ -151,12 +151,13 @@ func metricName(fullPath, method string) string {
 // TimedAndCounted wraps a http.Handler with Timed and a CountedByStatusXXX or, if the
 // metrics provider is of type Prometheus, via a prometheus.InstrumentHandler
 func TimedAndCounted(handler http.Handler, fullPath string, method string, p provider.Provider) *Timer {
+	fullPath = strings.TrimPrefix(fullPath, "/")
 	switch fmt.Sprintf("%T", p) {
 	case "provider.prometheusProvider":
 		return PrometheusTimedAndCounted(handler, fullPath)
 	default:
 		mn := metricName(fullPath, method)
-		return Timed(CountedByStatusXX(handler, mn + ".STATUS-COUNT", p), mn + ".DURATION", p)
+		return Timed(CountedByStatusXX(handler, mn+".STATUS-COUNT", p), mn+".DURATION", p)
 	}
 }
 

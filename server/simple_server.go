@@ -234,7 +234,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all simple endpoints with our wrapper
 		for path, epMethods := range ss.Endpoints() {
 			for method, ep := range epMethods {
-				fullpath := strings.TrimPrefix(prefix+path, "/")
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
@@ -252,7 +251,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 							ss.Middleware(ep).ServeHTTP(w, r)
 						})
 					}(ep, ss),
-					fullpath, method, s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -262,11 +261,10 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all JSON endpoints with our wrapper
 		for path, epMethods := range js.JSONEndpoints() {
 			for method, ep := range epMethods {
-				fullPath := strings.TrimPrefix(prefix+path, "/")
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					fullPath, method, s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -276,7 +274,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all context endpoints with our wrapper
 		for path, epMethods := range cs.ContextEndpoints() {
 			for method, ep := range epMethods {
-				fullPath := strings.TrimPrefix(prefix+path, "/")
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
@@ -294,7 +291,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
 						})
 					}(ep, cs),
-					fullPath, method, s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -304,7 +301,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all context endpoints with our wrapper
 		for path, epMethods := range mcs.JSONEndpoints() {
 			for method, ep := range epMethods {
-				fullPath := strings.TrimPrefix(prefix+path, "/")
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					mcs.Middleware(ContextToHTTP(netContext.Background(),
@@ -312,7 +308,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 							JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
 						),
 					)),
-					fullPath, method, s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}

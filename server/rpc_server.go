@@ -86,9 +86,8 @@ func (r *RPCServer) Register(svc Service) error {
 	// register all context endpoints with our wrapper
 	for path, epMethods := range rpcsvc.ContextEndpoints() {
 		for method, ep := range epMethods {
-			endpointName := metricName(prefix, path, method)
 			// set the function handle and register it to metrics
-			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+			r.mux.Handle(method, prefix+path, TimedAndCounted(
 				func(ep ContextHandlerFunc, cs ContextService) http.Handler {
 					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						if r.Body != nil {
@@ -102,8 +101,7 @@ func (r *RPCServer) Register(svc Service) error {
 						rpcsvc.Middleware(ContextToHTTP(ctx, rpcsvc.ContextMiddleware(ep))).ServeHTTP(w, r)
 					})
 				}(ep, rpcsvc),
-				endpointName+".STATUS-COUNT", r.mets),
-				endpointName+".DURATION", r.mets),
+				prefix+path, method, r.mets),
 			)
 		}
 	}
@@ -111,16 +109,14 @@ func (r *RPCServer) Register(svc Service) error {
 	// register all JSON context endpoints with our wrapper
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
-			endpointName := metricName(prefix, path, method)
 			// set the function handle and register it to metrics
-			r.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+			r.mux.Handle(method, prefix+path, TimedAndCounted(
 				rpcsvc.Middleware(ContextToHTTP(context.Background(),
 					rpcsvc.ContextMiddleware(
 						JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
 					),
 				)),
-				endpointName+".STATUS-COUNT", r.mets),
-				endpointName+".DURATION", r.mets),
+				prefix+path, method, r.mets),
 			)
 		}
 	}

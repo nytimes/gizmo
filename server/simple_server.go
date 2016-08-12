@@ -12,6 +12,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/context"
+	"github.com/prometheus/client_golang/prometheus"
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -108,11 +109,21 @@ func (s *SimpleServer) Start() error {
 	s.cfg.HealthCheckPath = healthHandler.Path()
 
 	// if expvar, register on our router
-	if s.cfg.Metrics.Type == metricscfg.Expvar {
+
+	switch s.cfg.Metrics.Type {
+
+	case metricscfg.Expvar:
 		if s.cfg.Metrics.Path == "" {
 			s.cfg.Metrics.Path = "/debug/vars"
 		}
 		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
+
+	case metricscfg.Prometheus:
+		if s.cfg.Metrics.Path == "" {
+			s.cfg.Metrics.Path = "/metrics"
+		}
+		s.mux.HandleFunc("GET", s.cfg.Metrics.Path,
+			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
 	}
 
 	// if this is an App Engine setup, just run it here
@@ -189,16 +200,6 @@ func (s *SimpleServer) Stop() error {
 	return <-ch
 }
 
-func metricName(prefix, path, method string) string {
-	// combine and trim prefix
-	fullpath := strings.TrimPrefix(prefix+path, "/")
-	// replace slashes
-	fullpath = strings.Replace(fullpath, "/", "-", -1)
-	// replace periods
-	fullpath = strings.Replace(fullpath, ".", "-", -1)
-	return fmt.Sprintf("routes.%s-%s", fullpath, method)
-}
-
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
 	prefix := svcI.Prefix()
@@ -233,9 +234,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all simple endpoints with our wrapper
 		for path, epMethods := range ss.Endpoints() {
 			for method, ep := range epMethods {
-				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -251,8 +251,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 							ss.Middleware(ep).ServeHTTP(w, r)
 						})
 					}(ep, ss),
-					endpointName+".STATUS-COUNT", s.mets),
-					endpointName+".DURATION", s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -262,12 +261,10 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all JSON endpoints with our wrapper
 		for path, epMethods := range js.JSONEndpoints() {
 			for method, ep := range epMethods {
-				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					endpointName+".STATUS-COUNT", s.mets),
-					endpointName+".DURATION", s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -277,9 +274,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all context endpoints with our wrapper
 		for path, epMethods := range cs.ContextEndpoints() {
 			for method, ep := range epMethods {
-				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							// is it worth it to always close this?
@@ -295,8 +291,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
 						})
 					}(ep, cs),
-					endpointName+".STATUS-COUNT", s.mets),
-					endpointName+".DURATION", s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}
@@ -306,16 +301,14 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all context endpoints with our wrapper
 		for path, epMethods := range mcs.JSONEndpoints() {
 			for method, ep := range epMethods {
-				endpointName := metricName(prefix, path, method)
 				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, Timed(CountedByStatusXX(
+				s.mux.Handle(method, prefix+path, TimedAndCounted(
 					mcs.Middleware(ContextToHTTP(netContext.Background(),
 						mcs.ContextMiddleware(
 							JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
 						),
 					)),
-					endpointName+".STATUS-COUNT", s.mets),
-					endpointName+".DURATION", s.mets),
+					prefix+path, method, s.mets),
 				)
 			}
 		}

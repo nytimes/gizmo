@@ -24,6 +24,7 @@ The subpackages contain structs meant for managing common configuration options 
 * MySQL
 * MongoDB
 * Oracle
+* PostgreSQL
 * AWS (S3, DynamoDB, ElastiCache)
 * GCP
 * Gorilla's `securecookie`

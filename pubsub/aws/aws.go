@@ -273,7 +273,7 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 				return
 			default:
 				// get messages
-				pubsub.Log.Infof("receiving messages")
+				pubsub.Log.Debugf("receiving messages")
 				resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
 					MaxNumberOfMessages: s.cfg.MaxMessages,
 					QueueUrl:            s.queueURL,
@@ -290,12 +290,12 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 
 				// if we didn't get any messages, lets chill out for a sec
 				if len(resp.Messages) == 0 {
-					pubsub.Log.Infof("no messages found. sleeping for %s", s.cfg.SleepInterval)
+					pubsub.Log.Debugf("no messages found. sleeping for %s", s.cfg.SleepInterval)
 					time.Sleep(*s.cfg.SleepInterval)
 					continue
 				}
 
-				pubsub.Log.Infof("found %d messages", len(resp.Messages))
+				pubsub.Log.Debugf("found %d messages", len(resp.Messages))
 
 				// for each message, pass to output
 				for _, msg := range resp.Messages {

@@ -14,7 +14,7 @@ This toolkit provides packages to put together server and pubsub daemons with th
 
 In this toolkit, you will find:
 
-## The `config` package
+## The `config` packages
 
 The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
 
@@ -146,7 +146,7 @@ type RPCService interface {
 
 The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
-## The `pubsub` package
+## The `pubsub` packages
 
 The base `pubsub` package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 

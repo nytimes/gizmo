@@ -14,7 +14,7 @@ This toolkit provides packages to put together server and pubsub daemons with th
 
 In this toolkit, you will find:
 
-## The `config` packages
+## The `config` package
 
 The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v or environment variables.
 
@@ -46,7 +46,7 @@ type Server interface {
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 4 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`. A service and these implementations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 5 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`. A service and these implementations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -60,7 +60,7 @@ type Service interface {
 }
 ```
 
-The 4 service types that are accepted and hostable on the `SimpleServer`:
+The 5 service types that are accepted and hostable on the `SimpleServer`:
 
 ```go
 type SimpleService interface {
@@ -146,7 +146,7 @@ type RPCService interface {
 
 The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily plugged in (i.e. oauth, tracing, metrics, logging, etc.)
 
-## The `pubsub` packages
+## The `pubsub` package
 
 The base `pubsub` package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 

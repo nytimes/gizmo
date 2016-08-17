@@ -46,7 +46,7 @@ type Server interface {
 
 The package offers 2 server implementations:
 
-`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 4 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`. A service and these implementations will be defined below.
+`SimpleServer`, which is capable of handling basic HTTP and JSON requests via 5 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`. A service and these implementations will be defined below.
 
 `RPCServer`, which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
 
@@ -60,7 +60,7 @@ type Service interface {
 }
 ```
 
-The 4 service types that are accepted and hostable on the `SimpleServer`:
+The 5 service types that are accepted and hostable on the `SimpleServer`:
 
 ```go
 type SimpleService interface {

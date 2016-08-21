@@ -275,11 +275,7 @@ func newMetricsProvider(cfg *Config) provider.Provider {
 	}
 	p := cfg.MetricsProvider
 	if p == nil {
-		var err error
-		p, err = cfg.Metrics.NewProvider()
-		if err != nil {
-			Log.Fatal("invalid metrics config:", err)
-		}
+		p = cfg.Metrics.NewProvider()
 	}
 	return p
 }

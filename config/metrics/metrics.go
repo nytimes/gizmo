@@ -4,7 +4,10 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/metrics/dogstatsd"
+	"github.com/go-kit/kit/metrics/graphite"
 	"github.com/go-kit/kit/metrics/provider"
+	"github.com/go-kit/kit/metrics/statsd"
 
 	"github.com/NYTimes/gizmo/config"
 )
@@ -72,7 +75,7 @@ func LoadConfigFromEnv() Config {
 // NewProvider will use the values in the Metrics config object
 // to generate a new go-kit/metrics/provider.Provider implementation.
 // If no type is given, a no-op implementation will be used.
-func (cfg Config) NewProvider() (provider.Provider, error) {
+func (cfg Config) NewProvider() provider.Provider {
 	if cfg.Logger == nil {
 		cfg.Logger = log.NewNopLogger()
 	}
@@ -84,19 +87,25 @@ func (cfg Config) NewProvider() (provider.Provider, error) {
 	}
 	switch cfg.Type {
 	case Statsd:
-		return provider.NewStatsdProvider(cfg.Network, cfg.Addr,
-			cfg.Prefix, cfg.Interval, cfg.Logger)
+		stsd := statsd.New(cfg.Prefix, cfg.Logger)
+		tick := time.NewTicker(cfg.Interval)
+		go stsd.SendLoop(tick.C, cfg.Network, cfg.Addr)
+		return provider.NewStatsdProvider(stsd, tick.Stop)
 	case DogStatsd:
-		return provider.NewDogStatsdProvider(cfg.Network, cfg.Addr,
-			cfg.Prefix, cfg.Interval, cfg.Logger)
+		stsd := dogstatsd.New(cfg.Prefix, cfg.Logger)
+		tick := time.NewTicker(cfg.Interval)
+		go stsd.SendLoop(tick.C, cfg.Network, cfg.Addr)
+		return provider.NewDogstatsdProvider(stsd, tick.Stop)
 	case Graphite:
-		return provider.NewGraphiteProvider(cfg.Network, cfg.Addr,
-			cfg.Prefix, cfg.Interval, cfg.Logger)
+		grpht := graphite.New(cfg.Prefix, cfg.Logger)
+		tick := time.NewTicker(cfg.Interval)
+		go grpht.SendLoop(tick.C, cfg.Network, cfg.Addr)
+		return provider.NewGraphiteProvider(grpht, tick.Stop)
 	case Prometheus:
-		return provider.NewPrometheusProvider(cfg.Namespace, cfg.Subsystem), nil
+		return provider.NewPrometheusProvider(cfg.Namespace, cfg.Subsystem)
 	case Expvar:
-		return provider.NewExpvarProvider(cfg.Prefix), nil
+		return provider.NewExpvarProvider()
 	default:
-		return provider.NewDiscardProvider(), nil
+		return provider.NewDiscardProvider()
 	}
 }

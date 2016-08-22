@@ -121,7 +121,7 @@ func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
 func (t *Timer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !t.isProm {
 		defer func(start time.Time) {
-			t.Observe(float64(time.Since(start).Nanoseconds()) / 1000000.0)
+			t.Observe(time.Since(start).Seconds())
 		}(time.Now())
 	}
 	t.handler.ServeHTTP(w, r)

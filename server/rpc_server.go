@@ -271,7 +271,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 		} else {
 			m.ErrorCounter.Add(1)
 		}
-		m.Timer.Observe(float64(time.Since(start).Nanoseconds()) / 1000000.0)
+		m.Timer.Observe(time.Since(start).Seconds())
 
 		if rpcAccessLog != nil {
 			LogRPCWithFields(rpcAccessLog, ctx).WithFields(logrus.Fields{

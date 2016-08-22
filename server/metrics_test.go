@@ -70,7 +70,7 @@ func TestTimer(t *testing.T) {
 	w := httptest.NewRecorder()
 	timer.ServeHTTP(w, r)
 
-	if dur := provider.histograms["timed"].lastObserved; dur < 200 || dur > 300 {
+	if dur := provider.histograms["timed"].lastObserved; dur < 0.2 || dur > 0.3 {
 		t.Errorf("Timer expected Max() to return between 200 and 300 ms, got %f", dur)
 	}
 }

@@ -72,17 +72,12 @@ type CounterByStatusXX struct {
 // its HTTP status code via go-kit/kit/metrics.
 func CountedByStatusXX(handler http.Handler, name string, p provider.Provider) *CounterByStatusXX {
 	return &CounterByStatusXX{
-		counter1xx: p.NewCounter(fmt.Sprintf("%s-1xx", name),
-			fmt.Sprintf("counting responses to %q with a status code of 1XX", name)),
-		counter2xx: p.NewCounter(fmt.Sprintf("%s-2xx", name),
-			fmt.Sprintf("counting responses to %q with a status code of 2XX", name)),
-		counter3xx: p.NewCounter(fmt.Sprintf("%s-3xx", name),
-			fmt.Sprintf("counting responses to %q with a status code of 3XX", name)),
-		counter4xx: p.NewCounter(fmt.Sprintf("%s-4xx", name),
-			fmt.Sprintf("counting responses to %q with a status code of 4XX", name)),
-		counter5xx: p.NewCounter(fmt.Sprintf("%s-5xx", name),
-			fmt.Sprintf("counting responses to %q with a status code of 5XX", name)),
-		handler: handler,
+		counter1xx: p.NewCounter(fmt.Sprintf("%s-1xx", name)),
+		counter2xx: p.NewCounter(fmt.Sprintf("%s-2xx", name)),
+		counter3xx: p.NewCounter(fmt.Sprintf("%s-3xx", name)),
+		counter4xx: p.NewCounter(fmt.Sprintf("%s-4xx", name)),
+		counter5xx: p.NewCounter(fmt.Sprintf("%s-5xx", name)),
+		handler:    handler,
 	}
 }
 
@@ -106,7 +101,7 @@ func (c *CounterByStatusXX) ServeHTTP(w0 http.ResponseWriter, r *http.Request) {
 
 // Timer is an http.Handler that counts requests via go-kit/kit/metrics.
 type Timer struct {
-	metrics.TimeHistogram
+	metrics.Histogram
 	isProm  bool
 	handler http.Handler
 }
@@ -115,17 +110,9 @@ type Timer struct {
 // underlying http.Handler, stops the timer, and updates the timer via
 // go-kit/kit/metrics.
 func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
-	hist, err := p.NewHistogram(name,
-		fmt.Sprintf("tracking request duration for %q", name),
-		0, 1500000, 4, // 0-15 minute time range, 4 sigfigs
-		50, 75, 90, 95, 99) // quantiles
-	if err != nil {
-		panic("invalid histogram settings")
-	}
-
 	return &Timer{
-		TimeHistogram: metrics.NewTimeHistogram(time.Millisecond, hist),
-		handler:       handler,
+		Histogram: p.NewHistogram(name, 50),
+		handler:   handler,
 	}
 }
 
@@ -134,7 +121,7 @@ func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
 func (t *Timer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !t.isProm {
 		defer func(start time.Time) {
-			t.Observe(time.Since(start))
+			t.Observe(time.Since(start).Seconds())
 		}(time.Now())
 	}
 	t.handler.ServeHTTP(w, r)

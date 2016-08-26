@@ -58,7 +58,7 @@ func NewSimpleServer(cfg *Config) *SimpleServer {
 		exit:         make(chan chan error),
 		monitor:      NewActivityMonitor(),
 		mets:         mets,
-		panicCounter: mets.NewCounter("panic", "counting any server panics"),
+		panicCounter: mets.NewCounter("panic"),
 	}
 }
 

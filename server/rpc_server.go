@@ -57,7 +57,7 @@ func NewRPCServer(cfg *Config) *RPCServer {
 		exit:         make(chan chan error),
 		monitor:      NewActivityMonitor(),
 		mets:         mets,
-		panicCounter: mets.NewCounter("panic", "counting any server panics"),
+		panicCounter: mets.NewCounter("panic"),
 	}
 }
 
@@ -271,7 +271,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 		} else {
 			m.ErrorCounter.Add(1)
 		}
-		m.Timer.Observe(time.Since(start))
+		m.Timer.Observe(time.Since(start).Seconds())
 
 		if rpcAccessLog != nil {
 			LogRPCWithFields(rpcAccessLog, ctx).WithFields(logrus.Fields{
@@ -286,7 +286,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 var rpcEndpointMetrics = map[string]*rpcMetrics{}
 
 type rpcMetrics struct {
-	Timer          metrics.TimeHistogram
+	Timer          metrics.Histogram
 	SuccessCounter metrics.Counter
 	ErrorCounter   metrics.Counter
 	PanicCounter   metrics.Counter
@@ -294,21 +294,11 @@ type rpcMetrics struct {
 
 func registerRPCMetrics(name string, mets provider.Provider) {
 	name = "rpc." + name
-	hist, err := mets.NewHistogram(name+".DURATION",
-		fmt.Sprintf("tracking request duration for %q", name),
-		0, 1500000, 4, // 0-15min time range
-		50, 75, 90, 95, 99)
-	if err != nil {
-		panic(fmt.Sprint("invalid histogram settings: ", err))
-	}
 	rpcEndpointMetrics[name] = &rpcMetrics{
-		Timer: metrics.NewTimeHistogram(time.Millisecond, hist),
-		SuccessCounter: mets.NewCounter(name+".SUCCESS",
-			fmt.Sprintf("counting successful repsonses for %s", name)),
-		ErrorCounter: mets.NewCounter(name+".ERROR",
-			fmt.Sprintf("counting error responses for %s", name)),
-		PanicCounter: mets.NewCounter(name+".PANIC",
-			fmt.Sprintf("counting paniced responses for %s", name)),
+		Timer:          mets.NewHistogram(name+".DURATION", 50),
+		SuccessCounter: mets.NewCounter(name + ".SUCCESS"),
+		ErrorCounter:   mets.NewCounter(name + ".ERROR"),
+		PanicCounter:   mets.NewCounter(name + ".PANIC"),
 	}
 }
 

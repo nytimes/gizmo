@@ -39,19 +39,19 @@ func TestCounterByStatusXX(t *testing.T) {
 	close(statuses)
 
 	if cnt := provider.counters["counted-1xx"].lastAdd; cnt != 1 {
-		t.Errorf("CountedByStatusXX expected 1xx counter to have a count of 1, got %d", cnt)
+		t.Errorf("CountedByStatusXX expected 1xx counter to have a count of 1, got %f", cnt)
 	}
 	if cnt := provider.counters["counted-2xx"].lastAdd; cnt != 1 {
-		t.Errorf("CountedByStatusXX expected 2xx counter to have a count of 1, got %d", cnt)
+		t.Errorf("CountedByStatusXX expected 2xx counter to have a count of 1, got %f", cnt)
 	}
 	if cnt := provider.counters["counted-3xx"].lastAdd; cnt != 1 {
-		t.Errorf("CountedByStatusXX expected 3xx counter to have a count of 1, got %d", cnt)
+		t.Errorf("CountedByStatusXX expected 3xx counter to have a count of 1, got %f", cnt)
 	}
 	if cnt := provider.counters["counted-4xx"].lastAdd; cnt != 1 {
-		t.Errorf("CountedByStatusXX expected 4xx counter to have a count of 1, got %d", cnt)
+		t.Errorf("CountedByStatusXX expected 4xx counter to have a count of 1, got %f", cnt)
 	}
 	if cnt := provider.counters["counted-5xx"].lastAdd; cnt != 1 {
-		t.Errorf("CountedByStatusXX expected 5xx counter to have a count of 1, got %d", cnt)
+		t.Errorf("CountedByStatusXX expected 5xx counter to have a count of 1, got %f", cnt)
 	}
 }
 
@@ -70,8 +70,8 @@ func TestTimer(t *testing.T) {
 	w := httptest.NewRecorder()
 	timer.ServeHTTP(w, r)
 
-	if dur := provider.histograms["timed"].lastObserved; dur < 200 || dur > 300 {
-		t.Errorf("Timer expected Max() to return between 200 and 300 ms, got %d", dur)
+	if dur := provider.histograms["timed"].lastObserved; dur < 0.2 || dur > 0.3 {
+		t.Errorf("Timer expected Max() to return between 200 and 300 ms, got %f", dur)
 	}
 }
 
@@ -90,7 +90,7 @@ type mockProvider struct {
 	histograms map[string]*mockHistogram
 }
 
-func (p *mockProvider) NewCounter(name string, help string) metrics.Counter {
+func (p *mockProvider) NewCounter(name string) metrics.Counter {
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 	c := &mockCounter{}
@@ -98,15 +98,15 @@ func (p *mockProvider) NewCounter(name string, help string) metrics.Counter {
 	return c
 }
 
-func (p *mockProvider) NewHistogram(name string, help string, min int64, max int64, sigfigs int, quantiles ...int) (metrics.Histogram, error) {
+func (p *mockProvider) NewHistogram(name string, buckets int) metrics.Histogram {
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 	h := &mockHistogram{}
 	p.histograms[name] = h
-	return h, nil
+	return h
 }
 
-func (p *mockProvider) NewGauge(name string, help string) metrics.Gauge {
+func (p *mockProvider) NewGauge(name string) metrics.Gauge {
 	p.mtx.Lock()
 	defer p.mtx.Unlock()
 	g := &mockGauge{}
@@ -123,18 +123,17 @@ func (c *mockCounter) Name() string {
 
 type mockCounter struct {
 	mtx     sync.Mutex
-	lastAdd uint64
+	lastAdd float64
 }
 
-func (c *mockCounter) With(metrics.Field) metrics.Counter {
+func (c *mockCounter) With(labelValues ...string) metrics.Counter {
 	panic("not implemented")
 }
 
-func (c *mockCounter) Add(delta uint64) {
+func (c *mockCounter) Add(delta float64) {
 	c.mtx.Lock()
 	defer c.mtx.Unlock()
 	c.lastAdd = delta
-
 }
 
 type mockGauge struct {
@@ -147,7 +146,7 @@ func (g *mockGauge) Name() string {
 	panic("not implemented")
 }
 
-func (g *mockGauge) With(metrics.Field) metrics.Gauge {
+func (g *mockGauge) With(labelValues ...string) metrics.Gauge {
 	panic("not implemented")
 }
 
@@ -170,23 +169,19 @@ func (g *mockGauge) Get() float64 {
 
 type mockHistogram struct {
 	mtx          sync.Mutex
-	lastObserved int64
+	lastObserved float64
 }
 
 func (h *mockHistogram) Name() string {
 	panic("not implemented")
 }
 
-func (h *mockHistogram) With(metrics.Field) metrics.Histogram {
+func (h *mockHistogram) With(labelValues ...string) metrics.Histogram {
 	panic("not implemented")
 }
 
-func (h *mockHistogram) Observe(value int64) {
+func (h *mockHistogram) Observe(value float64) {
 	h.mtx.Lock()
 	defer h.mtx.Unlock()
 	h.lastObserved = value
-}
-
-func (h *mockHistogram) Distribution() ([]metrics.Bucket, []metrics.Quantile) {
-	panic("not implemented")
 }

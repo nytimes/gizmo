@@ -58,11 +58,7 @@ func Init() {
 
 	var err error
 	cfg.Metrics.Prefix = metricsNamespace()
-	metrics, err = cfg.Metrics.NewProvider()
-	if err != nil {
-		Log.Fatal("unable to init metrics: ", err)
-	}
-
+	metrics = cfg.Metrics.NewProvider()
 	client = nyt.NewClient(cfg.MostPopularToken, cfg.SemanticToken)
 
 	sub, err = aws.NewSubscriber(cfg.SQS)
@@ -74,10 +70,8 @@ func Init() {
 func Run() (err error) {
 	stream := sub.Start()
 
-	totalMsgsConsumed := metrics.NewCounter("total-consumed",
-		"total messages consumed by the subscriber")
-	errorCount := metrics.NewCounter("error-count",
-		"number of errors that have occurred in the subscriber")
+	totalMsgsConsumed := metrics.NewCounter("total-consumed")
+	errorCount := metrics.NewCounter("error-count")
 
 	go func() {
 		ch := make(chan os.Signal, 1)

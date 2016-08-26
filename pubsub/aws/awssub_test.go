@@ -275,7 +275,7 @@ func makeProto(b []byte) *TestProto {
  1000000	     14248 ns/op	    1491 B/op	      31 allocs/op
  2000000	     14138 ns/op	    1489 B/op	      31 allocs/op
 */
-func Benchmarksubscriber_Proto(b *testing.B) {
+func BenchmarkSubscriber_Proto(b *testing.B) {
 	test1 := &TestProto{"hey hey hey!"}
 	sqstest := &TestSQSAPI{
 		Messages: [][]*sqs.Message{

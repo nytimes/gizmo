@@ -194,7 +194,7 @@ type (
 		sub *gpubsub.Subscription
 	}
 	iteratorImpl struct {
-		iter *gpubsub.Iterator
+		iter *gpubsub.MessageIterator
 	}
 	messageImpl struct {
 		msg *gpubsub.Message

@@ -13,7 +13,8 @@ import (
 // of using `mux.Vars(r)` with the Gorilla mux.Router.
 func Vars(r *http.Request) map[string]string {
 	if rv := context.Get(r, varsKey); rv != nil {
-		return rv.(map[string]string)
+		vars, _ := rv.(map[string]string)
+		return vars
 	}
 	return nil
 }

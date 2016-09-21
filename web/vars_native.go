@@ -18,11 +18,7 @@ func Vars(r *http.Request) map[string]string {
 	}
 
 	// for some reason, vars is wrong type, return empty map
-	vars, ok := rawVars.(map[string]string)
-	if !ok {
-		return map[string]string{}
-	}
-
+	vars, _ := rawVars.(map[string]string)
 	return vars
 }
 

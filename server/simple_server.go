@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
-	"github.com/gorilla/context"
 	"github.com/prometheus/client_golang/prometheus"
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -316,21 +315,6 @@ func (s *SimpleServer) Register(svcI Service) error {
 
 	RegisterProfiler(s.cfg, s.mux)
 	return nil
-}
-
-// AddIPToContext will attempt to pull an IP address out of the request and
-// set it into a gorilla context.
-func AddIPToContext(r *http.Request) {
-	ip, err := GetIP(r)
-	if err != nil {
-		LogWithFields(r).Warningf("unable to get IP: %s", err)
-	} else {
-		context.Set(r, "ip", ip)
-	}
-
-	if ip = GetForwardedIP(r); len(ip) > 0 {
-		context.Set(r, "forward-for-ip", ip)
-	}
 }
 
 // GetForwardedIP returns the "X-Forwarded-For" header value.

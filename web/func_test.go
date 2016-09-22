@@ -249,7 +249,7 @@ func TestGetUInt64Var(t *testing.T) {
 	for _, test := range tests {
 		route := mux.NewRouter()
 		route.HandleFunc(test.givenRoute, func(w http.ResponseWriter, r *http.Request) {
-			web.SetRouteVars(r, mux.Vars(r))
+			r = web.SetRouteVars(r, mux.Vars(r))
 			got := web.GetUInt64Var(r, "key")
 			if got != test.want {
 				t.Errorf("URL(%s): got int of %#v, expected %#v", test.givenURL, got, test.want)
@@ -294,7 +294,7 @@ func TestGetInt64Var(t *testing.T) {
 	for _, test := range tests {
 		route := mux.NewRouter()
 		route.HandleFunc(test.givenRoute, func(w http.ResponseWriter, r *http.Request) {
-			web.SetRouteVars(r, mux.Vars(r))
+			r = web.SetRouteVars(r, mux.Vars(r))
 			got := web.GetInt64Var(r, "key")
 			if got != test.want {
 				t.Errorf("URL(%s): got int of %#v, expected %#v", test.givenURL, got, test.want)

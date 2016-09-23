@@ -21,12 +21,10 @@ func Vars(r *http.Request) map[string]string {
 
 // SetRouteVars will set the given value into into the request context
 // with the shared 'vars' storage key.
-func SetRouteVars(r *http.Request, val interface{}) *http.Request {
+func SetRouteVars(r *http.Request, val interface{}) {
 	if val != nil {
 		context.Set(r, varsKey, val)
 	}
-
-	return r
 }
 
 type contextKey int

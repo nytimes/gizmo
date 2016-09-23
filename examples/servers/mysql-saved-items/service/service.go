@@ -36,7 +36,7 @@ func (s *SavedItemsService) Prefix() string {
 // This method helps satisfy the server.Service interface.
 func (s *SavedItemsService) Middleware(h http.Handler) http.Handler {
 	// wrap the response with our GZIP Middleware
-	return gziphandler.GzipHandler(h)
+	return context.ClearHandler(gziphandler.GzipHandler(h))
 }
 
 // JSONMiddleware provides a hook to add service-wide middleware for how JSONEndpoints

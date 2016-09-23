@@ -23,15 +23,14 @@ func Vars(r *http.Request) map[string]string {
 }
 
 // SetRouteVars will set the given value into into the request context
-// with the shared 'vars' storage key. This returns a shallow copy of
-// the request with its context altered. Users will need to use the returned
-// value for route vars to exist.
-func SetRouteVars(r *http.Request, val interface{}) *http.Request {
+// with the shared 'vars' storage key.
+func SetRouteVars(r *http.Request, val interface{}) {
 	if val == nil {
-		return r
+		return
 	}
 
-	return r.WithContext(context.WithValue(r.Context(), varsKey, val))
+	r2 := r.WithContext(context.WithValue(r.Context(), varsKey, val))
+	*r = *r2
 }
 
 type contextKey int

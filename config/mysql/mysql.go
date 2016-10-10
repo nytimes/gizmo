@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/NYTimes/gizmo/config"
 )
@@ -17,9 +18,9 @@ type Config struct {
 	Port            int    `envconfig:"MYSQL_PORT"`
 	DBName          string `envconfig:"MYSQL_DB_NAME"`
 	Location        string `envconfig:"MYSQL_LOCATION"`
-	ReadTimeout     string `envconfig:"READ_TIMEOUT"`
-	WriteTimeout    string `envconfig:"WRITE_TIMEOUT"`
-	AddtlDSNOptions string `envconfig:"ADDTL_DSN_OPTIONS"`
+	ReadTimeout     string `envconfig:"MYSQL_READ_TIMEOUT"`
+	WriteTimeout    string `envconfig:"MYSQL_WRITE_TIMEOUT"`
+	AddtlDSNOptions string `envconfig:"MYSQL_ADDTL_DSN_OPTIONS"`
 }
 
 const (
@@ -65,12 +66,18 @@ func (m *Config) String() string {
 		m.Location = url.QueryEscape(DefaultLocation)
 	}
 
-	addtl := m.AddtlDSNOptions
+	addtl := "&" + m.AddtlDSNOptions
 	if m.ReadTimeout != "" {
-		addtl += fmt.Sprintf("&readTimeout=%s", m.ReadTimeout)
+		if !strings.HasSuffix(addtl, "&") {
+			addtl += "&"
+		}
+		addtl += fmt.Sprintf("readTimeout=%s", m.ReadTimeout)
 	}
 	if m.WriteTimeout != "" {
-		addtl += fmt.Sprintf("&writeTimeout=%s", m.WriteTimeout)
+		if !strings.HasSuffix(addtl, "&") {
+			addtl += "&"
+		}
+		addtl += fmt.Sprintf("writeTimeout=%s", m.WriteTimeout)
 	}
 
 	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?loc=%s&parseTime=true%s",

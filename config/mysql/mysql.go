@@ -11,12 +11,15 @@ import (
 // Config holds everything you need to
 // connect and interact with a MySQL DB.
 type Config struct {
-	User     string `envconfig:"MYSQL_USER"`
-	Pw       string `envconfig:"MYSQL_PW"`
-	Host     string `envconfig:"MYSQL_HOST_NAME"`
-	Port     int    `envconfig:"MYSQL_PORT"`
-	DBName   string `envconfig:"MYSQL_DB_NAME"`
-	Location string `envconfig:"MYSQL_LOCATION"`
+	User            string `envconfig:"MYSQL_USER"`
+	Pw              string `envconfig:"MYSQL_PW"`
+	Host            string `envconfig:"MYSQL_HOST_NAME"`
+	Port            int    `envconfig:"MYSQL_PORT"`
+	DBName          string `envconfig:"MYSQL_DB_NAME"`
+	Location        string `envconfig:"MYSQL_LOCATION"`
+	ReadTimeout     string `envconfig:"READ_TIMEOUT"`
+	WriteTimeout    string `envconfig:"WRITE_TIMEOUT"`
+	AddtlDSNOptions string `envconfig:"ADDTL_DSN_OPTIONS"`
 }
 
 const (
@@ -62,13 +65,22 @@ func (m *Config) String() string {
 		m.Location = url.QueryEscape(DefaultLocation)
 	}
 
-	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?loc=%s&parseTime=true",
+	addtl := m.AddtlDSNOptions
+	if m.ReadTimeout != "" {
+		addtl += fmt.Sprintf("&readTimeout=%s", m.ReadTimeout)
+	}
+	if m.WriteTimeout != "" {
+		addtl += fmt.Sprintf("&writeTimeout=%s", m.WriteTimeout)
+	}
+
+	return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?loc=%s&parseTime=true%s",
 		m.User,
 		m.Pw,
 		m.Host,
 		m.Port,
 		m.DBName,
 		m.Location,
+		addtl,
 	)
 }
 

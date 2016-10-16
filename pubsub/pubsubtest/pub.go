@@ -1,6 +1,9 @@
 package pubsubtest
 
 import (
+	"errors"
+
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
@@ -29,6 +32,9 @@ type (
 	}
 )
 
+var _ pubsub.Publisher = &TestPublisher{}
+var _ pubsub.MultiPublisher = &TestPublisher{}
+
 // Publish publishes the message, delegating to PublishRaw.
 func (t *TestPublisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	data, err := proto.Marshal(msg)
@@ -40,4 +46,32 @@ func (t *TestPublisher) Publish(ctx context.Context, key string, msg proto.Messa
 func (t *TestPublisher) PublishRaw(_ context.Context, key string, msg []byte) error {
 	t.Published = append(t.Published, TestPublishMsg{key, msg})
 	return t.GivenError
+}
+
+// PublishMulti publishes the messages, delegating to Publish.
+func (t *TestPublisher) PublishMulti(ctx context.Context, keys []string, messages []proto.Message) error {
+	if len(keys) != len(messages) {
+		return errors.New("keys and messages must be equal length")
+	}
+
+	for i := range messages {
+		if err := t.Publish(ctx, keys[i], messages[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PublishMultiRaw will publish multiple raw byte array messages with a context.
+func (t *TestPublisher) PublishMultiRaw(ctx context.Context, keys []string, messages [][]byte) error {
+	if len(keys) != len(messages) {
+		return errors.New("keys and messages must be equal length")
+	}
+
+	for i := range messages {
+		if err := t.PublishRaw(ctx, keys[i], messages[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

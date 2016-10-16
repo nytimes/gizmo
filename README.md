@@ -148,7 +148,7 @@ The `Middleware(..)` functions offer each service a 'hook' to wrap each of its e
 
 ## The `pubsub` packages
 
-The base `pubsub` package contains two generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
+The base `pubsub` package contains three generic interfaces for publishing data to queues and subscribing and consuming data from those queues.
 
 ```go
 // Publisher is a generic interface to encapsulate how we want our publishers
@@ -159,6 +159,15 @@ type Publisher interface {
     Publish(ctx context.Context, key string, msg proto.Message) error
     // Publish will publish a []byte message.
     PublishRaw(ctx context.Context, key string, msg []byte) error
+}
+
+// MultiPublisher is an interface for publishers who support sending multiple
+// messages in a single request.
+type MultiPublisher interface {
+	// PublishMulti will publish multiple messages with a context.
+	PublishMulti(context.Context, []string, []proto.Message) error
+	// PublishMultiRaw will publish multiple raw byte array messages with a context.
+	PublishMultiRaw(context.Context, []string, [][]byte) error
 }
 
 // Subscriber is a generic interface to encapsulate how we want our subscribers
@@ -187,9 +196,11 @@ For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 
 For publishing via HTTP, you can use the `pubsub/http` package.
 
+The `MultiPublisher` interface is only implemented by `pubsub/gcp`.
+
 ## The `pubsub/pubsubtest` package
 
-This package contains 'test' implementations of the `pubsub.Publisher` and `pubsub.Subscriber` interfaces that will allow developers to easily mock out and test their `pubsub` implementations:
+This package contains 'test' implementations of the `pubsub.Publisher`, `pubsub.MultiPublisher`, and `pubsub.Subscriber` interfaces that will allow developers to easily mock out and test their `pubsub` implementations:
 
 ```go
 type TestPublisher struct {

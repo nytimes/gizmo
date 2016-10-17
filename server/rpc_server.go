@@ -231,7 +231,7 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 }
 
 // LogRPCWithFields will feed any request context into a logrus Entry.
-func LogRPCWithFields(log *logrus.Logger, ctx context.Context) *logrus.Entry {
+func LogRPCWithFields(ctx context.Context, log *logrus.Logger) *logrus.Entry {
 	md, ok := metadata.FromContext(ctx)
 	if !ok {
 		return logrus.NewEntry(log)
@@ -274,7 +274,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 		m.Timer.Observe(time.Since(start).Seconds())
 
 		if rpcAccessLog != nil {
-			LogRPCWithFields(rpcAccessLog, ctx).WithFields(logrus.Fields{
+			LogRPCWithFields(ctx, rpcAccessLog).WithFields(logrus.Fields{
 				"name":     methodName,
 				"duration": time.Since(start),
 				"error":    err,

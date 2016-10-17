@@ -22,6 +22,15 @@ type Publisher interface {
 	PublishRaw(context.Context, string, []byte) error
 }
 
+// MultiPublisher is an interface for publishers who support sending multiple
+// messages in a single request.
+type MultiPublisher interface {
+	// PublishMulti will publish multiple messages with a context.
+	PublishMulti(context.Context, []string, []proto.Message) error
+	// PublishMultiRaw will publish multiple raw byte array messages with a context.
+	PublishMultiRaw(context.Context, []string, [][]byte) error
+}
+
 // Subscriber is a generic interface to encapsulate how we want our subscribers
 // to behave. For now the system will auto stop if it encounters any errors. If
 // a user encounters a closed channel, they should check the Err() method to see

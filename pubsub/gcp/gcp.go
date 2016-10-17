@@ -145,6 +145,9 @@ type publisher struct {
 	topic *gpubsub.Topic
 }
 
+var _ pubsub.Publisher = &publisher{}
+var _ pubsub.MultiPublisher = &publisher{}
+
 // NewPublisher will instantiate a new GCP Publisher.
 func NewPublisher(ctx context.Context, projID, topic string, opts ...option.ClientOption) (pubsub.Publisher, error) {
 	client, err := gpubsub.NewClient(ctx, projID, opts...)
@@ -152,13 +155,13 @@ func NewPublisher(ctx context.Context, projID, topic string, opts ...option.Clie
 		return nil, err
 	}
 
-	return publisher{
+	return &publisher{
 		topic: client.Topic(topic),
 	}, nil
 }
 
 // Publish will marshal the proto message and publish it to GCP pubsub.
-func (p publisher) Publish(ctx context.Context, key string, msg proto.Message) error {
+func (p *publisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	mb, err := proto.Marshal(msg)
 	if err != nil {
 		return err
@@ -167,11 +170,46 @@ func (p publisher) Publish(ctx context.Context, key string, msg proto.Message) e
 }
 
 // PublishRaw will publish the message to GCP pubsub.
-func (p publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
+func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
 	_, err := p.topic.Publish(ctx, &gpubsub.Message{
 		Data:       m,
 		Attributes: map[string]string{"key": key},
 	})
+	return err
+}
+
+// PublishMulti will publish multiple messages to GCP pubsub in a single request.
+func (p *publisher) PublishMulti(ctx context.Context, keys []string, messages []proto.Message) error {
+	if len(keys) != len(messages) {
+		return errors.New("keys and messages must be equal length")
+	}
+
+	a := make([][]byte, len(messages))
+	for i := range messages {
+		b, err := proto.Marshal(messages[i])
+		if err != nil {
+			return err
+		}
+		a[i] = b
+	}
+	return p.PublishMultiRaw(ctx, keys, a)
+}
+
+// PublishMultiRaw will publish multiple raw byte array messages to GCP pubsub in a single request.
+func (p *publisher) PublishMultiRaw(ctx context.Context, keys []string, messages [][]byte) error {
+	if len(keys) != len(messages) {
+		return errors.New("keys and messages must be equal length")
+	}
+
+	a := make([]*gpubsub.Message, len(messages))
+	for i := range messages {
+		a[i] = &gpubsub.Message{
+			Data:       messages[i],
+			Attributes: map[string]string{"key": keys[i]},
+		}
+	}
+
+	_, err := p.topic.Publish(ctx, a...)
 	return err
 }
 

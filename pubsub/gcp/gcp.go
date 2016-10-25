@@ -14,12 +14,18 @@ import (
 	"github.com/NYTimes/gizmo/pubsub"
 )
 
-// subscriber is a Google Cloud Platform PubSub client that allows a user to
+// Subscriber is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Subscriber interface.
-type subscriber struct {
+type Subscriber struct {
 	sub  subscription
 	ctx  context.Context
 	name string
+
+	// MaxPrefetch limits Message prefetching.
+	MaxPrefetch int
+
+	// MaxExtension limits how long acks deadlines are extended for.
+	MaxExtension time.Duration
 
 	mtxStop sync.Mutex
 	stop    chan chan error
@@ -27,30 +33,35 @@ type subscriber struct {
 	err     error
 }
 
+var _ pubsub.Subscriber = &Subscriber{}
+
 // NewSubscriber will instantiate a new Subscriber that wraps
 // a pubsub.Iterator.
-func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (pubsub.Subscriber, error) {
+func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (*Subscriber, error) {
 	client, err := gpubsub.NewClient(ctx, projID, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return &subscriber{
+	return &Subscriber{
 		sub:  subscriptionImpl{sub: client.Subscription(subscription)},
 		ctx:  ctx,
 		name: subscription,
 		stop: make(chan chan error, 1),
+
+		MaxPrefetch:  defaultMaxMessages,
+		MaxExtension: defaultMaxExtension,
 	}, nil
 }
 
 var (
-	defaultMaxMessages  = gpubsub.MaxPrefetch(10)
-	defaultMaxExtension = gpubsub.MaxExtension(60 * time.Second)
+	defaultMaxMessages  = 10
+	defaultMaxExtension = 60 * time.Second
 )
 
 // Start will start pulling from pubsub via a pubsub.Iterator.
-func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
+func (s *Subscriber) Start() <-chan pubsub.SubscriberMessage {
 	output := make(chan pubsub.SubscriberMessage)
-	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
+	go func(s *Subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
 		var (
 			iter iterator
@@ -58,7 +69,7 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 			err  error
 		)
 
-		iter, err = s.sub.Pull(s.ctx, defaultMaxMessages, defaultMaxExtension)
+		iter, err = s.sub.Pull(s.ctx, gpubsub.MaxPrefetch(s.MaxPrefetch), gpubsub.MaxExtension(s.MaxExtension))
 		if err != nil {
 			go s.Stop()
 			s.err = err
@@ -98,12 +109,12 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 }
 
 // Err will contain any error the Subscriber has encountered while processing.
-func (s *subscriber) Err() error {
+func (s *Subscriber) Err() error {
 	return s.err
 }
 
 // Stop will block until the consumer has stopped consuming messages.
-func (s *subscriber) Stop() error {
+func (s *Subscriber) Stop() error {
 	s.mtxStop.Lock()
 	defer s.mtxStop.Unlock()
 	if s.stopped {

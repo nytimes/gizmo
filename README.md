@@ -186,11 +186,11 @@ type Subscriber interface {
 
 Where a `SubscriberMessage` is an interface that gives implementations a hook for acknowledging/delete messages. Take a look at the docs for each implementation in `pubsub` to see how they behave.
 
-There are currently 3 implementations of each type of `pubsub` interfaces:
+There are currently major 4 implementations of the `pubsub` interfaces:
 
 For pubsub via Amazon's SNS/SQS, you can use the `pubsub/aws` package.
 
-For pubsub via Google's Pubsub, you can use the `pubsub/gcp` package.
+For pubsub via Google's Pubsub, you can use the `pubsub/gcp` package. This package offers 2 ways of publishing to Google PubSub. `gcp.NewPublisher` uses the RPC client and `gcp.NewHTTPPublisher` will plublish over plain HTTP, which is useful for the App Engine standard environment.
 
 For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 

@@ -140,7 +140,7 @@ func (m *subMessage) Done() error {
 }
 
 // publisher is a Google Cloud Platform PubSub client that allows a user to
-// consume messages via the pubsub.Publisher interface.
+// consume messages via the pubsub.MultiPublisher interface.
 type publisher struct {
 	topic *gpubsub.Topic
 }
@@ -148,8 +148,8 @@ type publisher struct {
 var _ pubsub.Publisher = &publisher{}
 var _ pubsub.MultiPublisher = &publisher{}
 
-// NewPublisher will instantiate a new GCP Publisher.
-func NewPublisher(ctx context.Context, projID, topic string, opts ...option.ClientOption) (pubsub.Publisher, error) {
+// NewPublisher will instantiate a new GCP MultiPublisher.
+func NewPublisher(ctx context.Context, projID, topic string, opts ...option.ClientOption) (pubsub.MultiPublisher, error) {
 	client, err := gpubsub.NewClient(ctx, projID, opts...)
 	if err != nil {
 		return nil, err

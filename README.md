@@ -162,8 +162,10 @@ type Publisher interface {
 }
 
 // MultiPublisher is an interface for publishers who support sending multiple
-// messages in a single request.
+// messages in a single request, in addition to individual messages.
 type MultiPublisher interface {
+    Publisher
+
 	// PublishMulti will publish multiple messages with a context.
 	PublishMulti(context.Context, []string, []proto.Message) error
 	// PublishMultiRaw will publish multiple raw byte array messages with a context.

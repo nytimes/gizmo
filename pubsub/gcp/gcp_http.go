@@ -21,10 +21,10 @@ type httpPublisher struct {
 	topic string
 }
 
-// NewHTTPPublisher will instantiate a new GCP Publisher that utilizes the HTTP client.
+// NewHTTPPublisher will instantiate a new GCP MultiPublisher that utilizes the HTTP client.
 // This client is useful mainly for the App Engine standard environment as the gRPC client
 // counts against the socket quota for some reason.
-func NewHTTPPublisher(ctx context.Context, projID, topic string, src oauth2.TokenSource) (pubsub.Publisher, error) {
+func NewHTTPPublisher(ctx context.Context, projID, topic string, src oauth2.TokenSource) (pubsub.MultiPublisher, error) {
 	client := oauth2.NewClient(ctx, src)
 	svc, err := v1pubsub.New(client)
 	if err != nil {

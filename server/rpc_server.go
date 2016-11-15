@@ -255,6 +255,13 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 	start := time.Now()
 	return func(ctx context.Context, methodName string, err error) {
 		m := rpcEndpointMetrics["rpc."+methodName]
+		if m==nil{
+			registeredRpcEndpoints := make([]string, 0, len(rpcEndpointMetrics)) //for a better error-message retrieve all correctly registered rpcEndpoints
+			for registeredRpcEndpoint := range rpcEndpointMetrics {
+				registeredRpcEndpoints = append(registeredRpcEndpoints, registeredRpcEndpoint[4:len(registeredRpcEndpoint)]) //to hide internals slice away the "rpc."-part
+			}
+			fmt.Printf("rpc server panic: the methodName '%v' listed in the second parameter of MonitorRPCRequest() was not registered with the server.\nRegistered methodNames are: %v. Please check for spelling mistakes.\n\n", methodName, registeredRpcEndpoints)
+		}
 
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics

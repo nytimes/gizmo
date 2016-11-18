@@ -140,7 +140,7 @@ func metricName(fullPath, method string) string {
 func TimedAndCounted(handler http.Handler, fullPath string, method string, p provider.Provider) *Timer {
 	fullPath = strings.TrimPrefix(fullPath, "/")
 	switch fmt.Sprintf("%T", p) {
-	case "provider.prometheusProvider":
+	case "*provider.prometheusProvider":
 		return PrometheusTimedAndCounted(handler, fullPath)
 	default:
 		mn := metricName(fullPath, method)

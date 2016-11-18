@@ -255,23 +255,22 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 	start := time.Now()
 	return func(ctx context.Context, methodName string, err error) {
 		m := rpcEndpointMetrics["rpc."+methodName]
-		if m==nil{
-			registeredRPCEndpoints := make([]string, 0, len(rpcEndpointMetrics)) //for a better error-message retrieve all correctly registered rpcEndpoints
-			for registeredRPCEndpoint := range rpcEndpointMetrics {
-				registeredRPCEndpoints = append(registeredRPCEndpoints, registeredRPCEndpoint[4:len(registeredRPCEndpoint)]) //to hide internals slice away the "rpc."-part
-			}
-			fmt.Printf("rpc server panic: the methodName '%v' listed in the second parameter of MonitorRPCRequest() was not registered with the server.\nRegistered methodNames are: %v. Please check for spelling mistakes.\n\n", methodName, registeredRPCEndpoints)
-		}
+		x := recover()
 
-		if x := recover(); x != nil {
-			// register a panic'd request with our metrics
-			m.PanicCounter.Add(1)
-
+		if x != nil {
 			// log the panic for all the details later
 			Log.Warningf("rpc server recovered from a panic\n%v: %v", x, string(debug.Stack()))
 
 			// give the users our deepest regrets
 			err = errors.New(string(UnexpectedServerError))
+		}
+		if m == nil {
+			Log.Errorf("unable to monitor rpc request. unknown method name: %s", methodName)
+			return
+		}
+		if x != nil {
+			// register a panic'd request with our metrics
+			m.PanicCounter.Add(1)
 		}
 		if err == nil {
 			m.SuccessCounter.Add(1)

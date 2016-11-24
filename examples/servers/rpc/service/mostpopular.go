@@ -14,7 +14,7 @@ func (s *RPCService) GetMostPopular(ctx context.Context, r *MostPopularRequest) 
 		err error
 		res []*nyt.MostPopularResult
 	)
-	defer server.MonitorRPCRequest()(ctx, "GetMostPopular", err)
+	defer server.MonitorRPCRequest()(ctx, "GetMostPopular", &err)
 
 	res, err = s.client.GetMostPopular(r.ResourceType, r.Section, uint(r.TimePeriodDays))
 	if err != nil {

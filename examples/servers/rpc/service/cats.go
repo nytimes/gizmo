@@ -13,7 +13,7 @@ func (s *RPCService) GetCats(ctx context.Context, r *CatsRequest) (*CatsResponse
 		err error
 		res []*nyt.SemanticConceptArticle
 	)
-	defer server.MonitorRPCRequest()(ctx, "GetCats", err)
+	defer server.MonitorRPCRequest()(ctx, "GetCats", &err)
 
 	res, err = s.client.SemanticConceptSearch("des", "cats")
 	if err != nil {

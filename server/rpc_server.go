@@ -251,9 +251,9 @@ func MetadataToFields(md metadata.MD) logrus.Fields {
 
 // MonitorRPCRequest should be deferred by any RPC method that would like to have
 // metrics and access logging, participate in graceful shutdowns and safely recover from panics.
-func MonitorRPCRequest() func(ctx context.Context, methodName string, err error) {
+func MonitorRPCRequest() func(ctx context.Context, methodName string, err *error) {
 	start := time.Now()
-	return func(ctx context.Context, methodName string, err error) {
+	return func(ctx context.Context, methodName string, err *error) {
 		m := rpcEndpointMetrics["rpc."+methodName]
 		x := recover()
 
@@ -262,7 +262,8 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 			Log.Warningf("rpc server recovered from a panic\n%v: %v", x, string(debug.Stack()))
 
 			// give the users our deepest regrets
-			err = errors.New(string(UnexpectedServerError))
+			tmp := errors.New(string(UnexpectedServerError))
+			err = &tmp
 		}
 		if m == nil {
 			Log.Errorf("unable to monitor rpc request. unknown method name: %s", methodName)
@@ -272,7 +273,7 @@ func MonitorRPCRequest() func(ctx context.Context, methodName string, err error)
 			// register a panic'd request with our metrics
 			m.PanicCounter.Add(1)
 		}
-		if err == nil {
+		if *err == nil {
 			m.SuccessCounter.Add(1)
 		} else {
 			m.ErrorCounter.Add(1)

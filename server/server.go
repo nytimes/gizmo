@@ -50,6 +50,9 @@ var (
 	// jsonContentType is the content type that will be used for JSONEndpoints.
 	// It will default to the web.JSONContentType value.
 	jsonContentType = web.JSONContentType
+	// idleTimeout is used by the http server to set a maximum duration for
+	// keep-alive connections.
+	idleTimeout = 120 * time.Second
 )
 
 // Init will set up our name, logging, healthchecks and parse flags. If DefaultServer isn't set,
@@ -87,6 +90,14 @@ func Init(name string, scfg *Config) {
 			Log.Fatal("invalid server ReadTimeout: ", err)
 		}
 		readTimeout = tReadTimeout
+	}
+
+	if scfg.IdleTimeout != nil {
+		tIdleTimeout, err := time.ParseDuration(*scfg.IdleTimeout)
+		if err != nil {
+			Log.Fatal("invalid server IdleTimeout: ", err)
+		}
+		idleTimeout = tIdleTimeout
 	}
 
 	if scfg.WriteTimeout != nil {

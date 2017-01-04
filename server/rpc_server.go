@@ -152,12 +152,7 @@ func (r *RPCServer) Start() error {
 		Log.Fatalf("unable to create http access log: %s", err)
 	}
 
-	srv := http.Server{
-		Handler:        wrappedHandler,
-		MaxHeaderBytes: maxHeaderBytes,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-	}
+	srv := httpServer(wrappedHandler)
 	var hl net.Listener
 	hl, err = net.Listen("tcp", fmt.Sprintf(":%d", r.cfg.HTTPPort))
 	if err != nil {

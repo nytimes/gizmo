@@ -137,12 +137,7 @@ func (s *SimpleServer) Start() error {
 		Log.Fatalf("unable to create http access log: %s", err)
 	}
 
-	srv := http.Server{
-		Handler:        wrappedHandler,
-		MaxHeaderBytes: maxHeaderBytes,
-		ReadTimeout:    readTimeout,
-		WriteTimeout:   writeTimeout,
-	}
+	srv := httpServer(wrappedHandler)
 
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
 	if err != nil {

@@ -43,6 +43,10 @@ type Config struct {
 	// WriteTimeout can be used to override the default http server timeout of 10s.
 	// The string should be formatted like a time.Duration string.
 	WriteTimeout *string `envconfig:"GIZMO_WRITE_TIMEOUT"`
+	// IdleTimeout can be used to override the default http server timeout of 120s.
+	// The string should be formatted like a time.Duration string. This
+	// feature is supported only on Go 1.8+.
+	IdleTimeout *string `envconfig:"GIZMO_IDLE_TIMEOUT"`
 
 	// GOMAXPROCS can be used to override the default GOMAXPROCS (runtime.NumCPU).
 	GOMAXPROCS *int `envconfig:"GIZMO_SERVER_GOMAXPROCS"`

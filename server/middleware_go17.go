@@ -4,9 +4,9 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
-	"context"
 )
 
 // JSONContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
@@ -43,9 +43,9 @@ func JSONContextToHTTP(ep JSONContextEndpoint) ContextHandler {
 }
 
 // ContextToHTTP is a middleware func to convert a ContextHandler an http.Handler.
-func ContextToHTTP(ctx context.Context, ep ContextHandler) http.Handler {
+func ContextToHTTP(ep ContextHandler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ep.ServeHTTPContext(ctx, w, r)
+		ep.ServeHTTPContext(r.Context(), w, r)
 	})
 }
 

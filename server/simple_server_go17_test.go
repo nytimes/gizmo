@@ -3,9 +3,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-	"context"
 
 	"github.com/NYTimes/gizmo/web"
 )

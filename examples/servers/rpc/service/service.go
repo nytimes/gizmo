@@ -5,8 +5,6 @@ import (
 
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gziphandler"
-	"github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
@@ -58,24 +56,6 @@ func (s *RPCService) Middleware(h http.Handler) http.Handler {
 // requests. This could be handy if you need to decorate the request context.
 func (s *RPCService) ContextMiddleware(h server.ContextHandler) server.ContextHandler {
 	return h
-}
-
-// JSONMiddleware provides a JSONContextEndpoint hook wrapped around all requests.
-// In this implementation, we're using it to provide application logging and to check errors
-// and provide generic responses.
-func (s *RPCService) JSONMiddleware(j server.JSONContextEndpoint) server.JSONContextEndpoint {
-	return func(ctx context.Context, r *http.Request) (int, interface{}, error) {
-		status, res, err := j(ctx, r)
-		if err != nil {
-			server.LogWithFields(r).WithFields(logrus.Fields{
-				"error": err,
-			}).Error("problems with serving request")
-			return http.StatusServiceUnavailable, nil, &jsonErr{"sorry, this service is unavailable"}
-		}
-
-		server.LogWithFields(r).Info("success!")
-		return status, res, nil
-	}
 }
 
 // ContextEndpoints may be needed if your server has any non-RPC-able

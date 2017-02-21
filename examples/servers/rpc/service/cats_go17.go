@@ -1,11 +1,11 @@
-// +build !go1.7
+// +build go1.7
 
 package service
 
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/server"

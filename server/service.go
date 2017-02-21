@@ -3,7 +3,6 @@ package server
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
@@ -70,9 +69,6 @@ type RPCService interface {
 // JSONEndpoint is the JSONService equivalent to SimpleService's http.HandlerFunc.
 type JSONEndpoint func(*http.Request) (int, interface{}, error)
 
-// JSONContextEndpoint is the JSONContextService equivalent to JSONService's JSONEndpoint.
-type JSONContextEndpoint func(context.Context, *http.Request) (int, interface{}, error)
-
 // ContextService is an interface defining a service that
 // is made up of ContextHandlerFuncs.
 type ContextService interface {
@@ -91,17 +87,4 @@ type MixedContextService interface {
 	// route - method - func
 	JSONEndpoints() map[string]map[string]JSONContextEndpoint
 	JSONContextMiddleware(JSONContextEndpoint) JSONContextEndpoint
-}
-
-// ContextHandler is an equivalent to http.Handler but with additional param.
-type ContextHandler interface {
-	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
-}
-
-// ContextHandlerFunc is an equivalent to SimpleService's http.HandlerFunc.
-type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request)
-
-// ServeHTTPContext is an implementation of ContextHandler interface.
-func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-	h(ctx, rw, req)
 }

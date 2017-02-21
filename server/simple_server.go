@@ -280,9 +280,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 									}
 								}()
 							}
-							ctx := netContext.Background()
 							// call the func and return err or not
-							cs.Middleware(ContextToHTTP(ctx, cs.ContextMiddleware(ep))).ServeHTTP(w, r)
+							cs.Middleware(ContextToHTTP(cs.ContextMiddleware(ep))).ServeHTTP(w, r)
 						})
 					}(ep, cs),
 					prefix+path, method, s.mets),
@@ -297,7 +296,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 			for method, ep := range epMethods {
 				// set the function handle and register it to metrics
 				s.mux.Handle(method, prefix+path, TimedAndCounted(
-					mcs.Middleware(ContextToHTTP(netContext.Background(),
+					mcs.Middleware(ContextToHTTP(
 						mcs.ContextMiddleware(
 							JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
 						),

@@ -97,8 +97,7 @@ func (r *RPCServer) Register(svc Service) error {
 								}
 							}()
 						}
-						ctx := context.Background()
-						rpcsvc.Middleware(ContextToHTTP(ctx, rpcsvc.ContextMiddleware(ep))).ServeHTTP(w, r)
+						rpcsvc.Middleware(ContextToHTTP(rpcsvc.ContextMiddleware(ep))).ServeHTTP(w, r)
 					})
 				}(ep, rpcsvc),
 				prefix+path, method, r.mets),
@@ -111,11 +110,9 @@ func (r *RPCServer) Register(svc Service) error {
 		for method, ep := range epMethods {
 			// set the function handle and register it to metrics
 			r.mux.Handle(method, prefix+path, TimedAndCounted(
-				rpcsvc.Middleware(ContextToHTTP(context.Background(),
-					rpcsvc.ContextMiddleware(
-						JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
-					),
-				)),
+				rpcsvc.Middleware(ContextToHTTP(rpcsvc.ContextMiddleware(
+					JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
+				))),
 				prefix+path, method, r.mets),
 			)
 		}

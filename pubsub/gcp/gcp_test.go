@@ -23,7 +23,7 @@ func TestGCPSubscriber(t *testing.T) {
 		iter: &testIterator{msgs: msgs},
 	}
 
-	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &Subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
 
 	pipe := testSub.Start()
 
@@ -50,7 +50,7 @@ func TestSubscriberWithErr(t *testing.T) {
 		givenErr: errors.New("something's wrong"),
 	}
 
-	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &Subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
 	pipe := testSub.Start()
 
 	msg, ok := <-pipe

@@ -82,12 +82,18 @@ func (t *TestSNSAPI) SetSMSAttributesRequest(*sns.SetSMSAttributesInput) (*reque
 func (t *TestSNSAPI) SetSMSAttributes(*sns.SetSMSAttributesInput) (*sns.SetSMSAttributesOutput, error) {
 	return nil, nil
 }
+func (t *TestSNSAPI) SetSMSAttributesWithContext(aws.Context, *sns.SetSMSAttributesInput, ...request.Option) (*sns.SetSMSAttributesOutput, error) {
+	return nil, nil
+}
 
 func (t *TestSNSAPI) OptInPhoneNumberRequest(*sns.OptInPhoneNumberInput) (*request.Request, *sns.OptInPhoneNumberOutput) {
 	return nil, nil
 }
 
 func (t *TestSNSAPI) OptInPhoneNumber(*sns.OptInPhoneNumberInput) (*sns.OptInPhoneNumberOutput, error) {
+	return nil, nil
+}
+func (t *TestSNSAPI) OptInPhoneNumberWithContext(aws.Context, *sns.OptInPhoneNumberInput, ...request.Option) (*sns.OptInPhoneNumberOutput, error) {
 	return nil, nil
 }
 
@@ -98,12 +104,18 @@ func (t *TestSNSAPI) ListPhoneNumbersOptedOutRequest(*sns.ListPhoneNumbersOptedO
 func (t *TestSNSAPI) ListPhoneNumbersOptedOut(*sns.ListPhoneNumbersOptedOutInput) (*sns.ListPhoneNumbersOptedOutOutput, error) {
 	return nil, nil
 }
+func (t *TestSNSAPI) ListPhoneNumbersOptedOutWithContext(aws.Context, *sns.ListPhoneNumbersOptedOutInput, ...request.Option) (*sns.ListPhoneNumbersOptedOutOutput, error) {
+	return nil, nil
+}
 
 func (t *TestSNSAPI) GetSMSAttributesRequest(*sns.GetSMSAttributesInput) (*request.Request, *sns.GetSMSAttributesOutput) {
 	return nil, nil
 }
 
 func (t *TestSNSAPI) GetSMSAttributes(*sns.GetSMSAttributesInput) (*sns.GetSMSAttributesOutput, error) {
+	return nil, nil
+}
+func (t *TestSNSAPI) GetSMSAttributesWithContext(aws.Context, *sns.GetSMSAttributesInput, ...request.Option) (*sns.GetSMSAttributesOutput, error) {
 	return nil, nil
 }
 
@@ -148,6 +160,9 @@ func (t *TestSNSAPI) CreatePlatformEndpointRequest(*sns.CreatePlatformEndpointIn
 	return nil, nil
 }
 func (t *TestSNSAPI) CreatePlatformEndpoint(*sns.CreatePlatformEndpointInput) (*sns.CreatePlatformEndpointOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) CreatePlatformEndpointWithContext(aws.Context, *sns.CreatePlatformEndpointInput, ...request.Option) (*sns.CreatePlatformEndpointOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) CreateTopicRequest(*sns.CreateTopicInput) (*request.Request, *sns.CreateTopicOutput) {
@@ -234,6 +249,9 @@ func (t *TestSNSAPI) ListEndpointsByPlatformApplicationWithContext(aws.Context, 
 func (t *TestSNSAPI) ListEndpointsByPlatformApplicationPages(*sns.ListEndpointsByPlatformApplicationInput, func(*sns.ListEndpointsByPlatformApplicationOutput, bool) bool) error {
 	return nil
 }
+func (t *TestSNSAPI) ListEndpointsByPlatformApplicationPagesWithContext(aws.Context, *sns.ListEndpointsByPlatformApplicationInput, func(*sns.ListEndpointsByPlatformApplicationOutput, bool) bool, ...request.Option) error {
+	return nil
+}
 func (t *TestSNSAPI) ListPlatformApplicationsRequest(*sns.ListPlatformApplicationsInput) (*request.Request, *sns.ListPlatformApplicationsOutput) {
 	return nil, nil
 }
@@ -296,6 +314,9 @@ func (t *TestSNSAPI) ListTopicsPagesWithContext(aws.Context, *sns.ListTopicsInpu
 }
 func (t *TestSNSAPI) PublishRequest(*sns.PublishInput) (*request.Request, *sns.PublishOutput) {
 	return nil, nil
+}
+func (t *TestSNSAPI) PublishWithContext(aws.Context, *sns.PublishInput, ...request.Option) (*sns.PublishOutput, error) {
+	return nil, errNotImpl
 }
 
 func (t *TestSNSAPI) RemovePermissionRequest(*sns.RemovePermissionInput) (*request.Request, *sns.RemovePermissionOutput) {

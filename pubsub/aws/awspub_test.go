@@ -132,10 +132,16 @@ func (t *TestSNSAPI) ConfirmSubscriptionRequest(*sns.ConfirmSubscriptionInput) (
 func (t *TestSNSAPI) ConfirmSubscription(*sns.ConfirmSubscriptionInput) (*sns.ConfirmSubscriptionOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) ConfirmSubscriptionWithContext(aws.Context, *sns.ConfirmSubscriptionInput, ...request.Option) (*sns.ConfirmSubscriptionOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) CreatePlatformApplicationRequest(*sns.CreatePlatformApplicationInput) (*request.Request, *sns.CreatePlatformApplicationOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) CreatePlatformApplication(*sns.CreatePlatformApplicationInput) (*sns.CreatePlatformApplicationOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) CreatePlatformApplicationWithContext(aws.Context, *sns.CreatePlatformApplicationInput, ...request.Option) (*sns.CreatePlatformApplicationOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) CreatePlatformEndpointRequest(*sns.CreatePlatformEndpointInput) (*request.Request, *sns.CreatePlatformEndpointOutput) {
@@ -150,10 +156,16 @@ func (t *TestSNSAPI) CreateTopicRequest(*sns.CreateTopicInput) (*request.Request
 func (t *TestSNSAPI) CreateTopic(*sns.CreateTopicInput) (*sns.CreateTopicOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) CreateTopicWithContext(aws.Context, *sns.CreateTopicInput, ...request.Option) (*sns.CreateTopicOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) DeleteEndpointRequest(*sns.DeleteEndpointInput) (*request.Request, *sns.DeleteEndpointOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) DeleteEndpoint(*sns.DeleteEndpointInput) (*sns.DeleteEndpointOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) DeleteEndpointWithContext(aws.Context, *sns.DeleteEndpointInput, ...request.Option) (*sns.DeleteEndpointOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) DeletePlatformApplicationRequest(*sns.DeletePlatformApplicationInput) (*request.Request, *sns.DeletePlatformApplicationOutput) {
@@ -162,10 +174,16 @@ func (t *TestSNSAPI) DeletePlatformApplicationRequest(*sns.DeletePlatformApplica
 func (t *TestSNSAPI) DeletePlatformApplication(*sns.DeletePlatformApplicationInput) (*sns.DeletePlatformApplicationOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) DeletePlatformApplicationWithContext(aws.Context, *sns.DeletePlatformApplicationInput, ...request.Option) (*sns.DeletePlatformApplicationOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) DeleteTopicRequest(*sns.DeleteTopicInput) (*request.Request, *sns.DeleteTopicOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) DeleteTopic(*sns.DeleteTopicInput) (*sns.DeleteTopicOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) DeleteTopicWithContext(aws.Context, *sns.DeleteTopicInput, ...request.Option) (*sns.DeleteTopicOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) GetEndpointAttributesRequest(*sns.GetEndpointAttributesInput) (*request.Request, *sns.GetEndpointAttributesOutput) {
@@ -174,10 +192,16 @@ func (t *TestSNSAPI) GetEndpointAttributesRequest(*sns.GetEndpointAttributesInpu
 func (t *TestSNSAPI) GetEndpointAttributes(*sns.GetEndpointAttributesInput) (*sns.GetEndpointAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) GetEndpointAttributesWithContext(aws.Context, *sns.GetEndpointAttributesInput, ...request.Option) (*sns.GetEndpointAttributesOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) GetPlatformApplicationAttributesRequest(*sns.GetPlatformApplicationAttributesInput) (*request.Request, *sns.GetPlatformApplicationAttributesOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) GetPlatformApplicationAttributes(*sns.GetPlatformApplicationAttributesInput) (*sns.GetPlatformApplicationAttributesOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) GetPlatformApplicationAttributesWithContext(aws.Context, *sns.GetPlatformApplicationAttributesInput, ...request.Option) (*sns.GetPlatformApplicationAttributesOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) GetSubscriptionAttributesRequest(*sns.GetSubscriptionAttributesInput) (*request.Request, *sns.GetSubscriptionAttributesOutput) {
@@ -186,16 +210,25 @@ func (t *TestSNSAPI) GetSubscriptionAttributesRequest(*sns.GetSubscriptionAttrib
 func (t *TestSNSAPI) GetSubscriptionAttributes(*sns.GetSubscriptionAttributesInput) (*sns.GetSubscriptionAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) GetSubscriptionAttributesWithContext(aws.Context, *sns.GetSubscriptionAttributesInput, ...request.Option) (*sns.GetSubscriptionAttributesOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) GetTopicAttributesRequest(*sns.GetTopicAttributesInput) (*request.Request, *sns.GetTopicAttributesOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) GetTopicAttributes(*sns.GetTopicAttributesInput) (*sns.GetTopicAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) GetTopicAttributesWithContext(aws.Context, *sns.GetTopicAttributesInput, ...request.Option) (*sns.GetTopicAttributesOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) ListEndpointsByPlatformApplicationRequest(*sns.ListEndpointsByPlatformApplicationInput) (*request.Request, *sns.ListEndpointsByPlatformApplicationOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) ListEndpointsByPlatformApplication(*sns.ListEndpointsByPlatformApplicationInput) (*sns.ListEndpointsByPlatformApplicationOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) ListEndpointsByPlatformApplicationWithContext(aws.Context, *sns.ListEndpointsByPlatformApplicationInput, ...request.Option) (*sns.ListEndpointsByPlatformApplicationOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) ListEndpointsByPlatformApplicationPages(*sns.ListEndpointsByPlatformApplicationInput, func(*sns.ListEndpointsByPlatformApplicationOutput, bool) bool) error {
@@ -207,7 +240,13 @@ func (t *TestSNSAPI) ListPlatformApplicationsRequest(*sns.ListPlatformApplicatio
 func (t *TestSNSAPI) ListPlatformApplications(*sns.ListPlatformApplicationsInput) (*sns.ListPlatformApplicationsOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) ListPlatformApplicationsWithContext(aws.Context, *sns.ListPlatformApplicationsInput, ...request.Option) (*sns.ListPlatformApplicationsOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) ListPlatformApplicationsPages(*sns.ListPlatformApplicationsInput, func(*sns.ListPlatformApplicationsOutput, bool) bool) error {
+	return nil
+}
+func (t *TestSNSAPI) ListPlatformApplicationsPagesWithContext(aws.Context, *sns.ListPlatformApplicationsInput, func(*sns.ListPlatformApplicationsOutput, bool) bool, ...request.Option) error {
 	return nil
 }
 func (t *TestSNSAPI) ListSubscriptionsRequest(*sns.ListSubscriptionsInput) (*request.Request, *sns.ListSubscriptionsOutput) {
@@ -216,7 +255,13 @@ func (t *TestSNSAPI) ListSubscriptionsRequest(*sns.ListSubscriptionsInput) (*req
 func (t *TestSNSAPI) ListSubscriptions(*sns.ListSubscriptionsInput) (*sns.ListSubscriptionsOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) ListSubscriptionsWithContext(aws.Context, *sns.ListSubscriptionsInput, ...request.Option) (*sns.ListSubscriptionsOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) ListSubscriptionsPages(*sns.ListSubscriptionsInput, func(*sns.ListSubscriptionsOutput, bool) bool) error {
+	return errNotImpl
+}
+func (t *TestSNSAPI) ListSubscriptionsPagesWithContext(aws.Context, *sns.ListSubscriptionsInput, func(*sns.ListSubscriptionsOutput, bool) bool, ...request.Option) error {
 	return errNotImpl
 }
 func (t *TestSNSAPI) ListSubscriptionsByTopicRequest(*sns.ListSubscriptionsByTopicInput) (*request.Request, *sns.ListSubscriptionsByTopicOutput) {
@@ -225,7 +270,13 @@ func (t *TestSNSAPI) ListSubscriptionsByTopicRequest(*sns.ListSubscriptionsByTop
 func (t *TestSNSAPI) ListSubscriptionsByTopic(*sns.ListSubscriptionsByTopicInput) (*sns.ListSubscriptionsByTopicOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) ListSubscriptionsByTopicWithContext(aws.Context, *sns.ListSubscriptionsByTopicInput, ...request.Option) (*sns.ListSubscriptionsByTopicOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) ListSubscriptionsByTopicPages(*sns.ListSubscriptionsByTopicInput, func(*sns.ListSubscriptionsByTopicOutput, bool) bool) error {
+	return errNotImpl
+}
+func (t *TestSNSAPI) ListSubscriptionsByTopicPagesWithContext(aws.Context, *sns.ListSubscriptionsByTopicInput, func(*sns.ListSubscriptionsByTopicOutput, bool) bool, ...request.Option) error {
 	return errNotImpl
 }
 func (t *TestSNSAPI) ListTopicsRequest(*sns.ListTopicsInput) (*request.Request, *sns.ListTopicsOutput) {
@@ -234,7 +285,13 @@ func (t *TestSNSAPI) ListTopicsRequest(*sns.ListTopicsInput) (*request.Request, 
 func (t *TestSNSAPI) ListTopics(*sns.ListTopicsInput) (*sns.ListTopicsOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) ListTopicsWithContext(aws.Context, *sns.ListTopicsInput, ...request.Option) (*sns.ListTopicsOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) ListTopicsPages(*sns.ListTopicsInput, func(*sns.ListTopicsOutput, bool) bool) error {
+	return errNotImpl
+}
+func (t *TestSNSAPI) ListTopicsPagesWithContext(aws.Context, *sns.ListTopicsInput, func(*sns.ListTopicsOutput, bool) bool, ...request.Option) error {
 	return errNotImpl
 }
 func (t *TestSNSAPI) PublishRequest(*sns.PublishInput) (*request.Request, *sns.PublishOutput) {
@@ -247,10 +304,16 @@ func (t *TestSNSAPI) RemovePermissionRequest(*sns.RemovePermissionInput) (*reque
 func (t *TestSNSAPI) RemovePermission(*sns.RemovePermissionInput) (*sns.RemovePermissionOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) RemovePermissionWithContext(aws.Context, *sns.RemovePermissionInput, ...request.Option) (*sns.RemovePermissionOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) SetEndpointAttributesRequest(*sns.SetEndpointAttributesInput) (*request.Request, *sns.SetEndpointAttributesOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) SetEndpointAttributes(*sns.SetEndpointAttributesInput) (*sns.SetEndpointAttributesOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) SetEndpointAttributesWithContext(aws.Context, *sns.SetEndpointAttributesInput, ...request.Option) (*sns.SetEndpointAttributesOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) SetPlatformApplicationAttributesRequest(*sns.SetPlatformApplicationAttributesInput) (*request.Request, *sns.SetPlatformApplicationAttributesOutput) {
@@ -259,10 +322,16 @@ func (t *TestSNSAPI) SetPlatformApplicationAttributesRequest(*sns.SetPlatformApp
 func (t *TestSNSAPI) SetPlatformApplicationAttributes(*sns.SetPlatformApplicationAttributesInput) (*sns.SetPlatformApplicationAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) SetPlatformApplicationAttributesWithContext(aws.Context, *sns.SetPlatformApplicationAttributesInput, ...request.Option) (*sns.SetPlatformApplicationAttributesOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) SetSubscriptionAttributesRequest(*sns.SetSubscriptionAttributesInput) (*request.Request, *sns.SetSubscriptionAttributesOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) SetSubscriptionAttributes(*sns.SetSubscriptionAttributesInput) (*sns.SetSubscriptionAttributesOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) SetSubscriptionAttributesWithContext(aws.Context, *sns.SetSubscriptionAttributesInput, ...request.Option) (*sns.SetSubscriptionAttributesOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) SetTopicAttributesRequest(*sns.SetTopicAttributesInput) (*request.Request, *sns.SetTopicAttributesOutput) {
@@ -271,15 +340,24 @@ func (t *TestSNSAPI) SetTopicAttributesRequest(*sns.SetTopicAttributesInput) (*r
 func (t *TestSNSAPI) SetTopicAttributes(*sns.SetTopicAttributesInput) (*sns.SetTopicAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) SetTopicAttributesWithContext(aws.Context, *sns.SetTopicAttributesInput, ...request.Option) (*sns.SetTopicAttributesOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) SubscribeRequest(*sns.SubscribeInput) (*request.Request, *sns.SubscribeOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) Subscribe(*sns.SubscribeInput) (*sns.SubscribeOutput, error) {
 	return nil, errNotImpl
 }
+func (t *TestSNSAPI) SubscribeWithContext(aws.Context, *sns.SubscribeInput, ...request.Option) (*sns.SubscribeOutput, error) {
+	return nil, errNotImpl
+}
 func (t *TestSNSAPI) UnsubscribeRequest(*sns.UnsubscribeInput) (*request.Request, *sns.UnsubscribeOutput) {
 	return nil, nil
 }
 func (t *TestSNSAPI) Unsubscribe(*sns.UnsubscribeInput) (*sns.UnsubscribeOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) UnsubscribeWithContext(aws.Context, *sns.UnsubscribeInput, ...request.Option) (*sns.UnsubscribeOutput, error) {
 	return nil, errNotImpl
 }

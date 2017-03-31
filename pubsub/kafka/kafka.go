@@ -38,6 +38,7 @@ func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 	sconfig := sarama.NewConfig()
 	sconfig.Producer.Retry.Max = cfg.MaxRetry
 	sconfig.Producer.RequiredAcks = RequiredAcks
+	sconfig.Producer.Return.Successes = true
 	p.producer, err = sarama.NewSyncProducer(cfg.BrokerHosts, sconfig)
 	return p, err
 }

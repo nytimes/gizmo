@@ -365,7 +365,7 @@ func (s *TestSQSAPI) DeleteMessageWithContext(aws.Context, *sqs.DeleteMessageInp
 func (s *TestSQSAPI) DeleteMessageBatchRequest(i *sqs.DeleteMessageBatchInput) (*request.Request, *sqs.DeleteMessageBatchOutput) {
 	return nil, nil
 }
-func (s *TestSQSAPI) DeleteMessageBatchWithContext(aws.Context, *sqs.DeleteMessageBatchInput) (*sqs.DeleteMessageBatchOutput, error) {
+func (s *TestSQSAPI) DeleteMessageBatchWithContext(aws.Context, *sqs.DeleteMessageBatchInput, ...request.Option) (*sqs.DeleteMessageBatchOutput, error) {
 	return nil, errNotImpl
 }
 
@@ -489,11 +489,11 @@ func (s *TestSQSAPI) SendMessageWithContext(aws.Context, *sqs.SendMessageInput, 
 func (s *TestSQSAPI) SendMessageBatchRequest(*sqs.SendMessageBatchInput) (*request.Request, *sqs.SendMessageBatchOutput) {
 	return nil, nil
 }
-func (s *testsqsapi) sendmessagebatch(*sqs.sendmessagebatchinput) (*sqs.sendmessagebatchoutput, error) {
+func (s *TestSQSAPI) SendMessageBatch(*sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	return nil, errnotimpl
 }
-func (s *TestSQSAPI) SendMessageWithContext(aws.Context, *sqs.SendMessageInput, ...request.Option) (*sqs.SendMessageOutput, error) {
-	return nil, errNotImpl
+func (s *TestSQSAPI) SendMessageBatchWithContext(aws.Context, *sqs.SendMessageBatchInput, ...request.Option) (*sqs.SendMessageBatchOutput, error) {
+	return nil, errnotimpl
 }
 func (s *TestSQSAPI) SetQueueAttributesRequest(*sqs.SetQueueAttributesInput) (*request.Request, *sqs.SetQueueAttributesOutput) {
 	return nil, nil

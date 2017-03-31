@@ -11,7 +11,6 @@ import (
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/golang/protobuf/proto"
@@ -370,7 +369,7 @@ func (s *TestSQSAPI) AddPermissionRequest(*sqs.AddPermissionInput) (*request.Req
 func (s *TestSQSAPI) AddPermission(*sqs.AddPermissionInput) (*sqs.AddPermissionOutput, error) {
 	return nil, errNotImpl
 }
-func (t *TestSNSAPI) AddPermissionWithContext(aws.Context, *sns.AddPermissionInput, ...request.Option) (*sns.AddPermissionOutput, error) {
+func (s *TestSNSAPI) AddPermissionWithContext(aws.Context, *sqs.AddPermissionInput, ...request.Option) (*sqs.AddPermissionOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) ChangeMessageVisibilityRequest(*sqs.ChangeMessageVisibilityInput) (*request.Request, *sqs.ChangeMessageVisibilityOutput) {

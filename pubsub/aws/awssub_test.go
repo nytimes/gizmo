@@ -490,10 +490,10 @@ func (s *TestSQSAPI) SendMessageBatchRequest(*sqs.SendMessageBatchInput) (*reque
 	return nil, nil
 }
 func (s *TestSQSAPI) SendMessageBatch(*sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
-	return nil, errnotimpl
+	return nil, errNotImpl
 }
 func (s *TestSQSAPI) SendMessageBatchWithContext(aws.Context, *sqs.SendMessageBatchInput, ...request.Option) (*sqs.SendMessageBatchOutput, error) {
-	return nil, errnotimpl
+	return nil, errNotImpl
 }
 func (s *TestSQSAPI) SetQueueAttributesRequest(*sqs.SetQueueAttributesInput) (*request.Request, *sqs.SetQueueAttributesOutput) {
 	return nil, nil

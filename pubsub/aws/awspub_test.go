@@ -113,6 +113,10 @@ func (t *TestSNSAPI) CheckIfPhoneNumberIsOptedOutRequest(*sns.CheckIfPhoneNumber
 func (t *TestSNSAPI) CheckIfPhoneNumberIsOptedOut(*sns.CheckIfPhoneNumberIsOptedOutInput) (*sns.CheckIfPhoneNumberIsOptedOutOutput, error) {
 	return nil, nil
 }
+func (t *TestSNSAPI) CheckIfPhoneNumberIsOptedOutWithContext(aws.Context, *sns.CheckIfPhoneNumberIsOptedOutInput) (*sns.CheckIfPhoneNumberIsOptedOutOutput, error) {
+	return nil, nil
+}
+
 func (t *TestSNSAPI) AddPermissionRequest(*sns.AddPermissionInput) (*request.Request, *sns.AddPermissionOutput) {
 	return nil, nil
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
@@ -116,6 +117,9 @@ func (t *TestSNSAPI) AddPermissionRequest(*sns.AddPermissionInput) (*request.Req
 	return nil, nil
 }
 func (t *TestSNSAPI) AddPermission(*sns.AddPermissionInput) (*sns.AddPermissionOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) AddPermissionWithContext(aws.Context, *sns.AddPermissionInput, ...request.Option) (*sns.AddPermissionOutput, error) {
 	return nil, errNotImpl
 }
 func (t *TestSNSAPI) ConfirmSubscriptionRequest(*sns.ConfirmSubscriptionInput) (*request.Request, *sns.ConfirmSubscriptionOutput) {

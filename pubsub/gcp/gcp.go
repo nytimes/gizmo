@@ -17,14 +17,15 @@ import (
 // subscriber is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Subscriber interface.
 type subscriber struct {
-	sub  subscription
+	sub  *gpubsub.Subscription
 	ctx  context.Context
 	name string
 
 	mtxStop sync.Mutex
-	stop    chan chan error
 	stopped bool
-	err     error
+	cancel  func()
+
+	err error
 }
 
 // NewSubscriber will instantiate a new Subscriber that wraps
@@ -34,8 +35,14 @@ func NewSubscriber(ctx context.Context, projID, subscription string, opts ...opt
 	if err != nil {
 		return nil, err
 	}
+
+	sub := client.Subscription(subscription)
+	sub.ReceiveSettings = gpubsub.ReceiveSettings{
+		MaxExtension:           defaultMaxExtension,
+		MaxOutstandingMessages: defaultMaxMessages,
+	}
 	return &subscriber{
-		sub:  subscriptionImpl{sub: client.Subscription(subscription)},
+		sub:  sub,
 		ctx:  ctx,
 		name: subscription,
 		stop: make(chan chan error, 1),
@@ -52,45 +59,16 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 	output := make(chan pubsub.SubscriberMessage)
 	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
-		var (
-			iter iterator
-			msg  message
-			err  error
-		)
-
-		iter, err = s.sub.Pull(s.ctx, defaultMaxMessages, defaultMaxExtension)
+		s.ctx, s.cancel = context.WithCancel(ctx)
+		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg *gpubsub.Message) {
+			output <- &subMessage{
+				msg: msg,
+				ctx: s.ctx,
+			}
+		})
 		if err != nil {
 			go s.Stop()
 			s.err = err
-		}
-
-		for {
-			select {
-			case exit := <-s.stop:
-				if iter != nil {
-					iter.Stop()
-				}
-				exit <- nil
-				return
-			default:
-				// something's wrong and we're on the way to stopping
-				if iter == nil {
-					continue
-				}
-
-				msg, err = iter.Next()
-				if err != nil {
-					s.err = err
-					go s.Stop()
-					continue
-				}
-
-				output <- &subMessage{
-					msg: msg,
-					sub: s.name,
-					ctx: s.ctx,
-				}
-			}
 		}
 	}(s, output)
 	return output
@@ -110,16 +88,15 @@ func (s *subscriber) Stop() error {
 		return nil
 	}
 	s.stopped = true
-	exit := make(chan error)
-	s.stop <- exit
-	return <-exit
+	if s.cancel != nil {
+		s.cancel()
+	}
+	return
 }
 
 // subMessage pubsub implementation of pubsub.SubscriberMessage.
 type subMessage struct {
 	msg message
-	ctx context.Context
-	sub string
 }
 
 // Message will return the data of the pubsub Message.
@@ -215,27 +192,10 @@ func (p *publisher) PublishMultiRaw(ctx context.Context, keys []string, messages
 
 // interfaces and types to make this more testable
 type (
-	subscription interface {
-		Pull(ctx context.Context, opts ...gpubsub.PullOption) (iterator, error)
-	}
-	iterator interface {
-		Next() (message, error)
-		Stop()
-	}
 	message interface {
 		ID() string
 		MsgData() []byte
 		Done()
-	}
-
-	subscriptionImpl struct {
-		sub *gpubsub.Subscription
-	}
-	iteratorImpl struct {
-		iter *gpubsub.MessageIterator
-	}
-	messageImpl struct {
-		msg *gpubsub.Message
 	}
 )
 
@@ -248,23 +208,5 @@ func (m messageImpl) MsgData() []byte {
 }
 
 func (m messageImpl) Done() {
-	m.msg.Done(true)
-}
-
-func (i iteratorImpl) Next() (message, error) {
-	msg, err := i.iter.Next()
-	return messageImpl{msg}, err
-}
-
-func (i iteratorImpl) Stop() {
-	i.iter.Stop()
-}
-
-func (s subscriptionImpl) Pull(ctx context.Context, opts ...gpubsub.PullOption) (iterator, error) {
-	iter, err := s.sub.Pull(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return iteratorImpl{iter: iter}, nil
+	m.msg.Ack()
 }

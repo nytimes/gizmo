@@ -4,8 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"cloud.google.com/go/pubsub"
-
 	"golang.org/x/net/context"
 )
 
@@ -19,11 +17,11 @@ func TestGCPSubscriber(t *testing.T) {
 		&testMessage{data: []byte("6")},
 		&testMessage{data: []byte("7")},
 	}
-	gcpSub := testSubscription{
-		iter: &testIterator{msgs: msgs},
+	gcpSub := &testSubscription{
+		msgs: msgs,
 	}
 
-	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &subscriber{sub: gcpSub, ctx: context.Background()}
 
 	pipe := testSub.Start()
 
@@ -45,12 +43,11 @@ func TestGCPSubscriber(t *testing.T) {
 }
 
 func TestSubscriberWithErr(t *testing.T) {
-	gcpSub := testSubscription{
-		iter:     &testIterator{},
+	gcpSub := &testSubscription{
 		givenErr: errors.New("something's wrong"),
 	}
 
-	testSub := &subscriber{sub: gcpSub, stop: make(chan chan error, 1)}
+	testSub := &subscriber{sub: gcpSub, ctx: context.Background()}
 	pipe := testSub.Start()
 
 	msg, ok := <-pipe
@@ -71,14 +68,9 @@ type (
 		doned bool
 	}
 
-	testIterator struct {
-		index   int
-		msgs    []*testMessage
-		stopped bool
-	}
-
 	testSubscription struct {
-		iter     *testIterator
+		msgs []*testMessage
+
 		givenErr error
 	}
 )
@@ -95,20 +87,10 @@ func (m *testMessage) Done() {
 	m.doned = true
 }
 
-func (i *testIterator) Next() (message, error) {
-	if i.index >= len(i.msgs) {
-		return nil, errors.New("no more messages in test iterator")
+func (s *testSubscription) Receive(ctx context.Context, f func(context.Context, message)) error {
+	// iterate over messages and call f
+	for _, msg := range s.msgs {
+		f(ctx, msg)
 	}
-
-	msg := i.msgs[i.index]
-	i.index++
-	return msg, nil
-}
-
-func (i *testIterator) Stop() {
-	i.stopped = true
-}
-
-func (s testSubscription) Pull(ctx context.Context, opts ...pubsub.PullOption) (iterator, error) {
-	return s.iter, s.givenErr
+	return s.givenErr
 }

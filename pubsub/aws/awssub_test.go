@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gizmo/pubsub"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
@@ -357,9 +358,15 @@ func (s *TestSQSAPI) ChangeMessageVisibility(i *sqs.ChangeMessageVisibilityInput
 func (s *TestSQSAPI) DeleteMessage(d *sqs.DeleteMessageInput) (*sqs.DeleteMessageOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) DeleteMessageWithContext(aws.Context, *sqs.DeleteMessageInput, ...request.Option) (*sqs.DeleteMessageOutput, error) {
+	return nil, errNotImpl
+}
 
 func (s *TestSQSAPI) DeleteMessageBatchRequest(i *sqs.DeleteMessageBatchInput) (*request.Request, *sqs.DeleteMessageBatchOutput) {
 	return nil, nil
+}
+func (s *TestSQSAPI) DeleteMessageBatchWithContext(aws.Context, *sqs.DeleteMessageBatchInput, ...request.Option) (*sqs.DeleteMessageBatchOutput, error) {
+	return nil, errNotImpl
 }
 
 func (s *TestSQSAPI) AddPermissionRequest(*sqs.AddPermissionInput) (*request.Request, *sqs.AddPermissionOutput) {
@@ -368,19 +375,32 @@ func (s *TestSQSAPI) AddPermissionRequest(*sqs.AddPermissionInput) (*request.Req
 func (s *TestSQSAPI) AddPermission(*sqs.AddPermissionInput) (*sqs.AddPermissionOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) AddPermissionWithContext(aws.Context, *sqs.AddPermissionInput, ...request.Option) (*sqs.AddPermissionOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) ChangeMessageVisibilityRequest(*sqs.ChangeMessageVisibilityInput) (*request.Request, *sqs.ChangeMessageVisibilityOutput) {
 	return nil, nil
 }
+func (s *TestSQSAPI) ChangeMessageVisibilityWithContext(aws.Context, *sqs.ChangeMessageVisibilityInput, ...request.Option) (*sqs.ChangeMessageVisibilityOutput, error) {
+	return nil, errNotImpl
+}
+
 func (s *TestSQSAPI) ChangeMessageVisibilityBatchRequest(*sqs.ChangeMessageVisibilityBatchInput) (*request.Request, *sqs.ChangeMessageVisibilityBatchOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) ChangeMessageVisibilityBatch(*sqs.ChangeMessageVisibilityBatchInput) (*sqs.ChangeMessageVisibilityBatchOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) ChangeMessageVisibilityBatchWithContext(aws.Context, *sqs.ChangeMessageVisibilityBatchInput, ...request.Option) (*sqs.ChangeMessageVisibilityBatchOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) CreateQueueRequest(*sqs.CreateQueueInput) (*request.Request, *sqs.CreateQueueOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) CreateQueue(*sqs.CreateQueueInput) (*sqs.CreateQueueOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) CreateQueueWithContext(aws.Context, *sqs.CreateQueueInput, ...request.Option) (*sqs.CreateQueueOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) DeleteMessageRequest(*sqs.DeleteMessageInput) (*request.Request, *sqs.DeleteMessageOutput) {
@@ -393,10 +413,16 @@ func (s *TestSQSAPI) DeleteQueueRequest(*sqs.DeleteQueueInput) (*request.Request
 func (s *TestSQSAPI) DeleteQueue(*sqs.DeleteQueueInput) (*sqs.DeleteQueueOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) DeleteQueueWithContext(aws.Context, *sqs.DeleteQueueInput, ...request.Option) (*sqs.DeleteQueueOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) GetQueueAttributesRequest(*sqs.GetQueueAttributesInput) (*request.Request, *sqs.GetQueueAttributesOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) GetQueueAttributes(*sqs.GetQueueAttributesInput) (*sqs.GetQueueAttributesOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) GetQueueAttributesWithContext(aws.Context, *sqs.GetQueueAttributesInput, ...request.Option) (*sqs.GetQueueAttributesOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) GetQueueUrlRequest(*sqs.GetQueueUrlInput) (*request.Request, *sqs.GetQueueUrlOutput) {
@@ -405,10 +431,16 @@ func (s *TestSQSAPI) GetQueueUrlRequest(*sqs.GetQueueUrlInput) (*request.Request
 func (s *TestSQSAPI) GetQueueUrl(*sqs.GetQueueUrlInput) (*sqs.GetQueueUrlOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) GetQueueUrlWithContext(aws.Context, *sqs.GetQueueUrlInput, ...request.Option) (*sqs.GetQueueUrlOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) ListDeadLetterSourceQueuesRequest(*sqs.ListDeadLetterSourceQueuesInput) (*request.Request, *sqs.ListDeadLetterSourceQueuesOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) ListDeadLetterSourceQueues(*sqs.ListDeadLetterSourceQueuesInput) (*sqs.ListDeadLetterSourceQueuesOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) ListDeadLetterSourceQueuesWithContext(aws.Context, *sqs.ListDeadLetterSourceQueuesInput, ...request.Option) (*sqs.ListDeadLetterSourceQueuesOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) ListQueuesRequest(*sqs.ListQueuesInput) (*request.Request, *sqs.ListQueuesOutput) {
@@ -417,14 +449,23 @@ func (s *TestSQSAPI) ListQueuesRequest(*sqs.ListQueuesInput) (*request.Request, 
 func (s *TestSQSAPI) ListQueues(*sqs.ListQueuesInput) (*sqs.ListQueuesOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) ListQueuesWithContext(aws.Context, *sqs.ListQueuesInput, ...request.Option) (*sqs.ListQueuesOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) PurgeQueueRequest(*sqs.PurgeQueueInput) (*request.Request, *sqs.PurgeQueueOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) PurgeQueue(*sqs.PurgeQueueInput) (*sqs.PurgeQueueOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) PurgeQueueWithContext(aws.Context, *sqs.PurgeQueueInput, ...request.Option) (*sqs.PurgeQueueOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) ReceiveMessageRequest(*sqs.ReceiveMessageInput) (*request.Request, *sqs.ReceiveMessageOutput) {
 	return nil, nil
+}
+func (s *TestSQSAPI) ReceiveMessageWithContext(aws.Context, *sqs.ReceiveMessageInput, ...request.Option) (*sqs.ReceiveMessageOutput, error) {
+	return nil, errNotImpl
 }
 
 func (s *TestSQSAPI) RemovePermissionRequest(*sqs.RemovePermissionInput) (*request.Request, *sqs.RemovePermissionOutput) {
@@ -433,10 +474,16 @@ func (s *TestSQSAPI) RemovePermissionRequest(*sqs.RemovePermissionInput) (*reque
 func (s *TestSQSAPI) RemovePermission(*sqs.RemovePermissionInput) (*sqs.RemovePermissionOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) RemovePermissionWithContext(aws.Context, *sqs.RemovePermissionInput, ...request.Option) (*sqs.RemovePermissionOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) SendMessageRequest(*sqs.SendMessageInput) (*request.Request, *sqs.SendMessageOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) SendMessage(*sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) SendMessageWithContext(aws.Context, *sqs.SendMessageInput, ...request.Option) (*sqs.SendMessageOutput, error) {
 	return nil, errNotImpl
 }
 func (s *TestSQSAPI) SendMessageBatchRequest(*sqs.SendMessageBatchInput) (*request.Request, *sqs.SendMessageBatchOutput) {
@@ -445,9 +492,15 @@ func (s *TestSQSAPI) SendMessageBatchRequest(*sqs.SendMessageBatchInput) (*reque
 func (s *TestSQSAPI) SendMessageBatch(*sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) SendMessageBatchWithContext(aws.Context, *sqs.SendMessageBatchInput, ...request.Option) (*sqs.SendMessageBatchOutput, error) {
+	return nil, errNotImpl
+}
 func (s *TestSQSAPI) SetQueueAttributesRequest(*sqs.SetQueueAttributesInput) (*request.Request, *sqs.SetQueueAttributesOutput) {
 	return nil, nil
 }
 func (s *TestSQSAPI) SetQueueAttributes(*sqs.SetQueueAttributesInput) (*sqs.SetQueueAttributesOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) SetQueueAttributesWithContext(aws.Context, *sqs.SetQueueAttributesInput, ...request.Option) (*sqs.SetQueueAttributesOutput, error) {
 	return nil, errNotImpl
 }

@@ -17,9 +17,8 @@ import (
 // subscriber is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Subscriber interface.
 type subscriber struct {
-	sub  *gpubsub.Subscription
-	ctx  context.Context
-	name string
+	sub subscription
+	ctx context.Context
 
 	mtxStop sync.Mutex
 	stopped bool
@@ -42,16 +41,14 @@ func NewSubscriber(ctx context.Context, projID, subscription string, opts ...opt
 		MaxOutstandingMessages: defaultMaxMessages,
 	}
 	return &subscriber{
-		sub:  sub,
-		ctx:  ctx,
-		name: subscription,
-		stop: make(chan chan error, 1),
+		ctx: ctx,
+		sub: subscriptionImpl{sub: sub},
 	}, nil
 }
 
 var (
-	defaultMaxMessages  = gpubsub.MaxPrefetch(10)
-	defaultMaxExtension = gpubsub.MaxExtension(60 * time.Second)
+	defaultMaxMessages  = 10
+	defaultMaxExtension = 60 * time.Second
 )
 
 // Start will start pulling from pubsub via a pubsub.Iterator.
@@ -59,20 +56,19 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 	output := make(chan pubsub.SubscriberMessage)
 	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
-		s.ctx, s.cancel = context.WithCancel(ctx)
-		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg *gpubsub.Message) {
+
+		s.ctx, s.cancel = context.WithCancel(s.ctx)
+		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg message) {
 			output <- &subMessage{
 				msg: msg,
-				ctx: s.ctx,
 			}
 		})
 		if err != nil {
-			go s.Stop()
+			s.Stop()
 			s.err = err
 		}
 	}(s, output)
 	return output
-
 }
 
 // Err will contain any error the Subscriber has encountered while processing.
@@ -91,7 +87,7 @@ func (s *subscriber) Stop() error {
 	if s.cancel != nil {
 		s.cancel()
 	}
-	return
+	return nil
 }
 
 // subMessage pubsub implementation of pubsub.SubscriberMessage.
@@ -148,10 +144,11 @@ func (p *publisher) Publish(ctx context.Context, key string, msg proto.Message) 
 
 // PublishRaw will publish the message to GCP pubsub.
 func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
-	_, err := p.topic.Publish(ctx, &gpubsub.Message{
+	res := p.topic.Publish(ctx, &gpubsub.Message{
 		Data:       m,
 		Attributes: map[string]string{"key": key},
 	})
+	_, err := res.Get(ctx)
 	return err
 }
 
@@ -178,24 +175,32 @@ func (p *publisher) PublishMultiRaw(ctx context.Context, keys []string, messages
 		return errors.New("keys and messages must be equal length")
 	}
 
-	a := make([]*gpubsub.Message, len(messages))
 	for i := range messages {
-		a[i] = &gpubsub.Message{
-			Data:       messages[i],
-			Attributes: map[string]string{"key": keys[i]},
+		err := p.PublishRaw(ctx, keys[i], messages[i])
+		if err != nil {
+			return err
 		}
 	}
 
-	_, err := p.topic.Publish(ctx, a...)
-	return err
+	return nil
 }
 
 // interfaces and types to make this more testable
 type (
+	subscription interface {
+		Receive(ctx context.Context, f func(context.Context, message)) error
+	}
 	message interface {
 		ID() string
 		MsgData() []byte
 		Done()
+	}
+
+	messageImpl struct {
+		msg *gpubsub.Message
+	}
+	subscriptionImpl struct {
+		sub *gpubsub.Subscription
 	}
 )
 
@@ -209,4 +214,10 @@ func (m messageImpl) MsgData() []byte {
 
 func (m messageImpl) Done() {
 	m.msg.Ack()
+}
+
+func (s subscriptionImpl) Receive(ctx context.Context, f func(context.Context, message)) error {
+	return s.sub.Receive(ctx, func(ctx context.Context, msg *gpubsub.Message) {
+		f(ctx, messageImpl{msg})
+	})
 }

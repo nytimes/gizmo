@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/metrics"
+	"github.com/go-kit/kit/metrics/generic"
+	kprom "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +105,6 @@ func (c *CounterByStatusXX) ServeHTTP(w0 http.ResponseWriter, r *http.Request) {
 // Timer is an http.Handler that counts requests via go-kit/kit/metrics.
 type Timer struct {
 	metrics.Histogram
-	isProm  bool
 	handler http.Handler
 }
 
@@ -119,11 +121,9 @@ func Timed(handler http.Handler, name string, p provider.Provider) *Timer {
 // ServeHTTP starts a timer, passes the request to the underlying http.Handler,
 // stops the timer, and updates the timer via go-kit/kit/metrics.
 func (t *Timer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if !t.isProm {
-		defer func(start time.Time) {
-			t.Observe(time.Since(start).Seconds())
-		}(time.Now())
-	}
+	defer func(start time.Time) {
+		t.Observe(time.Since(start).Seconds())
+	}(time.Now())
 	t.handler.ServeHTTP(w, r)
 }
 
@@ -150,8 +150,54 @@ func TimedAndCounted(handler http.Handler, fullPath string, method string, p pro
 
 // PrometheusTimedAndCounted wraps a http.Handler with via prometheus.InstrumentHandler
 func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
+	// TODO: add better regex to find and replace
+	bads := []string{"{", "}", "[", "]", ":", ".", "-"}
+	mname := strings.Replace(name, "/", "_", -1)
+	for _, bad := range bads {
+		mname = strings.Replace(mname, bad, "", -1)
+	}
+	// since we cant use summaries or histograms in stackdriver,
+	// setup gauges for the quantiles we care about
+	pcts := []float64{0.05, 0.50, 0.95, 0.99}
+	gs := map[float64]metrics.Gauge{}
+	for _, p := range pcts {
+		gname := fmt.Sprintf("%s_%f_request_duration", mname, p)
+		gname = strings.Replace(gname, ".", "_", -1)
+		gs[p] = kprom.NewGaugeFrom(
+			prometheus.GaugeOpts{
+				Name: gname,
+				Help: fmt.Sprintf("Request latency for %s's %f percentile", name, p),
+			},
+			nil,
+		)
+	}
+	// and kick off go goroutine to update histo with gauges in background
+	// sure, why not?
+	histo := generic.NewHistogram(name, 50)
+	go func() {
+		c := time.Tick(20 * time.Second)
+		for _ = range c {
+			for p, g := range gs {
+				v := histo.Quantile(p)
+				if v > 0 {
+					g.Set(v)
+				}
+			}
+		}
+	}()
+	// create a request code counter
+	counter := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: mname + "_requests_total",
+			Help: "Total Requests for " + name,
+		},
+		[]string{"code", "method"},
+	)
+	prometheus.MustRegister(counter)
 	return &Timer{
-		isProm:  true,
-		handler: prometheus.InstrumentHandler(name, handler),
+		Histogram: histo,
+		handler: promhttp.InstrumentHandlerCounter(counter,
+			handler,
+		),
 	}
 }

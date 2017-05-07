@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
 
@@ -121,8 +121,7 @@ func (s *SimpleServer) Start() error {
 		if s.cfg.Metrics.Path == "" {
 			s.cfg.Metrics.Path = "/metrics"
 		}
-		s.mux.HandleFunc("GET", s.cfg.Metrics.Path,
-			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+		s.mux.Handle("GET", s.cfg.Metrics.Path, promhttp.Handler())
 	}
 
 	// if this is an App Engine setup, just run it here

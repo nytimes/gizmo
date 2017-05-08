@@ -151,22 +151,24 @@ func TimedAndCounted(handler http.Handler, fullPath string, method string, p pro
 // PrometheusTimedAndCounted wraps a http.Handler with via prometheus.InstrumentHandler
 func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
 	// TODO: add better regex to find and replace
-	bads := []string{"{", "}", "[", "]", ":", ".", "-"}
+	// only [a-zA-Z_] is allowed in prometheus metric names
+	bads := []string{"{", "}", "[", "]", ":", ".", "-", "?", "!", "+"}
 	mname := strings.Replace(name, "/", "_", -1)
 	for _, bad := range bads {
 		mname = strings.Replace(mname, bad, "", -1)
 	}
 	// since we cant use summaries or histograms in stackdriver,
 	// setup gauges for the quantiles we care about
-	pcts := []float64{0.05, 0.50, 0.95, 0.99}
+	pcts := []float64{0.05, 0.50, 0.90, 0.95, 0.99}
 	gs := map[float64]metrics.Gauge{}
 	for _, p := range pcts {
-		gname := fmt.Sprintf("%s_%f_request_duration", mname, p)
+		gname := fmt.Sprintf("%s_%2.2f_request_duration", mname, p)
+		// remove the decimal if there
 		gname = strings.Replace(gname, ".", "_", -1)
 		gs[p] = kprom.NewGaugeFrom(
 			prometheus.GaugeOpts{
 				Name: gname,
-				Help: fmt.Sprintf("Request latency for %s's %f percentile", name, p),
+				Help: fmt.Sprintf("Request latency for %s's %2.2f percentile", name, p),
 			},
 			nil,
 		)

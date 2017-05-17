@@ -45,11 +45,8 @@ func (s *SavedItemsService) Middleware(h http.Handler) http.Handler {
 func (s *SavedItemsService) JSONMiddleware(j server.JSONEndpoint) server.JSONEndpoint {
 	return func(r *http.Request) (code int, res interface{}, err error) {
 
-		// wrap our endpoint with an auth check
-		j = authCheck(j)
-
-		// call the endpoint
-		code, res, err = j(r)
+		// wrap our endpoint with an auth check and call it
+		code, res, err = authCheck(j)(r)
 
 		// if the endpoint returns an unexpected error, return a generic message
 		// and log it.

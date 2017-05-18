@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
 )
 
 // JSONContextEndpoint is the JSONContextService equivalent to JSONService's JSONEndpoint.

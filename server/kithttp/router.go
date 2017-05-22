@@ -95,7 +95,7 @@ func (g *gorillaRouter) Handle(method, path string, h http.Handler) {
 		// copy the route params into a shared location
 		// duplicating memory, but allowing Gizmo to be more flexible with
 		// router implementations.
-		SetRouteVars(r, mux.Vars(r))
+		r = SetRouteVars(r, mux.Vars(r))
 		h.ServeHTTP(w, r)
 	})).Methods(method)
 }
@@ -155,7 +155,7 @@ func httpToFastRoute(fh http.Handler) httprouter.Handle {
 			for _, param := range params {
 				vars[param.Key] = param.Value
 			}
-			SetRouteVars(r, vars)
+			r = SetRouteVars(r, vars)
 		}
 		fh.ServeHTTP(w, r)
 	}
@@ -174,8 +174,9 @@ func Vars(r *http.Request) map[string]string {
 
 // SetRouteVars will set the given value into into the request context
 // with the shared 'vars' storage key.
-func SetRouteVars(r *http.Request, val interface{}) {
+func SetRouteVars(r *http.Request, val interface{}) *http.Request {
 	if val != nil {
 		r = r.WithContext(context.WithValue(r.Context(), varsKey, val))
 	}
+	return r
 }

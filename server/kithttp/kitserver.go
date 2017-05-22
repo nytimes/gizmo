@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	gserver "github.com/NYTimes/gizmo/server"
@@ -14,7 +15,7 @@ import (
 )
 
 type server struct {
-	Logger log.Logger
+	logger log.Logger
 
 	mux Router
 
@@ -35,9 +36,10 @@ func newServer(cfg gserver.Config, opts ...RouterOption) server {
 		r = opt(r)
 	}
 	return server{
-		cfg:  cfg,
-		mux:  r,
-		exit: make(chan chan error),
+		cfg:    cfg,
+		mux:    r,
+		exit:   make(chan chan error),
+		logger: log.NewJSONLogger(log.NewSyncWriter(os.Stdout)),
 	}
 }
 
@@ -64,7 +66,13 @@ func (s server) Register(svc Service) error {
 		return errors.New("services for servers must implement one of the Service interface extensions")
 	}
 
-	opts := defaultOpts
+	opts := []httptransport.ServerOption{
+		// inject the server logger into every request context
+		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
+			return context.WithValue(ctx, logKey, s.logger)
+		}),
+	}
+	opts = append(opts, defaultOpts...)
 	opts = append(opts, svc.Options()...)
 
 	// register all JSON endpoints with our wrappers & default decoders/encoders
@@ -139,11 +147,11 @@ func (s server) Start() error {
 	go func() {
 		err := srv.ListenAndServe()
 		if err != nil {
-			s.Logger.Log("server error", err)
+			s.logger.Log("server error", err)
 			panic("server error" + err.Error())
 		}
 	}()
-	s.Logger.Log(fmt.Sprintf("Listening on %s", addr))
+	s.logger.Log("listening on port", addr)
 
 	go func() {
 		exit := <-s.exit

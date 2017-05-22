@@ -37,6 +37,8 @@ const (
 	ContextKeyInboundAppID contextKey = iota
 	// key to set/retrieve URL params from a request context.
 	varsKey
+	// key for logger
+	logKey
 )
 
 var defaultOpts = []httptransport.ServerOption{
@@ -95,7 +97,7 @@ func Run(service Service) error {
 		panic("unable to register service: " + err.Error())
 	}
 
-	srvr.Logger.Log("Starting new server")
+	srvr.logger.Log("starting new server", true)
 	if err := srvr.Start(); err != nil {
 		return err
 	}
@@ -103,6 +105,6 @@ func Run(service Service) error {
 	// parse address for host, port
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-	srvr.Logger.Log("Received signal %s", <-ch)
+	srvr.logger.Log("Received signal", <-ch)
 	return srvr.Stop()
 }

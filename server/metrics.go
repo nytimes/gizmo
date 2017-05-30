@@ -182,7 +182,8 @@ func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
 			for p, g := range gs {
 				v := histo.Quantile(p)
 				if v > 0 {
-					g.Set(v)
+					// seconds => milliseconds
+					g.Set(v * 1000.0)
 				}
 			}
 		}

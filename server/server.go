@@ -225,6 +225,7 @@ func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx Router) Hea
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
 	mx.Handle("GET", hch.Path(), hch)
+	mx.Handle("HEAD", hch.Path(), hch)
 	return hch
 }
 

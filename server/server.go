@@ -204,6 +204,7 @@ func RegisterProfiler(cfg *Config, mx Router) {
 	mx.HandleFunc("GET", "/debug/pprof/cmdline", pprof.Cmdline)
 	mx.HandleFunc("GET", "/debug/pprof/profile", pprof.Profile)
 	mx.HandleFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
+	mx.HandleFunc("GET", "/debug/pprof/trace", pprof.Trace)
 
 	// Manually add support for paths linked to by index page at /debug/pprof/
 	mx.Handle("GET", "/debug/pprof/goroutine", pprof.Handler("goroutine"))

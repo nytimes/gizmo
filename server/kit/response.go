@@ -1,4 +1,4 @@
-package kithttp
+package kit
 
 import (
 	"context"

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package api;
+
+message GetMostPopularResourceTypeSectionTimeframeRequest {
+    // mostemailed|mostviewed|mostshared
+    string ResourceType = 1;
+    // ie. Style, Arts, Books, Opinion
+    string Section = 2;
+    // days to include. 1, 7 or 30
+    int32 Timeframe = 3;
+}
+
+message CatResult {
+    string Body = 4;
+    string Byline = 3;
+    string Title = 2;
+    string URL = 1;
+}
+
+message CatsResponse {
+    uint32 NumResults = 2;
+    repeated CatResult Results = 3;
+    string Status = 1;
+}
+
+message MostPopularResponse {
+    uint32 NumResults = 2;
+    repeated MostPopularResult Results = 3;
+    string Status = 1;
+}
+
+message MostPopularResult {
+    string Abstract = 10;
+    uint64 AssetID = 3;
+    string Byline = 7;
+    string Column = 5;
+    uint64 ID = 2;
+    string Keywords = 4;
+    string PublishedDate = 11;
+    string Section = 6;
+    string Source = 12;
+    string Title = 9;
+    string Type = 8;
+    string URL = 1;
+}
+
+service ApiService {
+    // Request recent articles about cats.
+    rpc GetCats(google.protobuf.Empty) returns (CatsResponse) {}
+    // Request the most popular articles.
+    rpc GetMostPopularResourceTypeSectionTimeframe(GetMostPopularResourceTypeSectionTimeframeRequest) returns (MostPopularResponse) {}
+}

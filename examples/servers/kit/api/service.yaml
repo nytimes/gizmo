@@ -1,0 +1,148 @@
+swagger: '2.0'
+info:
+  title: api
+  description: A proxy service for accessing popular articles and articles about cats.
+  version: "1.0.0"
+# the domain of the service
+host: cats.api.nyt.net
+# array of all schemes that your API supports
+schemes:
+  - https
+# will be prefixed to all paths
+basePath: /svc/
+paths:
+  /most-popular/{ResourceType}/{Section}/{Timeframe}:
+    get:
+      description: Request the most popular articles.
+      parameters:
+        - name: ResourceType
+          in: path
+          description: mostemailed|mostviewed|mostshared
+          required: true
+          type: string
+        - name: Section
+          in: path
+          description: ie. Style, Arts, Books, Opinion
+          required: true
+          type: string
+        - name: Timeframe
+          in: path
+          description: days to include. 1, 7 or 30
+          required: true
+          type: number
+      responses:
+        200:
+          description: Successful purchase check
+          schema:
+            $ref: '#/definitions/MostPopularResponse'
+        400:
+          description: Bad request parameters
+          schema:
+            $ref: '#/definitions/MostPopularResponse'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/MostPopularResponse'
+  /cats:
+    get:
+      description: Request recent articles about cats.
+      responses:
+        200:
+          description: Successful purchase check
+          schema:
+            $ref: '#/definitions/CatsResponse'
+        500:
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/CatsResponse'               
+
+definitions:
+  MostPopularResponse:
+    type: object
+    properties:
+      Status:
+        type: string
+        x-proto-tag: 1
+      NumResults:
+        type: number
+        format: uint32
+        x-proto-tag: 2
+      Results:
+        type: array
+        x-proto-tag: 3
+        items:
+          $ref: '#/definitions/MostPopularResult'
+
+  MostPopularResult:
+    type: object
+    properties:
+      URL:
+        type: string
+        x-proto-tag: 1
+      ID:
+        type: number
+        format: uint64
+        x-proto-tag: 2
+      AssetID:
+        type: number
+        format: uint64
+        x-proto-tag: 3
+      Keywords:
+        type: string
+        x-proto-tag: 4
+      Column:
+        type: string
+        x-proto-tag: 5
+      Section:
+        type: string
+        x-proto-tag: 6
+      Byline:
+        type: string
+        x-proto-tag: 7
+      Type:
+        type: string
+        x-proto-tag: 8
+      Title:
+        type: string
+        x-proto-tag: 9
+      Abstract:
+        type: string
+        x-proto-tag: 10
+      PublishedDate:
+        type: string
+        x-proto-tag: 11
+      Source:
+        type: string
+        x-proto-tag: 12
+        
+  CatResult:
+    type: object
+    properties:
+      URL:
+        type: string
+        x-proto-tag: 1
+      Title:
+        type: string
+        x-proto-tag: 2
+      Byline:
+        type: string
+        x-proto-tag: 3
+      Body:
+        type: string
+        x-proto-tag: 4
+      
+  CatsResponse:
+    type: object
+    properties:
+      Status:
+        type: string
+        x-proto-tag: 1
+      NumResults:
+        type: number
+        format: uint32
+        x-proto-tag: 2
+      Results:
+        type: array
+        items:
+          $ref: '#/definitions/CatResult'
+        x-proto-tag: 3

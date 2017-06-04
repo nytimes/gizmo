@@ -67,13 +67,13 @@ func (s service) ServiceDesc() *grpc.ServiceDesc {
 // JSONEndpoints is a listing of all endpoints available in the Service.
 func (s service) HTTPEndpoints() map[string]map[string]kitserver.Endpoint {
 	return map[string]map[string]kitserver.Endpoint{
-		"/most-popular/{resourceType:[a-z]+}/{section:[a-z]+}/{timeframe:[0-9]+}": {
+		"/svc/most-popular/{resourceType:[a-z]+}/{section:[a-z]+}/{timeframe:[0-9]+}": {
 			"GET": {
 				Endpoint:    s.getMostPopular,
 				HTTPDecoder: decodeMostPopularRequest,
 			},
 		},
-		"/cats": {
+		"/svc/cats": {
 			"GET": {
 				Endpoint: s.getCats,
 			},

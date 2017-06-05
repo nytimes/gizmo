@@ -24,7 +24,7 @@ name: nytproxy.endpoints.games-puzzles-sandbox.cloud.goog
 
 title: NYT Proxy gRPC API...with cats!
 apis:
-- name: api.ApiServiceServer
+- name: api.ApiService
 
 usage:
   rules:

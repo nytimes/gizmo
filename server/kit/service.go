@@ -9,18 +9,18 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-// Endpoint encapsulates everything required to build
+// HTTPEndpoint encapsulates everything required to build
 // an endpoint hosted on an HTTP server.
-type Endpoint struct {
-	Endpoint    endpoint.Endpoint
-	HTTPDecoder httptransport.DecodeRequestFunc
-	HTTPEncoder httptransport.EncodeResponseFunc
-	HTTPOptions []httptransport.ServerOption
+type HTTPEndpoint struct {
+	Endpoint endpoint.Endpoint
+	Decoder  httptransport.DecodeRequestFunc
+	Encoder  httptransport.EncodeResponseFunc
+	Options  []httptransport.ServerOption
 }
 
-// Service is the most basic interface of a service that can be received and
-// hosted by a kithttp server. Services provide hooks for service-wide options and
-// middlewares and can be used as a means of dependency injection.
+// Service is the interface of mixed HTTP/gRPC that can be registered and
+// hosted by a gizmo/server/kit server. Services provide hooks for service-wide options
+// and middlewares and can be used as a means of dependency injection.
 // In general, a Service should just contain the logic for deserializing HTTP
 // requests, passing the request to a business logic interface abstraction,
 // handling errors and serializing the apprioriate response.
@@ -34,15 +34,15 @@ type Service interface {
 	// for easy integration with 3rd party http.Handlers.
 	HTTPMiddleware(http.Handler) http.Handler
 
+	// HTTPOptions are service-wide go-kit HTTP server options
+	HTTPOptions() []httptransport.ServerOption
+
 	// Middleware is for any service-wide go-kit middlewares
 	Middleware(endpoint.Endpoint) endpoint.Endpoint
 
-	// Options are service-wide go-kit options
-	Options() []httptransport.ServerOption
-
-	// RouterOptions allows users to override the default
+	// HTTPRouterOptions allows users to override the default
 	// behavior and use of the GorillaRouter.
-	RouterOptions() []RouterOption
+	HTTPRouterOptions() []RouterOption
 
 	// HTTPEndpoints default to using a JSON serializer if no encoder is provided.
 	// For example:
@@ -65,9 +65,12 @@ type Service interface {
 	//            },
 	//        },
 	//  }
-	HTTPEndpoints() map[string]map[string]Endpoint
+	HTTPEndpoints() map[string]map[string]HTTPEndpoint
 
-	// in case you want to run this as a gRPC server too
-	ServiceDesc() *grpc.ServiceDesc
+	// RPCServiceDesc allows services to declare an alternate gRPC
+	// representation of themselves ot be hosted on the RPC_PORT.
+	RPCServiceDesc() *grpc.ServiceDesc
+
+	// RPCOptions are for service-wide gRPC server options.
 	RPCOptions() []grpc.ServerOption
 }

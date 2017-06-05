@@ -11,8 +11,6 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-// TODO(jprobinson): USE kit/log
-// TODO(jprobinson): USE kit/metrics/prometheus
 // TODO(jprobinson): built in stackdriver error reporting
 // TODO(jprobinson): built in stackdriver tracing (sampling)
 
@@ -34,14 +32,13 @@ var (
 type contextKey int
 
 const (
-	ContextKeyInboundAppID contextKey = iota
 	// key to set/retrieve URL params from a request context.
-	varsKey
+	varsKey contextKey = iota
 	// key for logger
 	logKey
 )
 
-var defaultOpts = []httptransport.ServerOption{
+var defaultHTTPOpts = []httptransport.ServerOption{
 	httptransport.ServerBefore(
 		// populate context with helpful keys
 		httptransport.PopulateRequestContext,
@@ -91,13 +88,12 @@ func Run(service Service) error {
 		writeTimeout = tWriteTimeout
 	}
 
-	srvr := newServer(*scfg, service.RouterOptions()...)
+	srvr := newServer(*scfg, service.HTTPRouterOptions()...)
 	err := srvr.Register(service)
 	if err != nil {
 		panic("unable to register service: " + err.Error())
 	}
 
-	srvr.logger.Log("starting new server", true)
 	if err := srvr.Start(); err != nil {
 		return err
 	}
@@ -105,6 +101,6 @@ func Run(service Service) error {
 	// parse address for host, port
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-	srvr.logger.Log("Received signal", <-ch)
+	srvr.logger.Log("received signal", <-ch)
 	return srvr.Stop()
 }

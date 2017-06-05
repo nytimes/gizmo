@@ -259,6 +259,7 @@ func (m *subscriberMessage) Done() error {
 // and close the returned channel.
 func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 	output := make(chan pubsub.SubscriberMessage)
+	atomic.StoreUint32(&s.stopped, 0)
 	go s.handleDeletes()
 	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
@@ -357,7 +358,7 @@ func (s *subscriber) Stop() error {
 	}
 	exit := make(chan error)
 	s.stop <- exit
-	atomic.SwapUint32(&s.stopped, uint32(1))
+	atomic.StoreUint32(&s.stopped, uint32(1))
 	return <-exit
 }
 

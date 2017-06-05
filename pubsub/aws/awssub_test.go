@@ -62,8 +62,65 @@ func TestSubscriberNoBase64(t *testing.T) {
 	verifySQSSub(t, queue, sqstest, test3, 2)
 	verifySQSSub(t, queue, sqstest, test4, 3)
 	sub.Stop()
-
 }
+
+func TestSQSRestart(t *testing.T) {
+	test1 := "hey hey hey!"
+	test2 := "ho ho ho!"
+	test3 := "yessir!"
+	test4 := "nope!"
+	sqstest := &TestSQSAPI{
+		Messages: [][]*sqs.Message{
+			{
+				{
+					Body:          &test1,
+					ReceiptHandle: &test1,
+				},
+				{
+					Body:          &test2,
+					ReceiptHandle: &test2,
+				},
+			},
+			{
+				{
+					Body:          &test3,
+					ReceiptHandle: &test3,
+				},
+				{
+					Body:          &test4,
+					ReceiptHandle: &test4,
+				},
+			},
+		},
+	}
+
+	fals := false
+	cfg := SQSConfig{ConsumeBase64: &fals}
+	defaultSQSConfig(&cfg)
+	sub := &subscriber{
+		sqs:      sqstest,
+		cfg:      cfg,
+		toDelete: make(chan *deleteRequest),
+		stop:     make(chan chan error, 1),
+	}
+
+	queue := sub.Start()
+	verifySQSSub(t, queue, sqstest, test1, 0)
+	verifySQSSub(t, queue, sqstest, test2, 1)
+	verifySQSSub(t, queue, sqstest, test3, 2)
+	verifySQSSub(t, queue, sqstest, test4, 3)
+	sub.Stop()
+
+	sqstest.Messages = append(sqstest.Messages, sqstest.Messages...)
+
+	queue = sub.Start()
+	verifySQSSub(t, queue, sqstest, test1, 4)
+	verifySQSSub(t, queue, sqstest, test2, 5)
+	verifySQSSub(t, queue, sqstest, test3, 6)
+	verifySQSSub(t, queue, sqstest, test4, 7)
+	sub.Stop()
+}
+
 func TestSQSReceiveError(t *testing.T) {
 	wantErr := errors.New("my sqs error")
 	sqstest := &TestSQSAPI{

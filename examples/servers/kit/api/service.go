@@ -65,6 +65,7 @@ func (s service) ServiceDesc() *grpc.ServiceDesc {
 }
 
 // JSONEndpoints is a listing of all endpoints available in the Service.
+// If using Cloud Endpoints, this is not needed but handy for local dev.
 func (s service) HTTPEndpoints() map[string]map[string]kitserver.Endpoint {
 	return map[string]map[string]kitserver.Endpoint{
 		"/svc/most-popular/{resourceType:[a-z]+}/{section:[a-z]+}/{timeframe:[0-9]+}": {

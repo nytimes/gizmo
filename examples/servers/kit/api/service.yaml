@@ -9,7 +9,7 @@ host: cats.api.nyt.net
 schemes:
   - https
 # will be prefixed to all paths
-basePath: /svc/
+basePath: /svc
 paths:
   /most-popular/{ResourceType}/{Section}/{Timeframe}:
     get:

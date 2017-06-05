@@ -2,6 +2,8 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
+import "google/api/annotations.proto";
+
 package api;
 
 message GetMostPopularResourceTypeSectionTimeframeRequest {
@@ -49,7 +51,15 @@ message MostPopularResult {
 
 service ApiService {
     // Request recent articles about cats.
-    rpc GetCats(google.protobuf.Empty) returns (CatsResponse) {}
+    rpc GetCats(google.protobuf.Empty) returns (CatsResponse) {
+      option (google.api.http) = {
+        get: "/svc/cats"
+      };
+    }
     // Request the most popular articles.
-    rpc GetMostPopularResourceTypeSectionTimeframe(GetMostPopularResourceTypeSectionTimeframeRequest) returns (MostPopularResponse) {}
+    rpc GetMostPopularResourceTypeSectionTimeframe(GetMostPopularResourceTypeSectionTimeframeRequest) returns (MostPopularResponse) {
+      option (google.api.http) = {
+        get: "/svc/most-popular/{ResourceType}/{Section}/{Timeframe}"
+      };
+    }
 }

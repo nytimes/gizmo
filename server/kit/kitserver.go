@@ -63,28 +63,28 @@ func (s *server) Register(svc Service) error {
 			return context.WithValue(ctx, logKey, s.logger)
 		}),
 	}
-	opts = append(opts, defaultOpts...)
-	opts = append(opts, svc.Options()...)
+	opts = append(opts, defaultHTTPOpts...)
+	opts = append(opts, svc.HTTPOptions()...)
 
 	// register all endpoints with our wrappers & default decoders/encoders
 	for path, epMethods := range svc.HTTPEndpoints() {
 		for method, ep := range epMethods {
 			// just pass the http.Request in if no decoder provided
-			if ep.HTTPDecoder == nil {
-				ep.HTTPDecoder = func(_ context.Context, r *http.Request) (interface{}, error) {
+			if ep.Decoder == nil {
+				ep.Decoder = func(_ context.Context, r *http.Request) (interface{}, error) {
 					return r, nil
 				}
 			}
 			// default to the httptransport helper
-			if ep.HTTPEncoder == nil {
-				ep.HTTPEncoder = httptransport.EncodeJSONResponse
+			if ep.Encoder == nil {
+				ep.Encoder = httptransport.EncodeJSONResponse
 			}
 			s.mux.Handle(method, path, svc.HTTPMiddleware(
 				httptransport.NewServer(
 					svc.Middleware(ep.Endpoint),
-					ep.HTTPDecoder,
-					ep.HTTPEncoder,
-					append(opts, ep.HTTPOptions...)...)))
+					ep.Decoder,
+					ep.Encoder,
+					append(opts, ep.Options...)...)))
 		}
 	}
 
@@ -125,7 +125,7 @@ func (s *server) Start() error {
 
 	// gRPC SERVER!
 	var gsrv *grpc.Server
-	if desc := s.svc.ServiceDesc(); desc != nil {
+	if desc := s.svc.RPCServiceDesc(); desc != nil {
 		gaddr := fmt.Sprintf(":%d", s.cfg.RPCPort)
 		lis, err := net.Listen("tcp", gaddr)
 		if err != nil {

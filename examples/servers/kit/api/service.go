@@ -35,11 +35,11 @@ func New(cfg Config) kitserver.Service {
 	}
 }
 
-func (s service) RouterOptions() []kitserver.RouterOption {
+func (s service) HTTPRouterOptions() []kitserver.RouterOption {
 	return nil
 }
 
-func (s service) Options() []httptransport.ServerOption {
+func (s service) HTTPOptions() []httptransport.ServerOption {
 	return nil
 }
 
@@ -55,23 +55,14 @@ func (s service) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 	return e
 }
 
-func (s service) RPCOptions() []grpc.ServerOption {
-	return nil
-}
-
-func (s service) ServiceDesc() *grpc.ServiceDesc {
-	// snagged from the pb file
-	return &_ApiService_serviceDesc
-}
-
 // JSONEndpoints is a listing of all endpoints available in the Service.
 // If using Cloud Endpoints, this is not needed but handy for local dev.
-func (s service) HTTPEndpoints() map[string]map[string]kitserver.Endpoint {
-	return map[string]map[string]kitserver.Endpoint{
+func (s service) HTTPEndpoints() map[string]map[string]kitserver.HTTPEndpoint {
+	return map[string]map[string]kitserver.HTTPEndpoint{
 		"/svc/most-popular/{resourceType:[a-z]+}/{section:[a-z]+}/{timeframe:[0-9]+}": {
 			"GET": {
-				Endpoint:    s.getMostPopular,
-				HTTPDecoder: decodeMostPopularRequest,
+				Endpoint: s.getMostPopular,
+				Decoder:  decodeMostPopularRequest,
 			},
 		},
 		"/svc/cats": {
@@ -80,4 +71,13 @@ func (s service) HTTPEndpoints() map[string]map[string]kitserver.Endpoint {
 			},
 		},
 	}
+}
+
+func (s service) RPCOptions() []grpc.ServerOption {
+	return nil
+}
+
+func (s service) RPCServiceDesc() *grpc.ServiceDesc {
+	// snagged from the pb.go file
+	return &_ApiService_serviceDesc
 }

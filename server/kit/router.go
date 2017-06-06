@@ -23,7 +23,7 @@ type RouterOption func(Router) Router
 // default use of the Gorilla Router.
 // TODO add type and constants for names + docs
 func RouterSelect(name string) RouterOption {
-	return func(_ Router) Router {
+	return func(Router) Router {
 		switch name {
 		case "fast", "httprouter":
 			return &fastRouter{httprouter.New()}

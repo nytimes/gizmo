@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -66,9 +67,18 @@ func (s *server) Register(svc Service) error {
 	opts = append(opts, defaultHTTPOpts...)
 	opts = append(opts, svc.HTTPOptions()...)
 
+	var healthzFound bool
+	const healthz = "/healthz"
+
 	// register all endpoints with our wrappers & default decoders/encoders
 	for path, epMethods := range svc.HTTPEndpoints() {
 		for method, ep := range epMethods {
+
+			// check if folks are supplying their own healthcheck
+			if method == http.MethodGet && path == healthz {
+				healthzFound = true
+			}
+
 			// just pass the http.Request in if no decoder provided
 			if ep.Decoder == nil {
 				ep.Decoder = func(_ context.Context, r *http.Request) (interface{}, error) {
@@ -86,6 +96,13 @@ func (s *server) Register(svc Service) error {
 					ep.Encoder,
 					append(opts, ep.Options...)...)))
 		}
+	}
+
+	if !healthzFound {
+		s.mux.HandleFunc(http.MethodGet, healthz, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			io.WriteString(w, "OK")
+		})
 	}
 
 	return nil

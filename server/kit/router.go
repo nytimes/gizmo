@@ -39,7 +39,7 @@ func RouterSelect(name string) RouterOption {
 
 // CustomRouter allows users to inject an alternate Router implementation.
 func CustomRouter(r Router) RouterOption {
-	return func(_ Router) Router {
+	return func(Router) Router {
 		return r
 	}
 }

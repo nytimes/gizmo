@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
+
 	"github.com/NYTimes/gizmo/examples/servers/kit/api"
 	"github.com/NYTimes/gizmo/server/kit"
-	"github.com/kelseyhightower/envconfig"
 )
 
 func TestKitServer(t *testing.T) {

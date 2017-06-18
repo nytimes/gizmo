@@ -68,9 +68,9 @@ type Config struct {
 	// LogLevel will override the default log level of 'info'.
 	LogLevel string `envconfig:"APP_LOG_LEVEL"`
 	// LogJSONFormat will override the default JSON formatting logic on the server.
-	// If set and true, the logrus JSONFormatter will be used.
-	// By default the Server will log in JSON a format only if the Log field
+	// By default the Server will log in a JSON format only if the Log field
 	// is defined.
+	// If this field is set and true, the logrus JSONFormatter will be used.
 	LogJSONFormat *bool `envconfig:"APP_LOG_JSON_FMT"`
 
 	// TLSCertFile is an optional string for enabling TLS in simple servers.

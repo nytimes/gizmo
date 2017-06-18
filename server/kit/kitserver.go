@@ -2,21 +2,19 @@ package kit
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"os"
-	"time"
 
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	gserver "github.com/NYTimes/gizmo/server"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/pkg/errors"
 )
 
 type server struct {
@@ -24,30 +22,45 @@ type server struct {
 
 	mux Router
 
-	cfg gserver.Config
+	cfg Config
 
-	svc Service
+	svr  *http.Server
+	gsvr *grpc.Server
 
 	// exit chan for graceful shutdown
 	exit chan chan error
 }
 
-// newServer will init the mux and register all endpoints.
-func newServer(cfg gserver.Config, opts ...RouterOption) *server {
-	if len(opts) == 0 {
-		// select the default router
-		opts = append(opts, RouterSelect(""))
+func newServer(svc Service) *server {
+	// load config from environment with defaults set
+	cfg := loadConfig()
+
+	ropts := svc.HTTPRouterOptions()
+	// default the router if none set
+	if len(ropts) == 0 {
+		ropts = append(ropts, RouterSelect(""))
 	}
 	var r Router
-	for _, opt := range opts {
+	for _, opt := range ropts {
 		r = opt(r)
 	}
-	return &server{
+
+	s := &server{
 		cfg:    cfg,
 		mux:    r,
 		exit:   make(chan chan error),
 		logger: log.NewJSONLogger(log.NewSyncWriter(os.Stdout)),
 	}
+	s.svr = &http.Server{
+		Handler:        s,
+		Addr:           fmt.Sprintf(":%d", cfg.HTTPPort),
+		MaxHeaderBytes: cfg.MaxHeaderBytes,
+		ReadTimeout:    cfg.ReadTimeout,
+		WriteTimeout:   cfg.WriteTimeout,
+		IdleTimeout:    cfg.IdleTimeout,
+	}
+	s.register(svc)
+	return s
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -55,27 +68,26 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
 }
 
-// Register will accept and register server, JSONService or MixedService implementations.
-func (s *server) Register(svc Service) error {
-	s.svc = svc
+func (s *server) register(svc Service) {
 	opts := []httptransport.ServerOption{
+		// populate context with helpful keys
+		httptransport.ServerBefore(
+			httptransport.PopulateRequestContext,
+		),
 		// inject the server logger into every request context
 		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
 			return context.WithValue(ctx, logKey, s.logger)
 		}),
 	}
-	opts = append(opts, defaultHTTPOpts...)
 	opts = append(opts, svc.HTTPOptions()...)
 
 	var healthzFound bool
-	const healthz = "/healthz"
-
 	// register all endpoints with our wrappers & default decoders/encoders
 	for path, epMethods := range svc.HTTPEndpoints() {
 		for method, ep := range epMethods {
 
 			// check if folks are supplying their own healthcheck
-			if method == http.MethodGet && path == healthz {
+			if method == http.MethodGet && path == s.cfg.HealthCheckPath {
 				healthzFound = true
 			}
 
@@ -98,97 +110,82 @@ func (s *server) Register(svc Service) error {
 		}
 	}
 
+	// register a simple health check if none provided
 	if !healthzFound {
-		s.mux.HandleFunc(http.MethodGet, healthz, func(w http.ResponseWriter, r *http.Request) {
+		s.mux.HandleFunc(http.MethodGet, s.cfg.HealthCheckPath, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			io.WriteString(w, "OK")
 		})
 	}
 
-	return nil
+	gdesc := svc.RPCServiceDesc()
+	if gdesc == nil {
+		return
+	}
+
+	gopts := []grpc.ServerOption{
+		grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				grpc.UnaryServerInterceptor(
+					// inject logger into gRPC server
+					func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+						ctx = context.WithValue(ctx, logKey, s.logger)
+						return handler(ctx, req)
+					}),
+			),
+		),
+	}
+	gopts = append(gopts, svc.RPCOptions()...)
+	s.gsvr = grpc.NewServer(gopts...)
+	s.gsvr.RegisterService(gdesc, svc)
 }
 
-func (s *server) Start() error {
-	// TODO(jprobinson) add basic default health check
-
-	// HTTP SERVER!
-	addr := fmt.Sprintf(":%d", s.cfg.HTTPPort)
-	srv := http.Server{
-		Handler:        s,
-		MaxHeaderBytes: maxHeaderBytes,
-		Addr:           addr,
-	}
-
-	// add TLS if in the configs
-	if s.cfg.TLSCertFile != nil && s.cfg.TLSKeyFile != nil {
-		cert, err := tls.LoadX509KeyPair(*s.cfg.TLSCertFile, *s.cfg.TLSKeyFile)
-		if err != nil {
-			return err
-		}
-		srv.TLSConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			NextProtos:   []string{"http/1.1"},
-		}
-	}
-
+func (s *server) start() error {
 	go func() {
-		err := srv.ListenAndServe()
+		err := s.svr.ListenAndServe()
 		if err != nil {
-			s.logger.Log("server error", err)
-			panic("server error" + err.Error())
+			s.logger.Log("server error", err,
+				"initiating shutting down", true)
+			s.stop()
 		}
 	}()
-	s.logger.Log("listening on HTTP port", addr)
+	s.logger.Log("listening on HTTP port", s.cfg.HTTPPort)
 
-	// gRPC SERVER!
-	var gsrv *grpc.Server
-	if desc := s.svc.RPCServiceDesc(); desc != nil {
+	if s.gsvr != nil {
 		gaddr := fmt.Sprintf(":%d", s.cfg.RPCPort)
 		lis, err := net.Listen("tcp", gaddr)
 		if err != nil {
-			panic("failed to listen: " + err.Error())
+			return errors.Wrap(err, "failed to listen to RPC port")
 		}
-		gopts := []grpc.ServerOption{
-			grpc.UnaryInterceptor(
-				grpc_middleware.ChainUnaryServer(
-					grpc.UnaryServerInterceptor(
-						// inject logger into gRPC server
-						func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-							ctx = context.WithValue(ctx, logKey, s.logger)
-							return handler(ctx, req)
-						}),
-				),
-			),
-		}
-		gopts = append(gopts, s.svc.RPCOptions()...)
-		gsrv = grpc.NewServer(gopts...)
-		gsrv.RegisterService(desc, s.svc)
+
 		go func() {
-			err := gsrv.Serve(lis)
+			err := s.gsvr.Serve(lis)
 			if err != nil {
-				s.logger.Log("gRPC server error", err)
-				panic("gRPC server error" + err.Error())
+				s.logger.Log("gRPC server error", err,
+					"initiating shutting down", true)
+				s.stop()
 			}
 		}()
-		s.logger.Log("listening on RPC port", gaddr)
+		s.logger.Log("listening on RPC port", s.cfg.RPCPort)
 	}
 
 	go func() {
 		exit := <-s.exit
 
-		// stop the listener with timeout (5mins for now until we abstract to cfg)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		// stop the listener with timeout
+		ctx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
 		defer cancel()
 
-		if gsrv != nil {
-			gsrv.GracefulStop()
+		if s.gsvr != nil {
+			s.gsvr.GracefulStop()
 		}
-		exit <- srv.Shutdown(ctx)
+		exit <- s.svr.Shutdown(ctx)
 	}()
+
 	return nil
 }
 
-func (s *server) Stop() error {
+func (s *server) stop() error {
 	ch := make(chan error)
 	s.exit <- ch
 	return <-ch

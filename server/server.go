@@ -115,11 +115,21 @@ func Init(name string, scfg *Config) {
 			Log.Fatalf("unable to access log file: %s", err)
 		}
 		Log.Out = lf
-		// json output when writing to file
-		Log.Formatter = &logrus.JSONFormatter{}
+
+		// json output when writing to file by default
+		if scfg.LogJSONFormat == nil {
+			Log.Formatter = &logrus.JSONFormatter{}
+		}
+
 	} else {
 		Log.Out = os.Stderr
 	}
+
+	// override default JSON settings
+	if scfg.LogJSONFormat != nil && *scfg.LogJSONFormat {
+		Log.Formatter = &logrus.JSONFormatter{}
+	}
+
 	SetLogLevel(scfg)
 
 	server = NewServer(scfg)

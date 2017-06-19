@@ -76,5 +76,8 @@ func loadConfig() Config {
 	if cfg.HealthCheckPath == "" {
 		cfg.HealthCheckPath = "/healthz"
 	}
+	if cfg.ShutdownTimeout.Nanoseconds() == 0 {
+		cfg.ShutdownTimeout = 5 * time.Minute
+	}
 	return cfg
 }

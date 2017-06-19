@@ -22,7 +22,7 @@ const (
 // Service and start up the server(s).
 // This will block until the server shuts down.
 func Run(service Service) error {
-	svr := newServer(service)
+	svr := NewServer(service)
 
 	if err := svr.start(); err != nil {
 		return err

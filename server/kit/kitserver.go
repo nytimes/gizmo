@@ -17,7 +17,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-type server struct {
+// Server encapsulates all logic for registering and running a gizmo kit server.
+type Server struct {
 	logger log.Logger
 
 	mux Router
@@ -31,7 +32,11 @@ type server struct {
 	exit chan chan error
 }
 
-func newServer(svc Service) *server {
+// NewServer will create a new kit server for the given Service.
+//
+// Generally, users should only use the 'Run' function to start a server and use this
+// function within tests so they may call ServeHTTP.
+func NewServer(svc Service) *Server {
 	// load config from environment with defaults set
 	cfg := loadConfig()
 
@@ -45,7 +50,7 @@ func newServer(svc Service) *server {
 		r = opt(r)
 	}
 
-	s := &server{
+	s := &Server{
 		cfg:    cfg,
 		mux:    r,
 		exit:   make(chan chan error),
@@ -63,12 +68,12 @@ func newServer(svc Service) *server {
 	return s
 }
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// hand the request off to the router
 	s.mux.ServeHTTP(w, r)
 }
 
-func (s *server) register(svc Service) {
+func (s *Server) register(svc Service) {
 	opts := []httptransport.ServerOption{
 		// populate context with helpful keys
 		httptransport.ServerBefore(
@@ -140,7 +145,7 @@ func (s *server) register(svc Service) {
 	s.gsvr.RegisterService(gdesc, svc)
 }
 
-func (s *server) start() error {
+func (s *Server) start() error {
 	go func() {
 		err := s.svr.ListenAndServe()
 		if err != nil {
@@ -185,7 +190,7 @@ func (s *server) start() error {
 	return nil
 }
 
-func (s *server) stop() error {
+func (s *Server) stop() error {
 	ch := make(chan error)
 	s.exit <- ch
 	return <-ch

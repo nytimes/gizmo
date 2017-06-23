@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	kitserver "github.com/NYTimes/gizmo/server/kit"
+	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/NYTimes/gziphandler"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -13,7 +13,7 @@ import (
 )
 
 type (
-	// service will implement kitserver.Service.
+	// service will implement kit.Service.
 	service struct {
 		client nyt.Client
 	}
@@ -29,13 +29,13 @@ var _ ApiServiceServer = service{}
 
 // NewService will instantiate a Service
 // with the given configuration.
-func New(cfg Config) kitserver.Service {
+func New(cfg Config) kit.Service {
 	return service{
 		nyt.NewClient(cfg.MostPopularToken, cfg.SemanticToken),
 	}
 }
 
-func (s service) HTTPRouterOptions() []kitserver.RouterOption {
+func (s service) HTTPRouterOptions() []kit.RouterOption {
 	return nil
 }
 
@@ -57,8 +57,8 @@ func (s service) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 
 // JSONEndpoints is a listing of all endpoints available in the Service.
 // If using Cloud Endpoints, this is not needed but handy for local dev.
-func (s service) HTTPEndpoints() map[string]map[string]kitserver.HTTPEndpoint {
-	return map[string]map[string]kitserver.HTTPEndpoint{
+func (s service) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
+	return map[string]map[string]kit.HTTPEndpoint{
 		"/svc/most-popular/{resourceType:[a-z]+}/{section:[a-z]+}/{timeframe:[0-9]+}": {
 			"GET": {
 				Endpoint: s.getMostPopular,

@@ -3,10 +3,9 @@ package kit
 import (
 	"context"
 
-	"google.golang.org/grpc/metadata"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport/http"
+	"google.golang.org/grpc/metadata"
 )
 
 // Logger will return a kit/log.Logger that has been injected

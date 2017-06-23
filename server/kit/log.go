@@ -26,13 +26,18 @@ func Log(ctx context.Context, keyvals ...interface{}) error {
 func LoggerWithFields(ctx context.Context) log.Logger {
 	l := Logger(ctx)
 	// for HTTP requests
-	l = withLog(ctx, l, http.ContextKeyRequestMethod, "http-method")
-	l = withLog(ctx, l, http.ContextKeyRequestPath, "http-path")
-	l = withLog(ctx, l, http.ContextKeyRequestURI, "http-uri")
-	l = withLog(ctx, l, http.ContextKeyRequestXRequestID, "http-x-request-id")
-	l = withLog(ctx, l, http.ContextKeyRequestRemoteAddr, "http-remote-addr")
-	l = withLog(ctx, l, http.ContextKeyRequestXForwardedFor, "http-x-forwarded-for")
-	l = withLog(ctx, l, http.ContextKeyRequestUserAgent, "http-user-agent")
+	keys := map[interface{}]string{
+		http.ContextKeyRequestMethod:        "http-method",
+		http.ContextKeyRequestXRequestID:    "http-x-request-id",
+		http.ContextKeyRequestRemoteAddr:    "http-remote-addr",
+		http.ContextKeyRequestXForwardedFor: "http-x-forwarded-for",
+		http.ContextKeyRequestUserAgent:     "http-user-agent",
+	}
+	for k, v := range keys {
+		if val := ctx.Value(k).(string); val != "" {
+			l = log.With(l, v, val)
+		}
+	}
 	// for gRPC requests
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -66,11 +71,4 @@ func LogErrorMsgWithFields(ctx context.Context, err error, msg string) error {
 // the key "msg".
 func LogErrorMsg(ctx context.Context, err error, msg string) error {
 	return Logger(ctx).Log("error", err, "msg", msg)
-}
-
-func withLog(ctx context.Context, l log.Logger, key interface{}, skey string) log.Logger {
-	if val := ctx.Value(key).(string); val != "" {
-		return log.With(l, "http-method", val)
-	}
-	return l
 }

@@ -136,7 +136,6 @@ func (s *Server) register(svc Service) {
 					func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 						ctx = context.WithValue(ctx, logKey, s.logger)
 						return svc.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-
 							return handler(ctx, req)
 						})(ctx, req)
 					}),

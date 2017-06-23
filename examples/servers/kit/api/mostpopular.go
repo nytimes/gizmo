@@ -2,10 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
-	kitserver "github.com/NYTimes/gizmo/server/kit"
+	"github.com/NYTimes/gizmo/server/kit"
 	ocontext "golang.org/x/net/context"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
@@ -26,19 +27,21 @@ func (s service) getMostPopular(ctx context.Context, r interface{}) (interface{}
 
 	res, err := s.client.GetMostPopular(mpr.ResourceType, mpr.Section, uint(mpr.Timeframe))
 	if err != nil {
-		return nil, kitserver.NewJSONStatusResponse(err.Error(), http.StatusBadRequest)
+		return nil, kit.NewJSONStatusResponse(
+			&GetMostPopularResourceTypeSectionTimeframeRequest{},
+			http.StatusBadRequest)
 	}
 
-	kitserver.Logger(ctx).Log("most popular results found", len(res))
+	kit.LogMsg(ctx, fmt.Sprintf("most popular results found: %d", len(res)))
 	return mpToMP(res), nil
 }
 
 // CUSTOM HTTP REQUEST DECODER
 func decodeMostPopularRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	vs := kitserver.Vars(r)
+	vs := kit.Vars(r)
 	timeframe, err := strconv.ParseUint(vs["timeframe"], 10, 8)
 	if err != nil {
-		return nil, kitserver.NewJSONStatusResponse(
+		return nil, kit.NewJSONStatusResponse(
 			&MostPopularResponse{Status: "bad request"},
 			http.StatusBadRequest)
 	}

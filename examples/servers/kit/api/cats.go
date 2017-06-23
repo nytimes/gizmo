@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
-	kitserver "github.com/NYTimes/gizmo/server/kit"
+	"github.com/NYTimes/gizmo/server/kit"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
 	ocontext "golang.org/x/net/context"
 
@@ -12,7 +14,7 @@ import (
 
 // GRPC layer, add the service-wide middleware ourselves
 func (s service) GetCats(ctx ocontext.Context, r *google_protobuf.Empty) (*CatsResponse, error) {
-	res, err := s.Middleware(s.getCats)(ctx, r)
+	res, err := s.getCats(ctx, r)
 	if res != nil {
 		return res.(*CatsResponse), err
 	}
@@ -23,10 +25,12 @@ func (s service) GetCats(ctx ocontext.Context, r *google_protobuf.Empty) (*CatsR
 func (s service) getCats(ctx context.Context, _ interface{}) (interface{}, error) {
 	res, err := s.client.SemanticConceptSearch("des", "cats")
 	if err != nil {
-		kitserver.Logger(ctx).Log("unable to get cats", err)
-		return &CatsResponse{Status: "ERROR"}, nil
+		kit.LogErrorMsg(ctx, err, "unable to get cats")
+		return nil, kit.NewJSONStatusResponse(
+			&CatsResponse{Status: "ERROR"},
+			http.StatusInternalServerError)
 	}
-	kitserver.Logger(ctx).Log("cats results found", len(res))
+	kit.LogMsg(ctx, fmt.Sprintf("cats results found: %d", len(res)))
 	return semToCat(res), nil
 }
 

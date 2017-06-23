@@ -21,7 +21,7 @@ func Log(ctx context.Context, keyvals ...interface{}) error {
 	return Logger(ctx).Log(keyvals...)
 }
 
-// ContextLogger will pull any known request info from the context
+// LoggerWithFields will pull any known request info from the context
 // and include it into the log as key values.
 func LoggerWithFields(ctx context.Context) log.Logger {
 	l := Logger(ctx)
@@ -62,8 +62,8 @@ func LogErrorMsgWithFields(ctx context.Context, err error, msg string) error {
 	return Logger(ctx).Log("error", err, "msg", msg)
 }
 
-// LogErrMsg will log the given error under the key "error" and the given message under
-//  the key "msg".
+// LogErrorMsg will log the given error under the key "error" and the given message under
+// the key "msg".
 func LogErrorMsg(ctx context.Context, err error, msg string) error {
 	return Logger(ctx).Log("error", err, "msg", msg)
 }

@@ -47,7 +47,7 @@ type Service interface {
 	// HTTPEndpoints default to using a JSON serializer if no encoder is provided.
 	// For example:
 	//
-	//    return map[string]map[string]kithttp.HTTPEndpoint{
+	//    return map[string]map[string]kit.HTTPEndpoint{
 	//        "/cat/{id}": {
 	//            "GET": {
 	//                Endpoint: s.GetCatByID,

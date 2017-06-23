@@ -132,10 +132,13 @@ func (s *Server) register(svc Service) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(
 				grpc.UnaryServerInterceptor(
-					// inject logger into gRPC server
+					// inject logger into gRPC server and hook in go-kit middleware
 					func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 						ctx = context.WithValue(ctx, logKey, s.logger)
-						return handler(ctx, req)
+						return svc.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+
+							return handler(ctx, req)
+						})(ctx, req)
 					}),
 			),
 		),

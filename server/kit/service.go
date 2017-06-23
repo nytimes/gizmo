@@ -68,7 +68,7 @@ type Service interface {
 	HTTPEndpoints() map[string]map[string]HTTPEndpoint
 
 	// RPCServiceDesc allows services to declare an alternate gRPC
-	// representation of themselves ot be hosted on the RPC_PORT (8081 by default).
+	// representation of themselves to be hosted on the RPC_PORT (8081 by default).
 	RPCServiceDesc() *grpc.ServiceDesc
 
 	// RPCOptions are for service-wide gRPC server options.

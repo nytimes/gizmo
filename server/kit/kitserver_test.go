@@ -1,25 +1,25 @@
 package kit_test
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/go-kit/kit/endpoint"
+	httptransport "github.com/go-kit/kit/transport/http"
+	ocontext "golang.org/x/net/context"
+	"google.golang.org/grpc"
 
-	"github.com/NYTimes/gizmo/examples/servers/kit/api"
 	"github.com/NYTimes/gizmo/server/kit"
 )
 
 func TestKitServer(t *testing.T) {
-	var cfg api.Config
-	envconfig.MustProcess("", &cfg)
-
 	go func() {
 		// runs the HTTP _AND_ gRPC servers
-		err := kit.Run(api.New(cfg))
+		err := kit.Run(&server{})
 		if err != nil {
 			t.Fatal("problems running service: " + err.Error())
 		}
@@ -45,4 +45,60 @@ func TestKitServer(t *testing.T) {
 
 	// make signal to kill server
 	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+}
+
+type server struct{}
+
+func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
+	return e
+}
+
+func (s *server) HTTPMiddleware(h http.Handler) http.Handler {
+	return h
+}
+
+func (s *server) HTTPOptions() []httptransport.ServerOption {
+	return nil
+}
+
+func (s *server) HTTPRouterOptions() []kit.RouterOption {
+	return nil
+}
+
+func (s *server) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
+	return map[string]map[string]kit.HTTPEndpoint{
+		"GET": {
+			"/svc/cat/{name:[a-zA-Z]+}": {
+				Endpoint: s.getCatByName,
+				Decoder:  catNameDecoder,
+			},
+		},
+	}
+}
+
+func (s *server) RPCServiceDesc() *grpc.ServiceDesc {
+	return &_KitTestService_serviceDesc
+}
+
+func (s *server) RPCOptions() []grpc.ServerOption {
+	return nil
+}
+
+// gRPC layer
+func (s *server) GetCatName(ctx ocontext.Context, r *GetCatNameRequest) (*Cat, error) {
+	rs, err := s.getCatByName(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return rs.(*Cat), nil
+}
+
+// http decoder layer
+func catNameDecoder(ctx context.Context, r *http.Request) (interface{}, error) {
+	return &GetCatNameRequest{Name: kit.Vars(r)["name"]}, nil
+}
+
+// shared business layer
+func (s *server) getCatByName(ctx context.Context, _ interface{}) (interface{}, error) {
+	return &Cat{Breed: "American Shorthair", Name: "Ziggy", Age: 12}, nil
 }

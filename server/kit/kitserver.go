@@ -153,12 +153,12 @@ func (s *Server) start() error {
 		if err != nil {
 			s.logger.Log(
 				"error", err,
-				"message", "HTTP server error - initiating shutting down")
+				"msg", "HTTP server error - initiating shutting down")
 			s.stop()
 		}
 	}()
 
-	s.logger.Log("message",
+	s.logger.Log("msg",
 		fmt.Sprintf("listening on HTTP port: %d", s.cfg.HTTPPort))
 
 	if s.gsvr != nil {
@@ -173,11 +173,11 @@ func (s *Server) start() error {
 			if err != nil {
 				s.logger.Log(
 					"error", err,
-					"message", "gRPC server error - initiating shutting down")
+					"msg", "gRPC server error - initiating shutting down")
 				s.stop()
 			}
 		}()
-		s.logger.Log("message",
+		s.logger.Log("msg",
 			fmt.Sprintf("listening on RPC port: %d", s.cfg.RPCPort))
 	}
 

@@ -2,8 +2,10 @@ package kit_test
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"syscall"
 	"testing"
 	"time"
@@ -43,6 +45,38 @@ func TestKitServer(t *testing.T) {
 		t.Fatalf("unexpected health check response. got %q, wanted 'OK'", string(b))
 	}
 
+	// hit the HTTP server
+	resp, err = http.Get("http://localhost:8080/svc/cat/ziggy")
+	if err != nil {
+		t.Fatal("unable to cat http endpoint:", err)
+	}
+
+	var hcat Cat
+	err = json.NewDecoder(resp.Body).Decode(&hcat)
+	if err != nil {
+		t.Fatal("unable to read JSON cat:", err)
+	}
+
+	if !reflect.DeepEqual(&hcat, testCat) {
+		t.Fatalf("expected cat: %#v, got %#v", testCat, hcat)
+	}
+
+	// hit the gRPC server
+	gc, err := grpc.Dial("localhost:8081", grpc.WithInsecure())
+	if err != nil {
+		t.Fatalf("unable to init gRPC connection: %s", err)
+	}
+	defer gc.Close()
+	cc := NewKitTestServiceClient(gc)
+	cat, err := cc.GetCatName(context.Background(), &GetCatNameRequest{Name: "ziggy"})
+	if err != nil {
+		t.Fatalf("unable to make gRPC request: %s", err)
+	}
+
+	if !reflect.DeepEqual(cat, testCat) {
+		t.Fatalf("expected cat: %#v, got %#v", testCat, cat)
+	}
+
 	// make signal to kill server
 	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 }
@@ -67,8 +101,8 @@ func (s *server) HTTPRouterOptions() []kit.RouterOption {
 
 func (s *server) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 	return map[string]map[string]kit.HTTPEndpoint{
-		"GET": {
-			"/svc/cat/{name:[a-zA-Z]+}": {
+		"/svc/cat/{name:[a-zA-Z]+}": {
+			"GET": {
 				Endpoint: s.getCatByName,
 				Decoder:  catNameDecoder,
 			},
@@ -98,7 +132,10 @@ func catNameDecoder(ctx context.Context, r *http.Request) (interface{}, error) {
 	return &GetCatNameRequest{Name: kit.Vars(r)["name"]}, nil
 }
 
+var testCat = &Cat{Breed: "American Shorthair", Name: "Ziggy", Age: 12}
+
 // shared business layer
 func (s *server) getCatByName(ctx context.Context, _ interface{}) (interface{}, error) {
-	return &Cat{Breed: "American Shorthair", Name: "Ziggy", Age: 12}, nil
+	kit.Logger(ctx).Log("message", "getting ziggy")
+	return testCat, nil
 }

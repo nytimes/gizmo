@@ -152,12 +152,15 @@ func (s *Server) start() error {
 	go func() {
 		err := s.svr.ListenAndServe()
 		if err != nil {
-			s.logger.Log("server error", err,
-				"initiating shutting down", true)
+			s.logger.Log(
+				"error", err,
+				"message", "HTTP server error - initiating shutting down")
 			s.stop()
 		}
 	}()
-	s.logger.Log("listening on HTTP port", s.cfg.HTTPPort)
+
+	s.logger.Log("message",
+		fmt.Sprintf("listening on HTTP port: %d", s.cfg.HTTPPort))
 
 	if s.gsvr != nil {
 		gaddr := fmt.Sprintf(":%d", s.cfg.RPCPort)
@@ -169,12 +172,14 @@ func (s *Server) start() error {
 		go func() {
 			err := s.gsvr.Serve(lis)
 			if err != nil {
-				s.logger.Log("gRPC server error", err,
-					"initiating shutting down", true)
+				s.logger.Log(
+					"error", err,
+					"message", "gRPC server error - initiating shutting down")
 				s.stop()
 			}
 		}()
-		s.logger.Log("listening on RPC port", s.cfg.RPCPort)
+		s.logger.Log("message",
+			fmt.Sprintf("listening on RPC port: %d", s.cfg.RPCPort))
 	}
 
 	go func() {

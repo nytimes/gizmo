@@ -67,7 +67,7 @@ func LogMsg(ctx context.Context, msg string) error {
 // LogErrorMsgWithFields will start with LoggerWithFields and then log
 // the given error under the key "error" and the given message under the key "msg".
 func LogErrorMsgWithFields(ctx context.Context, err error, msg string) error {
-	return Logger(ctx).Log("error", err, "msg", msg)
+	return LoggerWithFields(ctx).Log("error", err, "msg", msg)
 }
 
 // LogErrorMsg will log the given error under the key "error" and the given message under

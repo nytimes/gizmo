@@ -5,7 +5,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 
 	"github.com/NYTimes/gizmo/server"

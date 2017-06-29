@@ -8,7 +8,7 @@ import (
 	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gziphandler"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type (

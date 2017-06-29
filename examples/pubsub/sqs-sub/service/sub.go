@@ -13,7 +13,7 @@ import (
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/logrotate"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
 

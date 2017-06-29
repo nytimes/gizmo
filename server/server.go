@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/nu7hatch/gouuid"
 

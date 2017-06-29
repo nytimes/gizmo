@@ -7,7 +7,7 @@ import (
 
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/server"
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *SimpleService) GetCats(w http.ResponseWriter, r *http.Request) {

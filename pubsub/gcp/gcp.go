@@ -90,6 +90,8 @@ func (s *Subscriber) Stop() error {
 	return nil
 }
 
+// SetReceiveSettings sets the ReceivedSettings on the google pubsub Subscription.
+// Should be called before Start().
 func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
 	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
 }

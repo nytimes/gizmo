@@ -14,9 +14,9 @@ import (
 	"github.com/NYTimes/gizmo/pubsub"
 )
 
-// subscriber is a Google Cloud Platform PubSub client that allows a user to
+// Subscriber is a Google Cloud Platform PubSub client that allows a user to
 // consume messages via the pubsub.Subscriber interface.
-type subscriber struct {
+type Subscriber struct {
 	sub subscription
 	ctx context.Context
 
@@ -29,10 +29,10 @@ type subscriber struct {
 
 // NewSubscriber will instantiate a new Subscriber that wraps
 // a pubsub.Iterator.
-func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (pubsub.Subscriber, error) {
+func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (*Subscriber, error) {
 	client, err := gpubsub.NewClient(ctx, projID, opts...)
 	if err != nil {
-		return nil, err
+		return &Subscriber{}, err
 	}
 
 	sub := client.Subscription(subscription)
@@ -40,9 +40,9 @@ func NewSubscriber(ctx context.Context, projID, subscription string, opts ...opt
 		MaxExtension:           defaultMaxExtension,
 		MaxOutstandingMessages: defaultMaxMessages,
 	}
-	return &subscriber{
+	return &Subscriber{
 		ctx: ctx,
-		sub: subscriptionImpl{sub: sub},
+		sub: subscriptionImpl{Sub: sub},
 	}, nil
 }
 
@@ -52,9 +52,9 @@ var (
 )
 
 // Start will start pulling from pubsub via a pubsub.Iterator.
-func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
+func (s *Subscriber) Start() <-chan pubsub.SubscriberMessage {
 	output := make(chan pubsub.SubscriberMessage)
-	go func(s *subscriber, output chan pubsub.SubscriberMessage) {
+	go func(s *Subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
 
 		s.ctx, s.cancel = context.WithCancel(s.ctx)
@@ -72,12 +72,12 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 }
 
 // Err will contain any error the Subscriber has encountered while processing.
-func (s *subscriber) Err() error {
+func (s *Subscriber) Err() error {
 	return s.err
 }
 
 // Stop will block until the consumer has stopped consuming messages.
-func (s *subscriber) Stop() error {
+func (s *Subscriber) Stop() error {
 	s.mtxStop.Lock()
 	defer s.mtxStop.Unlock()
 	if s.stopped {
@@ -88,6 +88,10 @@ func (s *subscriber) Stop() error {
 		s.cancel()
 	}
 	return nil
+}
+
+func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
+	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
 }
 
 // subMessage pubsub implementation of pubsub.SubscriberMessage.
@@ -199,8 +203,9 @@ type (
 	messageImpl struct {
 		msg *gpubsub.Message
 	}
+
 	subscriptionImpl struct {
-		sub *gpubsub.Subscription
+		Sub *gpubsub.Subscription
 	}
 )
 
@@ -217,7 +222,7 @@ func (m messageImpl) Done() {
 }
 
 func (s subscriptionImpl) Receive(ctx context.Context, f func(context.Context, message)) error {
-	return s.sub.Receive(ctx, func(ctx context.Context, msg *gpubsub.Message) {
+	return s.Sub.Receive(ctx, func(ctx context.Context, msg *gpubsub.Message) {
 		f(ctx, messageImpl{msg})
 	})
 }

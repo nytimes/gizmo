@@ -21,7 +21,7 @@ func TestGCPSubscriber(t *testing.T) {
 		msgs: msgs,
 	}
 
-	testSub := &subscriber{sub: gcpSub, ctx: context.Background()}
+	testSub := &Subscriber{sub: gcpSub, ctx: context.Background()}
 
 	pipe := testSub.Start()
 
@@ -47,7 +47,7 @@ func TestSubscriberWithErr(t *testing.T) {
 		givenErr: errors.New("something's wrong"),
 	}
 
-	testSub := &subscriber{sub: gcpSub, ctx: context.Background()}
+	testSub := &Subscriber{sub: gcpSub, ctx: context.Background()}
 	pipe := testSub.Start()
 
 	msg, ok := <-pipe

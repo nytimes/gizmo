@@ -52,14 +52,14 @@ var (
 )
 
 // Start will start pulling from pubsub via a pubsub.Iterator.
-func (s *Subscriber) Start() <-chan pubsub.SubscriberMessage {
-	output := make(chan pubsub.SubscriberMessage)
-	go func(s *Subscriber, output chan pubsub.SubscriberMessage) {
+func (s *Subscriber) Start() <-chan *SubMessage {
+	output := make(chan *SubMessage)
+	go func(s *Subscriber, output chan *SubMessage) {
 		defer close(output)
 
 		s.ctx, s.cancel = context.WithCancel(s.ctx)
 		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg message) {
-			output <- &subMessage{
+			output <- &SubMessage{
 				msg: msg,
 			}
 		})
@@ -96,26 +96,31 @@ func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
 	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
 }
 
-// subMessage pubsub implementation of pubsub.SubscriberMessage.
-type subMessage struct {
+// SubMessage pubsub implementation of pubsub.SubscriberMessage.
+type SubMessage struct {
 	msg message
 }
 
 // Message will return the data of the pubsub Message.
-func (m *subMessage) Message() []byte {
+func (m *SubMessage) Message() []byte {
 	return m.msg.MsgData()
 }
 
 // ExtendDoneDeadline will call the deprecated ModifyAckDeadline for a pubsub
 // Message. This likely should not be called.
-func (m *subMessage) ExtendDoneDeadline(dur time.Duration) error {
+func (m *SubMessage) ExtendDoneDeadline(dur time.Duration) error {
 	return errors.New("not suppported")
 }
 
 // Done will acknowledge the pubsub Message.
-func (m *subMessage) Done() error {
+func (m *SubMessage) Done() error {
 	m.msg.Done()
 	return nil
+}
+
+// Attributes will return the attributes set on the underlying gcp message
+func (m *SubMessage) Attributes() map[string]string {
+	return m.msg.(messageImpl).Msg.Attributes
 }
 
 // publisher is a Google Cloud Platform PubSub client that allows a user to
@@ -203,7 +208,7 @@ type (
 	}
 
 	messageImpl struct {
-		msg *gpubsub.Message
+		Msg *gpubsub.Message
 	}
 
 	subscriptionImpl struct {
@@ -212,15 +217,15 @@ type (
 )
 
 func (m messageImpl) ID() string {
-	return m.msg.ID
+	return m.Msg.ID
 }
 
 func (m messageImpl) MsgData() []byte {
-	return m.msg.Data
+	return m.Msg.Data
 }
 
 func (m messageImpl) Done() {
-	m.msg.Ack()
+	m.Msg.Ack()
 }
 
 func (s subscriptionImpl) Receive(ctx context.Context, f func(context.Context, message)) error {

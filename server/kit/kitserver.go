@@ -32,6 +32,15 @@ type Server struct {
 	exit chan chan error
 }
 
+type contextKey int
+
+const (
+	// key to set/retrieve URL params from a request context.
+	varsKey contextKey = iota
+	// key for logger
+	logKey
+)
+
 // NewServer will create a new kit server for the given Service.
 //
 // Generally, users should only use the 'Run' function to start a server and use this

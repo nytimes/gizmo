@@ -1,3 +1,5 @@
+// +build !appengine
+
 package kit
 
 import (
@@ -8,15 +10,6 @@ import (
 
 // TODO(jprobinson): built in stackdriver error reporting
 // TODO(jprobinson): built in stackdriver tracing (sampling)
-
-type contextKey int
-
-const (
-	// key to set/retrieve URL params from a request context.
-	varsKey contextKey = iota
-	// key for logger
-	logKey
-)
 
 // Run will use environment variables to configure the server then register the given
 // Service and start up the server(s).

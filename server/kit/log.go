@@ -37,7 +37,7 @@ func LoggerWithFields(ctx context.Context) log.Logger {
 		http.ContextKeyRequestUserAgent:     "http-user-agent",
 	}
 	for k, v := range keys {
-		if val := ctx.Value(k).(string); val != "" {
+		if val, ok := ctx.Value(k).(string); ok && val != "" {
 			l = log.With(l, v, val)
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/NYTimes/gizmo/pubsub"
 	"golang.org/x/net/context"
 )
 
@@ -47,7 +48,8 @@ func TestSubscriberWithErr(t *testing.T) {
 		givenErr: errors.New("something's wrong"),
 	}
 
-	testSub := &Subscriber{sub: gcpSub, ctx: context.Background()}
+	var testSub pubsub.Subscriber
+	testSub = &Subscriber{sub: gcpSub, ctx: context.Background()}
 	pipe := testSub.Start()
 
 	msg, ok := <-pipe

@@ -52,16 +52,20 @@ var (
 )
 
 // Start will start pulling from pubsub via a pubsub.Iterator.
-func (s *Subscriber) Start() <-chan *SubMessage {
-	output := make(chan *SubMessage)
-	go func(s *Subscriber, output chan *SubMessage) {
+func (s *Subscriber) Start() <-chan pubsub.SubscriberMessage {
+	output := make(chan pubsub.SubscriberMessage)
+	go func(s *Subscriber, output chan pubsub.SubscriberMessage) {
 		defer close(output)
 
 		s.ctx, s.cancel = context.WithCancel(s.ctx)
 		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg message) {
-			output <- &SubMessage{
+			sm := &SubMessage{
 				msg: msg,
 			}
+			if mi, ok := msg.(messageImpl); ok {
+				sm.Attributes = mi.Msg.Attributes
+			}
+			output <- sm
 		})
 		if err != nil {
 			s.Stop()
@@ -98,7 +102,8 @@ func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
 
 // SubMessage pubsub implementation of pubsub.SubscriberMessage.
 type SubMessage struct {
-	msg message
+	msg        message
+	Attributes map[string]string
 }
 
 // Message will return the data of the pubsub Message.
@@ -116,11 +121,6 @@ func (m *SubMessage) ExtendDoneDeadline(dur time.Duration) error {
 func (m *SubMessage) Done() error {
 	m.msg.Done()
 	return nil
-}
-
-// Attributes will return the attributes set on the underlying gcp message
-func (m *SubMessage) Attributes() map[string]string {
-	return m.msg.(messageImpl).Msg.Attributes
 }
 
 // publisher is a Google Cloud Platform PubSub client that allows a user to

@@ -59,9 +59,13 @@ func (s *Subscriber) Start() <-chan pubsub.SubscriberMessage {
 
 		s.ctx, s.cancel = context.WithCancel(s.ctx)
 		err := s.sub.Receive(s.ctx, func(ctx context.Context, msg message) {
-			output <- &subMessage{
+			sm := &SubMessage{
 				msg: msg,
 			}
+			if mi, ok := msg.(messageImpl); ok {
+				sm.Attributes = mi.Msg.Attributes
+			}
+			output <- sm
 		})
 		if err != nil {
 			s.Stop()
@@ -96,24 +100,25 @@ func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
 	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
 }
 
-// subMessage pubsub implementation of pubsub.SubscriberMessage.
-type subMessage struct {
-	msg message
+// SubMessage pubsub implementation of pubsub.SubscriberMessage.
+type SubMessage struct {
+	msg        message
+	Attributes map[string]string
 }
 
 // Message will return the data of the pubsub Message.
-func (m *subMessage) Message() []byte {
+func (m *SubMessage) Message() []byte {
 	return m.msg.MsgData()
 }
 
 // ExtendDoneDeadline will call the deprecated ModifyAckDeadline for a pubsub
 // Message. This likely should not be called.
-func (m *subMessage) ExtendDoneDeadline(dur time.Duration) error {
+func (m *SubMessage) ExtendDoneDeadline(dur time.Duration) error {
 	return errors.New("not suppported")
 }
 
 // Done will acknowledge the pubsub Message.
-func (m *subMessage) Done() error {
+func (m *SubMessage) Done() error {
 	m.msg.Done()
 	return nil
 }
@@ -203,7 +208,7 @@ type (
 	}
 
 	messageImpl struct {
-		msg *gpubsub.Message
+		Msg *gpubsub.Message
 	}
 
 	subscriptionImpl struct {
@@ -212,15 +217,15 @@ type (
 )
 
 func (m messageImpl) ID() string {
-	return m.msg.ID
+	return m.Msg.ID
 }
 
 func (m messageImpl) MsgData() []byte {
-	return m.msg.Data
+	return m.Msg.Data
 }
 
 func (m messageImpl) Done() {
-	m.msg.Ack()
+	m.Msg.Ack()
 }
 
 func (s subscriptionImpl) Receive(ctx context.Context, f func(context.Context, message)) error {

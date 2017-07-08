@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/NYTimes/gizmo/server/kit"
+	"github.com/NYTimes/gziphandler"
 )
 
 func TestKitServer(t *testing.T) {
@@ -84,11 +85,14 @@ func TestKitServer(t *testing.T) {
 type server struct{}
 
 func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
-	return e
+	return endpoint.Endpoint(func(ctx context.Context, r interface{}) (interface{}, error) {
+		kit.LogMsgWithFields(ctx, "kit middleware!")
+		return e(ctx, r)
+	})
 }
 
 func (s *server) HTTPMiddleware(h http.Handler) http.Handler {
-	return h
+	return gziphandler.GzipHandler(h)
 }
 
 func (s *server) HTTPOptions() []httptransport.ServerOption {
@@ -112,6 +116,13 @@ func (s *server) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 
 func (s *server) RPCServiceDesc() *grpc.ServiceDesc {
 	return &_KitTestService_serviceDesc
+}
+
+func (s *server) RPCMiddleware() grpc.UnaryServerInterceptor {
+	return grpc.UnaryServerInterceptor(func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		kit.LogMsgWithFields(ctx, "rpc middleware!")
+		return handler(ctx, req)
+	})
 }
 
 func (s *server) RPCOptions() []grpc.ServerOption {

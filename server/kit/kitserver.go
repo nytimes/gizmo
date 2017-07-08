@@ -8,13 +8,12 @@ import (
 	"net/http"
 	"os"
 
-	ocontext "golang.org/x/net/context"
-	"google.golang.org/grpc"
-
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
+	ocontext "golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // Server encapsulates all logic for registering and running a gizmo kit server.
@@ -137,22 +136,24 @@ func (s *Server) register(svc Service) {
 		return
 	}
 
-	gopts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(
-				grpc.UnaryServerInterceptor(
-					// inject logger into gRPC server and hook in go-kit middleware
-					func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-						ctx = context.WithValue(ctx, logKey, s.logger)
-						return svc.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-							return handler(ctx, req)
-						})(ctx, req)
-					}),
-			),
+	inters := []grpc.UnaryServerInterceptor{
+		grpc.UnaryServerInterceptor(
+			// inject logger into gRPC server and hook in go-kit middleware
+			func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+				ctx = context.WithValue(ctx, logKey, s.logger)
+				return svc.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+					return handler(ctx, req)
+				})(ctx, req)
+			},
 		),
 	}
-	gopts = append(gopts, svc.RPCOptions()...)
-	s.gsvr = grpc.NewServer(gopts...)
+	if mw := svc.RPCMiddleware(); mw != nil {
+		inters = append(inters, mw)
+	}
+
+	s.gsvr = grpc.NewServer(append(svc.RPCOptions(),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
+
 	s.gsvr.RegisterService(gdesc, svc)
 }
 

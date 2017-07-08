@@ -67,10 +67,27 @@ type Service interface {
 	//  }
 	HTTPEndpoints() map[string]map[string]HTTPEndpoint
 
+	// RPCMiddleware is for any service-wide gRPC specific middleware
+	// for easy integration with 3rd party grpc.UnaryServerInterceptors like
+	// http://godoc.org/cloud.google.com/go/trace#Client.GRPCServerInterceptor
+	//
+	// The underlying kit server already uses the one available grpc.UnaryInterceptor
+	// grpc.ServerOption so attempting to pass your own in this Service's RPCOptions()
+	// will cause a panic at startup.
+	//
+	// If you want to apply multiple RPC middlewares,
+	// we recommend using:
+	// http://godoc.org/github.com/grpc-ecosystem/go-grpc-middleware#ChainUnaryServer
+	RPCMiddleware() grpc.UnaryServerInterceptor
+
 	// RPCServiceDesc allows services to declare an alternate gRPC
 	// representation of themselves to be hosted on the RPC_PORT (8081 by default).
 	RPCServiceDesc() *grpc.ServiceDesc
 
 	// RPCOptions are for service-wide gRPC server options.
+	//
+	// The underlying kit server already uses the one available grpc.UnaryInterceptor
+	// grpc.ServerOption so attempting to pass your own in this method will cause a panic
+	// at startup. We recommend using RPCMiddleware() to fill this need.
 	RPCOptions() []grpc.ServerOption
 }

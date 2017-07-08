@@ -73,6 +73,10 @@ func (s service) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 	}
 }
 
+func (s service) RPCMiddleware() grpc.UnaryServerInterceptor {
+	return nil
+}
+
 func (s service) RPCOptions() []grpc.ServerOption {
 	return nil
 }

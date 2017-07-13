@@ -58,6 +58,9 @@ func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*Sema
 	}
 
 	err = json.Unmarshal(rawRes, &res)
+	if err != nil {
+		return nil, err
+	}
 	if len(res.Results) == 0 {
 		return nil, errors.New("no results")
 	}

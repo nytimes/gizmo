@@ -11,7 +11,6 @@ import (
 
 	"cloud.google.com/go/trace"
 
-	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -45,7 +44,7 @@ func NewService(db DB) (kit.Service, error) {
 }
 
 func (s *service) HTTPOptions() []httptransport.ServerOption {
-	return []httptransport.ServerOption{}
+	return nil
 }
 
 // override the default gorilla router and select the stdlib
@@ -55,9 +54,12 @@ func (s *service) HTTPRouterOptions() []kit.RouterOption {
 	}
 }
 
-// in this example, we're tossing a simple CORS middleware in the mix
+// tracing HTTP requests
 func (s *service) HTTPMiddleware(h http.Handler) http.Handler {
-	return server.CORSHandler(h, "")
+	if s.tracer != nil {
+		return s.tracer.HTTPHandler(h)
+	}
+	return h
 }
 
 // the go-kit middleware is used for checking user authentication and
@@ -102,6 +104,7 @@ func (s *service) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 	}
 }
 
+// tracing RPC requests
 func (s *service) RPCMiddleware() grpc.UnaryServerInterceptor {
 	if s.tracer != nil {
 		return s.tracer.GRPCServerInterceptor()

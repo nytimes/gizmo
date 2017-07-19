@@ -1,0 +1,13 @@
+type: google.api.Service
+config_version: 3
+
+name: reading-list.endpoints.nyt-reading-list.cloud.goog
+
+title: Save, retrieve and delete nytimes.com URLs
+apis:
+- name: readinglist.ReadingListServiceServer
+
+usage:
+  rules:
+  - selector: "*"
+    allow_unregistered_calls: true

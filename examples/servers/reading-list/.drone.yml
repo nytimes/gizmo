@@ -1,0 +1,58 @@
+# See: https://github.com/drone/drone/blob/v0.4.0/docs/build/README.md
+build:
+
+  test:
+    image: golang:1.8
+    environment:
+      - GOPATH=/drone
+    commands:
+      - go test -v .
+    when:
+      event: [push, pull_request]
+
+  build:
+    image: golang:1.8
+    environment:
+      - GOPATH=/drone
+    commands:
+      - cd server
+      # copy cert from host
+      - cp /etc/ssl/certs/ca-certificates.crt .
+      - CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server .
+    when:
+      event: tag
+
+publish:
+  # build the Docker image and publish it to GCR
+  gcr:
+    repo: nyt-reading-list/server
+    tag: "$$TAG"
+    context: ./server
+    file: server/Dockerfile
+    token: >
+       $$GOOGLE_CREDENTIALS
+    storage_driver: overlay
+    when:
+      event: tag
+
+deploy:
+  # apply the deployment changes to the GKE cluster
+  gke:
+    image: nytimes/drone-gke
+    project: nyt-reading-list
+    zone: us-central1-b
+    template: .kube.yml
+    cluster: central1
+    token: >
+      $$GOOGLE_CREDENTIALS
+    vars:
+      GCP_PROJECT_ID: nyt-reading-list
+      ENDPOINTS_VERSION: 2017-07-10r0
+    when:
+      event: tag
+
+notify:
+  slack:
+    webhook_url: $$SLACK_WEBHOOK_URL
+    username: drone
+    channel: games-releases

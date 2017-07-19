@@ -1,0 +1,97 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reading-list-server
+spec:
+  minReadySeconds: 30
+  replicas: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: reading-list-server
+    spec:
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: nyt-reading-list-tls 
+        secret:
+          secretName: nyt-reading-list-tls
+      containers:
+        - name: esp
+          image: "gcr.io/endpoints-release/endpoints-runtime:1.3.0"
+          args: [
+            "-S", "443",
+            "-s", "nyt-reading-list.endpoints.{{.GCP_PROJECT_ID}}.cloud.goog",
+            "-v", "{{ .ENDPOINTS_VERSION }}",
+            "-a", "grpc://127.0.0.1:8081",
+            "-z", "healthz"
+          ]
+          ports:
+          - containerPort: 443
+            protocol: TCP
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sleep","60"]
+          volumeMounts:
+          - mountPath: /etc/nginx/ssl
+            readOnly: true
+            name: nyt-reading-list-tls
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 443
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 443
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+        - name: reading-list-server
+          image: gcr.io/nyt-games-dev/reading-list-server:{{.COMMIT}}
+          ports:
+          - containerPort: 8081
+            protocol: TCP
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          env:
+            - name: GCP_PROJECT_ID
+              value: {{.GCP_PROJECT_ID}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reading-list-server
+  labels:
+    app: reading-list-server
+spec:
+  type: LoadBalancer
+  ports:
+  - name: reading-list-server
+    protocol: TCP
+    port: 443
+  selector:
+    app: reading-list-server

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+
+package readinglist;
+
+message PutLinkRequest {
+    // The Link to save
+    LinkRequest request = 1;
+}
+
+message GetListLimitRequest {
+    // The limit of links to fetch
+    int32 limit = 1;
+}
+
+message Link {
+    string url = 1;
+}
+
+message LinkRequest {
+    // True to remove this link from the user's list.
+    bool delete = 1;
+    Link link = 2;
+}
+
+message Links {
+    repeated Link links = 1;
+}
+
+message Message {
+    string message = 1;
+}
+
+service ReadingListService {
+    // Save a link via JSON or Protobuf
+    rpc PutLink(PutLinkRequest) returns (Message) {
+      option (google.api.http) = {
+        put: "/link"
+        body: "request"
+      };
+    }
+    // Get your links via JSON or Protobuf
+    rpc GetListLimit(GetListLimitRequest) returns (Links) {
+      option (google.api.http) = {
+        get: "/list/{limit}"
+      };
+    }
+}

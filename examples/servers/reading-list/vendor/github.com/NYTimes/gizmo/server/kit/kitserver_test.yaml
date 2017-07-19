@@ -1,0 +1,39 @@
+swagger: '2.0'
+info:
+  title: kit_test
+  description: A test service for gizmo/server/kit
+  version: "1.0.0"
+host: gizmo.nyt.net
+schemes:
+  - https
+basePath: /svc/
+paths:
+  cat/{name}:
+    get:
+      parameters:
+        - name: name
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          schema:
+            $ref: '#/definitions/Cat'
+        500:
+          schema:
+            $ref: '#/definitions/Cat'
+
+definitions:
+  Cat:
+    type: object
+    properties:
+      Breed:
+        type: string
+        x-proto-tag: 1
+      Name:
+        type: string
+        x-proto-tag: 2
+      Age:
+        type: number 
+        format: int32
+        x-proto-tag: 3

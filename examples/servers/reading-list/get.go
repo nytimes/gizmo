@@ -28,6 +28,10 @@ func (s service) getLinks(ctx context.Context, req interface{}) (interface{}, er
 	if r.Limit == 0 {
 		r.Limit = 50
 	}
+	// set maximum
+	if r.Limit > 100 {
+		r.Limit = 100
+	}
 
 	// get data from the service-injected DB interface
 	links, err := s.db.GetLinks(ctx, getUser(ctx), int(r.Limit))

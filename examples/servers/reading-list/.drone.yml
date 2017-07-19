@@ -43,7 +43,6 @@ deploy:
     image: nytimes/drone-gke
     project: nyt-reading-list
     zone: us-central1-b
-    template: .kube.yml
     cluster: central1
     token: >
       $$GOOGLE_CREDENTIALS

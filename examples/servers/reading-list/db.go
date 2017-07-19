@@ -92,6 +92,8 @@ func (d *Datastore) PutLink(ctx context.Context, userID string, url string) erro
 
 // Using this to turn keys 12345, 12346 into 54321, 64321 which are easier for
 // Datastore/BigTable to shard.
+//
+// More info: https://cloud.google.com/bigtable/docs/schema-design#row_keys_to_avoid & "Sequential numeric IDs"
 func reverse(id string) string {
 	runes := []rune(id)
 	n := len(runes)

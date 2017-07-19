@@ -1,0 +1,94 @@
+swagger: '2.0'
+
+info:
+  version: "0.0.0"
+  title: Reading List
+  description: Reading list
+
+paths:
+  /list/{limit}:
+    get:
+      description: |
+       Get your links via JSON or Protobuf
+      produces:
+        - application/json
+      parameters:
+        - name: limit
+          description: The limit of links to fetch
+          type: number
+          format: int32
+          x-proto-tag: 1
+      responses:
+        200:
+          description: Successful link retrieval
+          schema:
+            $ref: '#/definitions/Links'
+        401:
+          description: No cookie
+          schema:
+            $ref: '#/definitions/Message'
+        500:
+          description: We had a server error
+          schema:
+            $ref: '#/definitions/Message'
+
+  /link:
+    put:
+      description: |
+       Save a link via JSON or Protobuf
+      produces:
+        - application/json
+      parameters:
+        - name: request
+          in: body
+          required: true
+          description: The Link to save
+          schema:
+            $ref: '#/definitions/LinkRequest'
+          x-proto-tag: 1
+      responses:
+        201:
+          description: Successful link save
+          schema:
+            $ref: '#/definitions/Message'
+        401:
+          description: No cookie
+          schema:
+            $ref: '#/definitions/Message'
+        500:
+          description: Server problems
+          schema:
+            $ref: '#/definitions/Message'
+
+definitions:
+  Links:
+    type: object
+    properties:
+      links:
+        type: array
+        items:
+          $ref: '#/definitions/Link'
+        x-proto-tag: 1
+
+  Link:
+    type: object
+    properties:
+      url:
+        type: string
+        x-proto-tag: 1
+
+  LinkRequest:
+    type: object
+    properties:
+      link:
+        $ref: '#/definitions/Link'
+      delete:
+        type: boolean
+        description: True to remove this link from the user's list.
+
+  Message:
+    type: object
+    properties:
+      message:
+        type: string
+        x-proto-tag: 1

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+
+package kit_test;
+
+message GetCatNameRequest {
+    string name = 1;
+}
+
+message Cat {
+    int32 Age = 3;
+    string Breed = 1;
+    string Name = 2;
+}
+
+service Kit_testService {
+    rpc GetCatName(GetCatNameRequest) returns (Cat) {
+      option (google.api.http) = {
+        get: "/svc/cat/{name}"
+      };
+    }
+}

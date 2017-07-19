@@ -5,4 +5,4 @@ export DATASTORE_EMULATOR_HOST=localhost:8082
 
 gcloud beta emulators datastore start --host-port=localhost:8082 &
 
-go run main.go
+go run ./server/main.go

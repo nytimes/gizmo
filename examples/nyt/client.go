@@ -2,7 +2,6 @@ package nyt
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -62,7 +61,7 @@ func (c *ClientImpl) SemanticConceptSearch(conceptType, concept string) ([]*Sema
 		return nil, err
 	}
 	if len(res.Results) == 0 {
-		return nil, errors.New("no results")
+		return []*SemanticConceptArticle{}, nil
 	}
 
 	return res.Results[0].ArticleList.Results, nil

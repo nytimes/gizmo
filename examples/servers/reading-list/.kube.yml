@@ -57,7 +57,7 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
         - name: reading-list-server
-          image: gcr.io/nyt-games-dev/reading-list-server:{{.COMMIT}}
+          image: gcr.io/nyt-reading-list/server:{{.TAG}}
           ports:
           - containerPort: 8081
             protocol: TCP

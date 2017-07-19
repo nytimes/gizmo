@@ -55,4 +55,4 @@ notify:
   slack:
     webhook_url: $$SLACK_WEBHOOK_URL
     username: drone
-    channel: games-releases
+    channel: nyt-reading-list-deploy

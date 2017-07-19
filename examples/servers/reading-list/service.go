@@ -103,7 +103,9 @@ func (s *service) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 }
 
 func (s *service) RPCMiddleware() grpc.UnaryServerInterceptor {
-	// TODO: add the cloud tracing client
+	if s.tracer != nil {
+		return s.tracer.GRPCServerInterceptor()
+	}
 	return nil
 }
 

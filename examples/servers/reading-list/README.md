@@ -6,7 +6,7 @@ This service utilizes Google Cloud Datastore and is set up to be built and publi
 
 Instead of utilizing NYT's auth, this example leans on Google OAuth and Google Cloud Endpoints for user identity.
 
-To run locally, have the latest version of `gcloud` installed and execute the `./server/run_local.sh` script to start up the Datastore emulater and the reading list server.
+To run locally, have the latest version of `gcloud` installed and execute the `./run_local.sh` script to start up the Datastore emulater and the reading list server.
 
 A few highlights of this service worth calling out:
 

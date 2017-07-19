@@ -28,12 +28,7 @@ lint: testdeps
 	done
 
 vet: testdeps
-	for file in $$(find . -name '*.go' | grep -v 'examples\|_test.go'); do \
-		golint $${file}; \
-		if [ -n "$$(go vet $${file})" ]; then \
-			exit 1; \
-		fi; \
-	done
+	go vet github.com/NYTimes/gizmo/...
 
 errcheck: testdeps
 	go get -v github.com/kisielk/errcheck

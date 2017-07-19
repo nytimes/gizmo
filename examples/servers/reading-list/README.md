@@ -6,7 +6,7 @@ This service utilizes Google Cloud Datastore and is set up to be built and publi
 
 Instead of utilizing NYT's auth, this example leans on Google OAuth and Google Cloud Endpoints for user identity.
 
-To run locally, have the latest version of `gcloud` installed and execute the `./run_local.sh` script to start up the Datastore emulater and the reading list server.
+To run locally, have the latest version of `gcloud` installed and execute the `./run_local.sh` script to start up the Datastore emulator and the reading list server.
 
 A few highlights of this service worth calling out:
 
@@ -20,9 +20,9 @@ A few highlights of this service worth calling out:
   * A go-kit client for programmatically accessing the API via HTTP/JSON.
 * [cmd/cli/main.go](cmd/cli/main.go)
   * A CLI wrapper around the gRPC client.
-* [.drone.yaml](.drone.yaml)
+* [.drone.yml](.drone.yml)
   * An example configuration file for [Drone CI](http://readme.drone.io/) using the [NYTimes/drone-gke](https://github.com/nytimes/drone-gke) plugin for managing automated deployments to Google Container Engine.
 * [cloud-endpoints/service-ce-prd.yaml](cloud-endpoints/service-ce-prd.yaml)
-  * A service configuration for Google Cloud Endpoints. 
+  * A service configuration for Google Cloud Endpoints.
 
 This example [mirrors an example](https://github.com/NYTimes/marvin/tree/master/examples/reading-list#the-reading-list-example) in gizmo's sibling server for Google App Engine, marvin.

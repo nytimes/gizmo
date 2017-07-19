@@ -2,7 +2,9 @@
 
 This example implements a clone of NYT's 'saved articles API' that allows users to save, delete and retrieve nytimes.com article URLs.
 
-Instead of utilizing NYT's auth, this example leans on Google OAuth for user identity.
+This service utilizes Google Cloud Datastore and is set up to be built and published to Google Container Registry, deployed to Google Container Engine and monitored by Google Cloud Tracing.
+
+Instead of utilizing NYT's auth, this example leans on Google OAuth and Google Cloud Endpoints for user identity.
 
 To run locally, have the latest version of `gcloud` installed and execute the `./server/run_local.sh` script to start up the Datastore emulater and the reading list server.
 

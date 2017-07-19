@@ -6,6 +6,8 @@ build:
     environment:
       - GOPATH=/drone
     commands:
+      - go get -u github.com/golang/dep/cmd/dep
+      - dep ensure -v
       - go test -v .
     when:
       event: [push, pull_request]

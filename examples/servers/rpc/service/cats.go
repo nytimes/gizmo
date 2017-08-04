@@ -1,17 +1,18 @@
-// +build !go1.7
+// +build go1.7
 
 package service
 
 import (
+	"context"
 	"net/http"
 
-	"golang.org/x/net/context"
+	ocontext "golang.org/x/net/context"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/server"
 )
 
-func (s *RPCService) GetCats(ctx context.Context, r *CatsRequest) (*CatsResponse, error) {
+func (s *RPCService) GetCats(ctx ocontext.Context, r *CatsRequest) (*CatsResponse, error) {
 	var (
 		err error
 		res []*nyt.SemanticConceptArticle

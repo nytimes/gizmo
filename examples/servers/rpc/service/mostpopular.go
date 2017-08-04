@@ -1,17 +1,19 @@
-// +build !go1.7
+// +build go1.7
 
 package service
 
 import (
+	"context"
 	"net/http"
+
+	ocontext "golang.org/x/net/context"
 
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/web"
-	"golang.org/x/net/context"
 )
 
-func (s *RPCService) GetMostPopular(ctx context.Context, r *MostPopularRequest) (*MostPopularResponse, error) {
+func (s *RPCService) GetMostPopular(ctx ocontext.Context, r *MostPopularRequest) (*MostPopularResponse, error) {
 	var (
 		err error
 		res []*nyt.MostPopularResult

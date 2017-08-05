@@ -36,7 +36,7 @@ func (s service) getLinks(ctx context.Context, req interface{}) (interface{}, er
 	// get data from the service-injected DB interface
 	links, err := s.db.GetLinks(ctx, getUser(ctx), int(r.Limit))
 	if err != nil {
-		kit.LogErrorMsgWithFields(ctx, err, "error getting links from DB")
+		kit.LogErrorMsg(ctx, err, "error getting links from DB")
 		return nil, kit.NewJSONStatusResponse(
 			&Message{"server error"},
 			http.StatusInternalServerError)

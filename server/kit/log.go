@@ -8,23 +8,23 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// Logger will return a kit/log.Logger that has been injected
-// into the context by the kit server. This function will only work
-// within the scope of a request initiated by the server.
+// Logger will return a kit/log.Logger that has been injected into the context by the kit
+// server. This logger has had request headers and metadata added as key values.
+// This function will only work within the scope of a request initiated by the server.
 func Logger(ctx context.Context) log.Logger {
 	return ctx.Value(logKey).(log.Logger)
 }
 
-// Log will pull the server log.Logger from the context and
+// Log will pull a request scoped log.Logger from the context and
 // log the given keyvals with it.
 func Log(ctx context.Context, keyvals ...interface{}) error {
 	return Logger(ctx).Log(keyvals...)
 }
 
-// LoggerWithFields will pull any known request info from the context
-// and include it into the log as key values.
-func LoggerWithFields(ctx context.Context) log.Logger {
-	l := Logger(ctx)
+// AddLogKeyVals will add any common HTTP headers or gRPC metadata
+// from the given context to the given logger as fields.
+// This is used by the server to initialize the request scopes logger.
+func AddLogKeyVals(ctx context.Context, l log.Logger) log.Logger {
 	// for HTTP requests
 	keys := map[interface{}]string{
 		http.ContextKeyRequestMethod:        "http-method",
@@ -52,26 +52,14 @@ func LoggerWithFields(ctx context.Context) log.Logger {
 	return l
 }
 
-// LogMsgWithFields will start with LoggerWithFields and then
-// log the given message under the key "msg".
-func LogMsgWithFields(ctx context.Context, msg string) error {
-	return LoggerWithFields(ctx).Log("msg", msg)
-}
-
 // LogMsg will log the given message to the server logger
-// with the key "msg".
+// with the key "msg" along with all the common request headers or gRPC metadata.
 func LogMsg(ctx context.Context, msg string) error {
 	return Logger(ctx).Log("msg", msg)
 }
 
-// LogErrorMsgWithFields will start with LoggerWithFields and then log
-// the given error under the key "error" and the given message under the key "msg".
-func LogErrorMsgWithFields(ctx context.Context, err error, msg string) error {
-	return LoggerWithFields(ctx).Log("error", err, "msg", msg)
-}
-
-// LogErrorMsg will log the given error under the key "error" and the given message under
-// the key "msg".
+// LogErrorMsg will log the given error under the key "error", the given message under
+// the key "msg" along with all the common request headers or gRPC metadata.
 func LogErrorMsg(ctx context.Context, err error, msg string) error {
 	return Logger(ctx).Log("error", err, "msg", msg)
 }

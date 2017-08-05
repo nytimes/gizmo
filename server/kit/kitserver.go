@@ -89,7 +89,7 @@ func (s *Server) register(svc Service) {
 		),
 		// inject the server logger into every request context
 		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
-			return context.WithValue(ctx, logKey, s.logger)
+			return context.WithValue(ctx, logKey, AddLogKeyVals(ctx, s.logger))
 		}),
 	}
 	opts = append(opts, svc.HTTPOptions()...)
@@ -140,7 +140,7 @@ func (s *Server) register(svc Service) {
 		grpc.UnaryServerInterceptor(
 			// inject logger into gRPC server and hook in go-kit middleware
 			func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-				ctx = context.WithValue(ctx, logKey, s.logger)
+				ctx = context.WithValue(ctx, logKey, AddLogKeyVals(ctx, s.logger))
 				return svc.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 					return handler(ctx, req)
 				})(ctx, req)

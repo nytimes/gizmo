@@ -68,13 +68,13 @@ func (s *service) Middleware(ep endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Endpoint(func(ctx context.Context, r interface{}) (interface{}, error) {
 		start := time.Now()
 		defer func() {
-			kit.LogMsgWithFields(ctx,
+			kit.LogMsg(ctx,
 				fmt.Sprintf("complete in %0.8f seconds", time.Since(start).Seconds()))
 		}()
 
 		usr, err := getUserFromMD(ctx)
 		if usr == "" || err != nil {
-			kit.LogErrorMsgWithFields(ctx, err, "unable to get user auth")
+			kit.LogErrorMsg(ctx, err, "unable to get user auth")
 			// reject if user is not logged in
 			return nil, kit.NewJSONStatusResponse(
 				&Message{"please provide a valid oauth token"},

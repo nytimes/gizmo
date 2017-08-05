@@ -86,7 +86,7 @@ type server struct{}
 
 func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Endpoint(func(ctx context.Context, r interface{}) (interface{}, error) {
-		kit.LogMsgWithFields(ctx, "kit middleware!")
+		kit.LogMsg(ctx, "kit middleware!")
 		return e(ctx, r)
 	})
 }
@@ -120,7 +120,7 @@ func (s *server) RPCServiceDesc() *grpc.ServiceDesc {
 
 func (s *server) RPCMiddleware() grpc.UnaryServerInterceptor {
 	return grpc.UnaryServerInterceptor(func(ctx ocontext.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		kit.LogMsgWithFields(ctx, "rpc middleware!")
+		kit.LogMsg(ctx, "rpc middleware!")
 		return handler(ctx, req)
 	})
 }

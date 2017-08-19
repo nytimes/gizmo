@@ -224,7 +224,7 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 
 // LogRPCWithFields will feed any request context into a logrus Entry.
 func LogRPCWithFields(ctx context.Context, log *logrus.Logger) *logrus.Entry {
-	md, ok := metadata.FromContext(ctx)
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return logrus.NewEntry(log)
 	}

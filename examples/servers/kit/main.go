@@ -12,11 +12,8 @@ func main() {
 	config.LoadEnvConfig(&cfg)
 
 	// runs the HTTP _AND_ gRPC servers
-	ready := make(chan struct{})
 	errors := make(chan error)
-	go func() {
-		kit.Run(api.New(cfg), ready, errors)
-	}()
+	kit.Run(api.New(cfg), errors)
 	err := <-errors
 	if err != nil {
 		panic("problems running service: " + err.Error())

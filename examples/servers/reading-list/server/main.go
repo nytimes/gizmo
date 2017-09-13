@@ -15,11 +15,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ready := make(chan struct{})
 	errors := make(chan error)
-	go func() {
-		kit.Run(svc, ready, errors)
-	}()
+	kit.Run(svc, errors)
 	err = <-errors
 	if err != nil {
 		panic(err)

@@ -12,13 +12,20 @@ import (
 
 // Run will use environment variables to configure the server then register the given
 // Service and start up the server(s). The ready channel will be closed once the
-// service has started.
-// Run will block until an os quit signal is received.
-func Run(service Service, ready chan struct{}, errors chan error) {
+// service has started. Run will block until the server is ready.
+func Run(service Service, errors chan error) {
+	ready := make(chan struct{})
+	go runReady(service, ready, errors)
+	_ = <-ready
+	return
+}
+
+func runReady(service Service, ready chan struct{}, errors chan error) {
 	defer close(errors)
 	svr := NewServer(service)
-	if err := svr.start(); err != nil {
-		errors <- err
+	err := svr.start()
+	errors <- err
+	if err != nil {
 		close(ready)
 		return
 	}
@@ -35,10 +42,9 @@ func Run(service Service, ready chan struct{}, errors chan error) {
 	_ = <-signals
 	svr.logger.Log("received os quit signal")
 
-	err := svr.stop()
-	if err != nil {
-		errors <- err
-	} else {
-		svr.logger.Log("stopped server")
+	err = svr.stop()
+	errors <- err
+	if err == nil {
+		svr.logger.Log("successfully stopped server")
 	}
 }

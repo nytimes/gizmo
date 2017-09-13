@@ -19,19 +19,11 @@ import (
 )
 
 func TestKitServer(t *testing.T) {
-	ready := make(chan struct{})
 	errors := make(chan error, 1)
-	go func() {
-		// runs the HTTP _AND_ gRPC servers
-		kit.Run(&server{}, ready, errors)
-	}()
+	kit.Run(&server{}, errors)
 
-	// let the server start
-	var err error
-	select {
-	case <-ready:
-		t.Log("goroutine server is ready")
-	case err = <-errors:
+	err := <-errors
+	if err != nil {
 		t.Fatal(err)
 	}
 

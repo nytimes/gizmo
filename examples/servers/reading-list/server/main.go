@@ -17,5 +17,12 @@ func main() {
 	}
 	ready := make(chan struct{})
 	quit := make(chan struct{})
-	kit.Run(svc, ready, quit)
+	errors := make(chan struct{})
+	go func() {
+		kit.Run(svc, ready, quit, errors)
+	}()
+	err = <-errors
+	if err != nil {
+		panic(err)
+	}
 }

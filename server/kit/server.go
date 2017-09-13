@@ -2,6 +2,12 @@
 
 package kit
 
+import (
+	"os"
+	"os/signal"
+	"syscall"
+)
+
 // TODO(jprobinson): built in stackdriver tracing (sampling)
 
 // Run will use environment variables to configure the server then register the given
@@ -17,12 +23,21 @@ func Run(service Service, ready chan struct{}, quit chan struct{}, errors chan e
 		return
 	}
 
-	close(ready)
-	svr.logger.Log("closed ready channel")
+	signals := make(chan os.Signal, 1)
+	defer close(signals)
 
-	// wait for message on quit channel
-	_ = <-quit
-	svr.logger.Log("received quit message")
+	close(ready)
+	svr.logger.Log("server is ready - closed ready channel")
+
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// wait for quit channel or os signal
+	select {
+	case <-signals:
+		svr.logger.Log("received os quit signal")
+	case <-quit:
+		svr.logger.Log("received quit message")
+	}
 
 	err := svr.stop()
 	if err != nil {

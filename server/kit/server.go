@@ -8,15 +8,26 @@ package kit
 // Service and start up the server(s). The ready channel will be closed once the
 // service has started.
 // Run will block until the quit channel is closed.
-func Run(service Service, ready chan struct{}, quit chan struct{}) error {
+func Run(service Service, ready chan struct{}, quit chan struct{}, errors chan error) {
+	defer close(errors)
 	svr := NewServer(service)
 	if err := svr.start(); err != nil {
-		return err
+		errors <- err
+		close(ready)
+		return
 	}
 
 	close(ready)
+	svr.logger.Log("closed ready channel")
 
+	// wait for message on quit channel
 	_ = <-quit
 	svr.logger.Log("received quit message")
-	return svr.stop()
+
+	err := svr.stop()
+	if err != nil {
+		errors <- err
+	} else {
+		svr.logger.Log("stopped server")
+	}
 }

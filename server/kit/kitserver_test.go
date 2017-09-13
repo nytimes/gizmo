@@ -20,16 +20,20 @@ import (
 func TestKitServer(t *testing.T) {
 	quit := make(chan struct{})
 	ready := make(chan struct{})
+	errors := make(chan error, 1)
 	go func() {
 		// runs the HTTP _AND_ gRPC servers
-		err := kit.Run(&server{}, ready, quit)
-		if err != nil {
-			t.Fatal("problems running service: " + err.Error())
-		}
+		kit.Run(&server{}, ready, quit, errors)
 	}()
 
 	// let the server start
-	_ = <-ready
+	var err error
+	select {
+	case <-ready:
+		t.Log("goroutine server is ready")
+	case err = <-errors:
+		t.Fatal(err)
+	}
 
 	// hit the health check
 	resp, err := http.Get("http://localhost:8080/healthz")
@@ -80,6 +84,13 @@ func TestKitServer(t *testing.T) {
 
 	// kill server
 	close(quit)
+
+	select {
+	case err := <-errors:
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 type server struct{}

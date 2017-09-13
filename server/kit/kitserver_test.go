@@ -6,9 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"syscall"
 	"testing"
-	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -20,16 +18,18 @@ import (
 )
 
 func TestKitServer(t *testing.T) {
+	quit := make(chan struct{})
+	ready := make(chan struct{})
 	go func() {
 		// runs the HTTP _AND_ gRPC servers
-		err := kit.Run(&server{})
+		err := kit.Run(&server{}, ready, quit)
 		if err != nil {
 			t.Fatal("problems running service: " + err.Error())
 		}
 	}()
 
 	// let the server start
-	time.Sleep(1 * time.Second)
+	_ = <-ready
 
 	// hit the health check
 	resp, err := http.Get("http://localhost:8080/healthz")
@@ -78,8 +78,8 @@ func TestKitServer(t *testing.T) {
 		t.Fatalf("expected cat: %#v, got %#v", testCat, cat)
 	}
 
-	// make signal to kill server
-	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+	// kill server
+	close(quit)
 }
 
 type server struct{}

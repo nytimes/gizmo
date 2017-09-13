@@ -15,5 +15,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	kit.Run(svc)
+	ready := make(chan struct{})
+	quit := make(chan struct{})
+	kit.Run(svc, ready, quit)
 }

@@ -2,28 +2,21 @@
 
 package kit
 
-import (
-	"os"
-	"os/signal"
-	"syscall"
-)
-
-// TODO(jprobinson): built in stackdriver error reporting
 // TODO(jprobinson): built in stackdriver tracing (sampling)
 
 // Run will use environment variables to configure the server then register the given
-// Service and start up the server(s).
-// This will block until the server shuts down.
-func Run(service Service) error {
+// Service and start up the server(s). The ready channel will be closed once the
+// service has started.
+// Run will block until the quit channel is closed.
+func Run(service Service, ready chan struct{}, quit chan struct{}) error {
 	svr := NewServer(service)
-
 	if err := svr.start(); err != nil {
 		return err
 	}
 
-	// parse address for host, port
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-	svr.logger.Log("received signal", <-ch)
+	close(ready)
+
+	_ = <-quit
+	svr.logger.Log("received quit message")
 	return svr.stop()
 }

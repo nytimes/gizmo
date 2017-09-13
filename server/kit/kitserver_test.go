@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"syscall"
 	"testing"
 
 	"github.com/go-kit/kit/endpoint"
@@ -18,12 +19,11 @@ import (
 )
 
 func TestKitServer(t *testing.T) {
-	quit := make(chan struct{})
 	ready := make(chan struct{})
 	errors := make(chan error, 1)
 	go func() {
 		// runs the HTTP _AND_ gRPC servers
-		kit.Run(&server{}, ready, quit, errors)
+		kit.Run(&server{}, ready, errors)
 	}()
 
 	// let the server start
@@ -82,8 +82,8 @@ func TestKitServer(t *testing.T) {
 		t.Fatalf("expected cat: %#v, got %#v", testCat, cat)
 	}
 
-	// kill server
-	close(quit)
+	// make signal to kill server
+	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
 
 	select {
 	case err := <-errors:

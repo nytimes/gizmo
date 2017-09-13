@@ -13,10 +13,9 @@ func main() {
 
 	// runs the HTTP _AND_ gRPC servers
 	ready := make(chan struct{})
-	quit := make(chan struct{})
 	errors := make(chan error)
 	go func() {
-		kit.Run(api.New(cfg), ready, quit, errors)
+		kit.Run(api.New(cfg), ready, errors)
 	}()
 	err := <-errors
 	if err != nil {

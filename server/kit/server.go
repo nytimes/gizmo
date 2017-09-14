@@ -8,11 +8,11 @@ import (
 	"syscall"
 )
 
+// TODO(jprobinson): built in stackdriver error reporting
 // TODO(jprobinson): built in stackdriver tracing (sampling)
 
 // Run will use environment variables to configure the server then register the given
-// Service and start up the server(s). The ready channel will be closed once the
-// service has started. Run will block until the server is ready.
+// Service and start up the server(s). Run will block until the server is ready.
 func Run(service Service, errors chan error) {
 	ready := make(chan struct{})
 	go runReady(service, ready, errors)

@@ -12,18 +12,39 @@ import (
 // TODO(jprobinson): built in stackdriver tracing (sampling)
 
 // Run will use environment variables to configure the server then register the given
-// Service and start up the server(s).
-// This will block until the server shuts down.
-func Run(service Service) error {
-	svr := NewServer(service)
+// Service and start up the server(s). Run will block until the server is ready.
+func Run(service Service, errors chan error) {
+	ready := make(chan struct{})
+	go runReady(service, ready, errors)
+	_ = <-ready
+	return
+}
 
-	if err := svr.start(); err != nil {
-		return err
+func runReady(service Service, ready chan struct{}, errors chan error) {
+	defer close(errors)
+	svr := NewServer(service)
+	err := svr.start()
+	errors <- err
+	if err != nil {
+		close(ready)
+		return
 	}
 
-	// parse address for host, port
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
-	svr.logger.Log("received signal", <-ch)
-	return svr.stop()
+	signals := make(chan os.Signal, 1)
+	defer close(signals)
+
+	close(ready)
+	svr.logger.Log("server is ready - closed ready channel")
+
+	signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT)
+
+	// wait for os signal
+	_ = <-signals
+	svr.logger.Log("received os quit signal")
+
+	err = svr.stop()
+	errors <- err
+	if err == nil {
+		svr.logger.Log("successfully stopped server")
+	}
 }

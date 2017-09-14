@@ -15,5 +15,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	kit.Run(svc)
+	errors := make(chan error)
+	kit.Run(svc, errors)
+	err = <-errors
+	if err != nil {
+		panic(err)
+	}
 }

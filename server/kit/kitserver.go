@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -160,7 +161,7 @@ func (s *Server) register(svc Service) {
 func (s *Server) start() error {
 	go func() {
 		err := s.svr.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			s.logger.Log(
 				"error", err,
 				"msg", "HTTP server error - initiating shutting down")
@@ -180,6 +181,11 @@ func (s *Server) start() error {
 
 		go func() {
 			err := s.gsvr.Serve(lis)
+			// the gRPC server _always_ returns non-nil
+			// this filters out the known err we don't care about logging
+			if strings.Contains(err.Error(), "use of closed network connection") {
+				err = nil
+			}
 			if err != nil {
 				s.logger.Log(
 					"error", err,

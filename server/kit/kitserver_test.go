@@ -36,7 +36,7 @@ func TestKitServer(t *testing.T) {
 		if err == nil {
 			break
 		}
-		t.Log("healthcheck failed on attempt %d", i+1)
+		t.Logf("healthcheck failed on attempt %d", i+1)
 		time.Sleep(50 * time.Millisecond)
 	}
 	if err != nil {

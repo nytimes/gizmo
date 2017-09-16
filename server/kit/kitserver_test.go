@@ -20,19 +20,25 @@ import (
 )
 
 func TestKitServer(t *testing.T) {
+	shutdownErrChan := make(chan error)
 	go func() {
 		// runs the HTTP _AND_ gRPC servers
-		err := kit.Run(&server{})
-		if err != nil {
-			t.Fatal("problems running service: " + err.Error())
-		}
+		shutdownErrChan <- kit.Run(&server{})
 	}()
-
-	// let the server start
-	time.Sleep(1 * time.Second)
-
-	// hit the health check
-	resp, err := http.Get("http://localhost:8080/healthz")
+	// server may still be coming up, give it 3 attempts
+	var (
+		err  error
+		resp *http.Response
+	)
+	for i := 0; i < 3; i++ {
+		// hit the health check
+		resp, err = http.Get("http://localhost:8080/healthz")
+		if err == nil {
+			break
+		}
+		t.Log("healthcheck failed on attempt %d", i+1)
+		time.Sleep(50 * time.Millisecond)
+	}
 	if err != nil {
 		t.Fatal("unable to hit health check:", err)
 	}
@@ -80,6 +86,13 @@ func TestKitServer(t *testing.T) {
 
 	// make signal to kill server
 	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+
+	t.Log("waiting for shutdown")
+	err = <-shutdownErrChan
+	t.Log("shutdown complete")
+	if err != nil {
+		t.Fatal("problems running service: " + err.Error())
+	}
 }
 
 type server struct{}

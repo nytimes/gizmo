@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"strings"
 
@@ -132,6 +133,9 @@ func (s *Server) register(svc Service) {
 		})
 	}
 
+	// add all pprof endpoints by default to HTTP
+	registerPprof(s.mux)
+
 	gdesc := svc.RPCServiceDesc()
 	if gdesc == nil {
 		return
@@ -217,4 +221,17 @@ func (s *Server) stop() error {
 	ch := make(chan error)
 	s.exit <- ch
 	return <-ch
+}
+
+func registerPprof(mx Router) {
+	mx.HandleFunc(http.MethodGet, "/debug/pprof/", pprof.Index)
+	mx.HandleFunc(http.MethodGet, "/debug/pprof/cmdline", pprof.Cmdline)
+	mx.HandleFunc(http.MethodGet, "/debug/pprof/profile", pprof.Profile)
+	mx.HandleFunc(http.MethodGet, "/debug/pprof/symbol", pprof.Symbol)
+	mx.HandleFunc(http.MethodGet, "/debug/pprof/trace", pprof.Trace)
+	// Manually add support for paths linked to by index page at /debug/pprof/
+	mx.Handle(http.MethodGet, "/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	mx.Handle(http.MethodGet, "/debug/pprof/heap", pprof.Handler("heap"))
+	mx.Handle(http.MethodGet, "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	mx.Handle(http.MethodGet, "/debug/pprof/block", pprof.Handler("block"))
 }

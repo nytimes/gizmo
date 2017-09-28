@@ -134,7 +134,7 @@ func (s *Server) register(svc Service) {
 	}
 
 	// add all pprof endpoints by default to HTTP
-	registerPprof(s.mux)
+	registerPprof(s.cfg, s.mux)
 
 	gdesc := svc.RPCServiceDesc()
 	if gdesc == nil {
@@ -223,7 +223,10 @@ func (s *Server) stop() error {
 	return <-ch
 }
 
-func registerPprof(mx Router) {
+func registerPprof(cfg Config, mx Router) {
+	if !cfg.EnablePProf {
+		return
+	}
 	mx.HandleFunc(http.MethodGet, "/debug/pprof/", pprof.Index)
 	mx.HandleFunc(http.MethodGet, "/debug/pprof/cmdline", pprof.Cmdline)
 	mx.HandleFunc(http.MethodGet, "/debug/pprof/profile", pprof.Profile)

@@ -56,6 +56,11 @@ func CORSHandler(f http.Handler, originSuffix string) http.Handler {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-requested-by, *")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
+
+			if r.Method == http.MethodOptions {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
 		}
 		f.ServeHTTP(w, r)
 	})

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -91,7 +92,7 @@ func (s *benchmarkSimpleService) Endpoints() map[string]map[string]http.HandlerF
 }
 
 func (s *benchmarkSimpleService) Middleware(h http.Handler) http.Handler {
-	return h
+	return CORSHandler(h, "")
 }
 
 func (s *benchmarkSimpleService) GetSimple(w http.ResponseWriter, r *http.Request) {
@@ -381,5 +382,39 @@ func TestBasicRegistration(t *testing.T) {
 
 	if err := s.Register(&testInvalidService{}); err == nil {
 		t.Error("Invalid services should produce an error in service registration")
+	}
+}
+
+func TestSimpleServerCORSMiddleware(t *testing.T) {
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
+	srvr := NewSimpleServer(cfg)
+	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
+	srvr.Register(&benchmarkSimpleService{false})
+
+	wt := httptest.NewRecorder()
+	// hit the CORS middlware
+	r := httptest.NewRequest(http.MethodOptions, "/svc/v1/1/blah/:something", nil)
+	r.RemoteAddr = "0.0.0.0:8080"
+	r.Header.Add("Origin", "nytimes.com")
+
+	srvr.ServeHTTP(wt, r)
+
+	w := wt.Result()
+
+	if w.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 response code, got %d", w.StatusCode)
+	}
+	gb, err := ioutil.ReadAll(w.Body)
+	if err != nil {
+		t.Fatalf("unable to read response body: %s", err)
+	}
+
+	if gotBody := string(gb); gotBody != "" {
+		t.Errorf("expected response body to be \"\", got %q", gotBody)
+	}
+
+	if gotOrig := w.Header.Get("Access-Control-Allow-Origin"); gotOrig != "nytimes.com" {
+		t.Errorf("expected response \"Access-Control-Allow-Origin\" header to be to be \"nytimes.com\", got %q",
+			gotOrig)
 	}
 }

@@ -504,3 +504,30 @@ func (s *TestSQSAPI) SetQueueAttributes(*sqs.SetQueueAttributesInput) (*sqs.SetQ
 func (s *TestSQSAPI) SetQueueAttributesWithContext(aws.Context, *sqs.SetQueueAttributesInput, ...request.Option) (*sqs.SetQueueAttributesOutput, error) {
 	return nil, errNotImpl
 }
+func (s *TestSQSAPI) ListQueueTags(input *sqs.ListQueueTagsInput) (*sqs.ListQueueTagsOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) ListQueueTagsRequest(input *sqs.ListQueueTagsInput) (req *request.Request, output *sqs.ListQueueTagsOutput) {
+	return nil, nil
+}
+func (s *TestSQSAPI) ListQueueTagsWithContext(ctx aws.Context, input *sqs.ListQueueTagsInput, opts ...request.Option) (*sqs.ListQueueTagsOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) TagQueue(input *sqs.TagQueueInput) (*sqs.TagQueueOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) TagQueueRequest(input *sqs.TagQueueInput) (req *request.Request, output *sqs.TagQueueOutput) {
+	return nil, nil
+}
+func (s *TestSQSAPI) TagQueueWithContext(ctx aws.Context, input *sqs.TagQueueInput, opts ...request.Option) (*sqs.TagQueueOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) UntagQueue(input *sqs.UntagQueueInput) (*sqs.UntagQueueOutput, error) {
+	return nil, errNotImpl
+}
+func (s *TestSQSAPI) UntagQueueRequest(input *sqs.UntagQueueInput) (req *request.Request, output *sqs.UntagQueueOutput) {
+	return nil, nil
+}
+func (s *TestSQSAPI) UntagQueueWithContext(ctx aws.Context, input *sqs.UntagQueueInput, opts ...request.Option) (*sqs.UntagQueueOutput, error) {
+	return nil, errNotImpl
+}

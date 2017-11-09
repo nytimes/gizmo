@@ -30,6 +30,8 @@ type SimpleServer struct {
 	// mux for routing
 	mux Router
 
+	svc Service
+
 	// tracks active requests
 	monitor *ActivityMonitor
 
@@ -80,7 +82,6 @@ var UnexpectedServerError = []byte("unexpected server error")
 
 // executeRequestSafely will prevent a panic in a request from bringing the server down.
 func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Request) {
-
 	defer func() {
 		if x := recover(); x != nil {
 			// register a panic'd request with our metrics
@@ -97,8 +98,16 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 		}
 	}()
 
-	// hand the request off to gorilla
-	s.mux.ServeHTTP(w, r)
+	TimedAndCounted(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Body != nil {
+			defer func() {
+				if err := r.Body.Close(); err != nil {
+					Log.Warn("unable to close request body: ", err)
+				}
+			}()
+		}
+		s.svc.Middleware(s.mux).ServeHTTP(w, r)
+	}), r.URL.Path, r.Method, s.mets).ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.
@@ -196,6 +205,7 @@ func (s *SimpleServer) Stop() error {
 
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
+	s.svc = svcI
 	prefix := svcI.Prefix()
 	// quick fix for backwards compatibility
 	prefix = strings.TrimRight(prefix, "/")
@@ -228,25 +238,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all simple endpoints with our wrapper
 		for path, epMethods := range ss.Endpoints() {
 			for method, ep := range epMethods {
-				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, TimedAndCounted(
-					func(ep http.HandlerFunc, ss SimpleService) http.Handler {
-						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							// is it worth it to always close this?
-							if r.Body != nil {
-								defer func() {
-									if err := r.Body.Close(); err != nil {
-										Log.Warn("unable to close request body: ", err)
-									}
-								}()
-							}
-
-							// call the func and return err or not
-							ss.Middleware(ep).ServeHTTP(w, r)
-						})
-					}(ep, ss),
-					prefix+path, method, s.mets),
-				)
+				s.mux.Handle(method, prefix+path, ep)
 			}
 		}
 	}
@@ -255,11 +247,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all JSON endpoints with our wrapper
 		for path, epMethods := range js.JSONEndpoints() {
 			for method, ep := range epMethods {
-				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, TimedAndCounted(
-					js.Middleware(JSONToHTTP(js.JSONMiddleware(ep))),
-					prefix+path, method, s.mets),
-				)
+				s.mux.Handle(method, prefix+path, JSONToHTTP(js.JSONMiddleware(ep)))
 			}
 		}
 	}
@@ -268,24 +256,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		// register all context endpoints with our wrapper
 		for path, epMethods := range cs.ContextEndpoints() {
 			for method, ep := range epMethods {
-				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, TimedAndCounted(
-					func(ep ContextHandlerFunc, cs ContextService) http.Handler {
-						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-							// is it worth it to always close this?
-							if r.Body != nil {
-								defer func() {
-									if err := r.Body.Close(); err != nil {
-										Log.Warn("unable to close request body: ", err)
-									}
-								}()
-							}
-							// call the func and return err or not
-							cs.Middleware(ContextToHTTP(cs.ContextMiddleware(ep))).ServeHTTP(w, r)
-						})
-					}(ep, cs),
-					prefix+path, method, s.mets),
-				)
+				s.mux.Handle(method, prefix+path, ContextToHTTP(cs.ContextMiddleware(ep)))
 			}
 		}
 	}
@@ -295,14 +266,9 @@ func (s *SimpleServer) Register(svcI Service) error {
 		for path, epMethods := range mcs.JSONEndpoints() {
 			for method, ep := range epMethods {
 				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, TimedAndCounted(
-					mcs.Middleware(ContextToHTTP(
-						mcs.ContextMiddleware(
-							JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
-						),
-					)),
-					prefix+path, method, s.mets),
-				)
+				s.mux.Handle(method, prefix+path, ContextToHTTP(mcs.ContextMiddleware(
+					JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
+				)))
 			}
 		}
 	}

@@ -38,6 +38,8 @@ type RPCServer struct {
 
 	mets         provider.Provider
 	panicCounter metrics.Counter
+
+	svc RPCService
 }
 
 // NewRPCServer will instantiate a new experimental RPCServer with the given config.
@@ -68,6 +70,7 @@ func (r *RPCServer) Register(svc Service) error {
 	if !ok {
 		Log.Fatalf("invalid service type for rpc server: %T", svc)
 	}
+	r.svc = rpcsvc
 
 	// register RPC
 	desc, grpcSvc := rpcsvc.Service()
@@ -87,21 +90,7 @@ func (r *RPCServer) Register(svc Service) error {
 	for path, epMethods := range rpcsvc.ContextEndpoints() {
 		for method, ep := range epMethods {
 			// set the function handle and register it to metrics
-			r.mux.Handle(method, prefix+path, TimedAndCounted(
-				func(ep ContextHandlerFunc, cs ContextService) http.Handler {
-					return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						if r.Body != nil {
-							defer func() {
-								if err := r.Body.Close(); err != nil {
-									Log.Warn("unable to close request body: ", err)
-								}
-							}()
-						}
-						rpcsvc.Middleware(ContextToHTTP(rpcsvc.ContextMiddleware(ep))).ServeHTTP(w, r)
-					})
-				}(ep, rpcsvc),
-				prefix+path, method, r.mets),
-			)
+			r.mux.Handle(method, prefix+path, ContextToHTTP(rpcsvc.ContextMiddleware(ep)))
 		}
 	}
 
@@ -109,12 +98,9 @@ func (r *RPCServer) Register(svc Service) error {
 	for path, epMethods := range rpcsvc.JSONEndpoints() {
 		for method, ep := range epMethods {
 			// set the function handle and register it to metrics
-			r.mux.Handle(method, prefix+path, TimedAndCounted(
-				rpcsvc.Middleware(ContextToHTTP(rpcsvc.ContextMiddleware(
-					JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
-				))),
-				prefix+path, method, r.mets),
-			)
+			r.mux.Handle(method, prefix+path, ContextToHTTP(rpcsvc.ContextMiddleware(
+				JSONContextToHTTP(rpcsvc.JSONMiddleware(ep)),
+			)))
 		}
 	}
 
@@ -218,8 +204,16 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 		}
 	}()
 
-	// hand the request off to gorilla
-	r.mux.ServeHTTP(w, req)
+	TimedAndCounted(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Body != nil {
+			defer func() {
+				if err := req.Body.Close(); err != nil {
+					Log.Warn("unable to close request body: ", err)
+				}
+			}()
+		}
+		r.svc.Middleware(r.mux).ServeHTTP(w, req)
+	}), req.URL.Path, req.Method, r.mets).ServeHTTP(w, req)
 }
 
 // LogRPCWithFields will feed any request context into a logrus Entry.

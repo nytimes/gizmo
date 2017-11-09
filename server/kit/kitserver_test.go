@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"syscall"
 	"testing"
@@ -21,23 +22,16 @@ import (
 )
 
 func TestKitServerHTTPMiddleware(t *testing.T) {
-	shutdownErrChan := make(chan error)
-	go func() {
-		// runs the HTTP _AND_ gRPC servers
-		shutdownErrChan <- kit.Run(&server{})
-	}()
+	svr := kit.NewServer(&server{})
 
-	// wait for server to come up
-	time.Sleep(50 * time.Millisecond)
-
-	// hit the HTTP server
-	r, _ := http.NewRequest(http.MethodOptions, "http://localhost:8080/svc/cat/ziggy", nil)
+	r := httptest.NewRequest(http.MethodOptions, "http://localhost:8080/svc/cat/ziggy", nil)
 	r.Header.Add("Origin", "nytimes.com")
+	w := httptest.NewRecorder()
 
-	resp, err := http.DefaultClient.Do(r)
-	if err != nil {
-		t.Fatal("unable to cat http endpoint:", err)
-	}
+	// hit the server
+	svr.ServeHTTP(w, r)
+
+	resp := w.Result()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status code of 200, got %d", resp.StatusCode)
@@ -55,16 +49,6 @@ func TestKitServerHTTPMiddleware(t *testing.T) {
 	if gotOrig := resp.Header.Get("Access-Control-Allow-Origin"); gotOrig != "nytimes.com" {
 		t.Errorf("expected response \"Access-Control-Allow-Origin\" header to be to be \"nytimes.com\", got %q",
 			gotOrig)
-	}
-
-	// make signal to kill server
-	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
-
-	t.Log("waiting for shutdown")
-	err = <-shutdownErrChan
-	t.Log("shutdown complete")
-	if err != nil {
-		t.Fatal("problems running service: " + err.Error())
 	}
 }
 

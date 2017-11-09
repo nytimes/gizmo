@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 )
 
 // Server encapsulates all logic for registering and running a gizmo kit server.
@@ -159,19 +158,7 @@ func (s *Server) register(svc Service) {
 		inters = append(inters, mw)
 	}
 
-	gopts := svc.RPCOptions()
-	if len(s.cfg.TLSCertFile) > 0 {
-		// Create the TLS credentials
-		creds, err := credentials.NewServerTLSFromFile(s.cfg.TLSCertFile, s.cfg.TLSKeyFile)
-		if err != nil {
-			s.logger.Log("msg", "unable to load TLS credentials",
-				"error", err.Error())
-			return
-		}
-		gopts = append(gopts, grpc.Creds(creds))
-	}
-
-	s.gsvr = grpc.NewServer(append(gopts,
+	s.gsvr = grpc.NewServer(append(svc.RPCOptions(),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
 
 	s.gsvr.RegisterService(gdesc, svc)

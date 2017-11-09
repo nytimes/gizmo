@@ -47,11 +47,6 @@ type Config struct {
 
 	// Enable pprof Profiling. Off by default.
 	EnablePProf bool `envconfig:"ENABLE_PPROF"`
-
-	// TLSCertFile is the path to a TLS certificate.
-	TLSCertFile string `envconfig:"TLS_CERT_PATH"`
-	// TLSKeyFile is the path to a TLS key.
-	TLSKeyFile string `enconfig:"TLS_KEY_PATH"`
 }
 
 func loadConfig() Config {

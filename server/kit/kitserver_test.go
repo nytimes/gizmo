@@ -41,6 +41,7 @@ func TestKitServerHTTPMiddleware(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read response body: %s", err)
 	}
+	resp.Body.Close()
 
 	if gotBody := string(gb); gotBody != "" {
 		t.Errorf("expected response body to be \"\", got %q", gotBody)

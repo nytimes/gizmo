@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 // Server encapsulates all logic for registering and running a gizmo kit server.
@@ -25,6 +26,8 @@ type Server struct {
 	mux Router
 
 	cfg Config
+
+	svc Service
 
 	svr  *http.Server
 	gsvr *grpc.Server
@@ -79,11 +82,11 @@ func NewServer(svc Service) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// hand the request off to the router
-	s.mux.ServeHTTP(w, r)
+	s.svc.HTTPMiddleware(s.mux).ServeHTTP(w, r)
 }
 
 func (s *Server) register(svc Service) {
+	s.svc = svc
 	opts := []httptransport.ServerOption{
 		// populate context with helpful keys
 		httptransport.ServerBefore(
@@ -116,12 +119,12 @@ func (s *Server) register(svc Service) {
 			if ep.Encoder == nil {
 				ep.Encoder = httptransport.EncodeJSONResponse
 			}
-			s.mux.Handle(method, path, svc.HTTPMiddleware(
+			s.mux.Handle(method, path,
 				httptransport.NewServer(
 					svc.Middleware(ep.Endpoint),
 					ep.Decoder,
 					ep.Encoder,
-					append(opts, ep.Options...)...)))
+					append(opts, ep.Options...)...))
 		}
 	}
 
@@ -156,7 +159,19 @@ func (s *Server) register(svc Service) {
 		inters = append(inters, mw)
 	}
 
-	s.gsvr = grpc.NewServer(append(svc.RPCOptions(),
+	gopts := svc.RPCOptions()
+	if len(s.cfg.TLSCertFile) > 0 {
+		// Create the TLS credentials
+		creds, err := credentials.NewServerTLSFromFile(s.cfg.TLSCertFile, s.cfg.TLSKeyFile)
+		if err != nil {
+			s.logger.Log("msg", "unable to load TLS credentials",
+				"error", err.Error())
+			return
+		}
+		gopts = append(gopts, grpc.Creds(creds))
+	}
+
+	s.gsvr = grpc.NewServer(append(gopts,
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
 
 	s.gsvr.RegisterService(gdesc, svc)
@@ -187,7 +202,7 @@ func (s *Server) start() error {
 			err := s.gsvr.Serve(lis)
 			// the gRPC server _always_ returns non-nil
 			// this filters out the known err we don't care about logging
-			if strings.Contains(err.Error(), "use of closed network connection") {
+			if (err != nil) && strings.Contains(err.Error(), "use of closed network connection") {
 				err = nil
 			}
 			if err != nil {

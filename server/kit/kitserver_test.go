@@ -15,9 +15,58 @@ import (
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
+	gserver "github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/NYTimes/gziphandler"
 )
+
+func TestKitServerHTTPMiddleware(t *testing.T) {
+	shutdownErrChan := make(chan error)
+	go func() {
+		// runs the HTTP _AND_ gRPC servers
+		shutdownErrChan <- kit.Run(&server{})
+	}()
+
+	// wait for server to come up
+	time.Sleep(50 * time.Millisecond)
+
+	// hit the HTTP server
+	r, _ := http.NewRequest(http.MethodOptions, "http://localhost:8080/svc/cat/ziggy", nil)
+	r.Header.Add("Origin", "nytimes.com")
+
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		t.Fatal("unable to cat http endpoint:", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code of 200, got %d", resp.StatusCode)
+	}
+
+	gb, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("unable to read response body: %s", err)
+	}
+
+	if gotBody := string(gb); gotBody != "" {
+		t.Errorf("expected response body to be \"\", got %q", gotBody)
+	}
+
+	if gotOrig := resp.Header.Get("Access-Control-Allow-Origin"); gotOrig != "nytimes.com" {
+		t.Errorf("expected response \"Access-Control-Allow-Origin\" header to be to be \"nytimes.com\", got %q",
+			gotOrig)
+	}
+
+	// make signal to kill server
+	syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+
+	t.Log("waiting for shutdown")
+	err = <-shutdownErrChan
+	t.Log("shutdown complete")
+	if err != nil {
+		t.Fatal("problems running service: " + err.Error())
+	}
+}
 
 func TestKitServer(t *testing.T) {
 	shutdownErrChan := make(chan error)
@@ -105,7 +154,7 @@ func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 }
 
 func (s *server) HTTPMiddleware(h http.Handler) http.Handler {
-	return gziphandler.GzipHandler(h)
+	return gserver.CORSHandler(gziphandler.GzipHandler(h), "")
 }
 
 func (s *server) HTTPOptions() []httptransport.ServerOption {

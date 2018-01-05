@@ -32,7 +32,7 @@ func TestGorillaRoute(t *testing.T) {
 	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status"}
 	srvr := NewSimpleServer(cfg)
 	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
-	srvr.Register(&benchmarkSimpleService{true})
+	srvr.Register(&benchmarkSimpleService{false})
 
 	w := httptest.NewRecorder()
 	r, _ := http.NewRequest("GET", "/svc/v1/1/blah/:something", nil)

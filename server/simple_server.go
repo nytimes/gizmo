@@ -100,13 +100,13 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	}()
 
 	// lookup metric name if we can
-	metricName := r.URL.Path
+	registeredPath := r.URL.Path
 	if muxr, ok := s.mux.(*GorillaRouter); ok {
 		var match mux.RouteMatch
 		if muxr.mux.Match(r, &match) {
 			tmpl, err := match.Route.GetPathTemplate()
 			if err == nil {
-				metricName = tmpl
+				registeredPath = tmpl
 			}
 		}
 	}
@@ -119,7 +119,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 			}()
 		}
 		s.svc.Middleware(s.mux).ServeHTTP(w, r)
-	}), metricName, r.Method, s.mets).ServeHTTP(w, r)
+	}), registeredPath, r.Method, s.mets).ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.

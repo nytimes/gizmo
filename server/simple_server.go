@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -98,6 +99,17 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 		}
 	}()
 
+	// lookup metric name if we can
+	metricName := r.URL.Path
+	if muxr, ok := s.mux.(*GorillaRouter); ok {
+		var match mux.RouteMatch
+		if muxr.mux.Match(r, &match) {
+			tmpl, err := match.Route.GetPathTemplate()
+			if err == nil {
+				metricName = tmpl
+			}
+		}
+	}
 	TimedAndCounted(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
 			defer func() {
@@ -107,7 +119,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 			}()
 		}
 		s.svc.Middleware(s.mux).ServeHTTP(w, r)
-	}), r.URL.Path, r.Method, s.mets).ServeHTTP(w, r)
+	}), metricName, r.Method, s.mets).ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.

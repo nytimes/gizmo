@@ -63,7 +63,9 @@ func (g *GorillaRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.mux.ServeHTTP(w, r)
 }
 
-// FastRouter is a Router implementation for `julienschmidt/httprouter`.
+// FastRouter is a Router implementation for `julienschmidt/httprouter`. THIS ROUTER IS
+// DEPRECATED. Please use gorilla or stdlib if you can. Metrics will not work properly on
+// servers using this router type. (see issue #132)
 type FastRouter struct {
 	mux *httprouter.Router
 }

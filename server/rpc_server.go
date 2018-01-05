@@ -206,13 +206,13 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	}()
 
 	// lookup metric name if we can
-	metricName := req.URL.Path
+	registeredPath := req.URL.Path
 	if muxr, ok := r.mux.(*GorillaRouter); ok {
 		var match mux.RouteMatch
 		if muxr.mux.Match(req, &match) {
 			tmpl, err := match.Route.GetPathTemplate()
 			if err == nil {
-				metricName = tmpl
+				registeredPath = tmpl
 			}
 		}
 	}
@@ -225,7 +225,7 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 			}()
 		}
 		r.svc.Middleware(r.mux).ServeHTTP(w, req)
-	}), metricName, req.Method, r.mets).ServeHTTP(w, req)
+	}), registeredPath, req.Method, r.mets).ServeHTTP(w, req)
 }
 
 // LogRPCWithFields will feed any request context into a logrus Entry.

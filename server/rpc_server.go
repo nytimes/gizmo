@@ -206,10 +206,10 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	}()
 
 	// lookup metric name if we can
-	metricName := r.URL.Path
-	if muxr, ok := s.mux.(*GorillaRouter); ok {
+	metricName := req.URL.Path
+	if muxr, ok := r.mux.(*GorillaRouter); ok {
 		var match mux.RouteMatch
-		if muxr.mux.Match(r, &match) {
+		if muxr.mux.Match(req, &match) {
 			tmpl, err := match.Route.GetPathTemplate()
 			if err == nil {
 				metricName = tmpl

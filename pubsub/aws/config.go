@@ -11,8 +11,8 @@ type (
 	// SQSConfig holds the info required to work with Amazon SQS
 	SQSConfig struct {
 		aws.Config
-
-		QueueName string `envconfig:"AWS_SQS_NAME"`
+		QueueName           string `envconfig:"AWS_SQS_NAME"`
+		QueueOwnerAccountID string `envconfig:"AWS_SQS_OWNER_ACCOUNT_ID"`
 		// MaxMessages will override the DefaultSQSMaxMessages.
 		MaxMessages *int64 `envconfig:"AWS_SQS_MAX_MESSAGES"`
 		// TimeoutSeconds will override the DefaultSQSTimeoutSeconds.

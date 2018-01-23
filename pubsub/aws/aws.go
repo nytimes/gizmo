@@ -6,18 +6,18 @@ import (
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/context"
-
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/aws/aws-sdk-go/service/sns/snsiface"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/golang/protobuf/proto"
-
-	"github.com/NYTimes/gizmo/pubsub"
+	"golang.org/x/net/context"
 )
 
 // publisher will accept AWS credentials and an SNS topic name
@@ -50,10 +50,23 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		creds = credentials.NewEnvCredentials()
 	}
 
-	p.sns = sns.New(session.New(&aws.Config{
+	if cfg.RoleARN != "" {
+		var err error
+		creds, err = requestRoleCredentials(creds, cfg.RoleARN, cfg.MFASerialNumber)
+		if err != nil {
+			return p, err
+		}
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return p, err
+	}
+
+	p.sns = sns.New(sess, &aws.Config{
 		Credentials: creds,
 		Region:      &cfg.Region,
-	}))
+	})
 	return p, nil
 }
 
@@ -193,14 +206,27 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	} else {
 		creds = credentials.NewEnvCredentials()
 	}
-	s.sqs = sqs.New(session.New(&aws.Config{
+
+	if cfg.RoleARN != "" {
+		creds, err = requestRoleCredentials(creds, cfg.RoleARN, cfg.MFASerialNumber)
+		if err != nil {
+			return s, err
+		}
+	}
+
+	sess, err := session.NewSession()
+	if err != nil {
+		return s, err
+	}
+	s.sqs = sqs.New(sess, &aws.Config{
 		Credentials: creds,
 		Region:      &cfg.Region,
-	}))
+	})
 
 	var urlResp *sqs.GetQueueUrlOutput
 	urlResp, err = s.sqs.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName: &cfg.QueueName,
+		QueueName:              &cfg.QueueName,
+		QueueOwnerAWSAccountId: &cfg.QueueOwnerAccountID,
 	})
 
 	if err != nil {
@@ -366,4 +392,28 @@ func (s *subscriber) Stop() error {
 // a user encounters a closed channel.
 func (s *subscriber) Err() error {
 	return s.sqsErr
+}
+
+// requestRoleCredentials return the credentials from AssumeRoleProvider to assume the role
+// referenced by the roleARN. If MFASerialNumber is specified, prompt for MFA token from stdin.
+func requestRoleCredentials(creds *credentials.Credentials, roleARN string, MFASerialNumber string) (*credentials.Credentials, error) {
+	if roleARN == "" {
+		return nil, errors.New("role ARN is required")
+	}
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config: *aws.NewConfig().WithCredentials(creds),
+	})
+	if err != nil {
+		return nil, err
+	}
+	assumeRole := &stscreds.AssumeRoleProvider{
+		Client:   sts.New(sess),
+		RoleARN:  roleARN,
+		Duration: stscreds.DefaultDuration,
+	}
+	if MFASerialNumber != "" {
+		assumeRole.SerialNumber = &MFASerialNumber
+		assumeRole.TokenProvider = stscreds.StdinTokenProvider
+	}
+	return credentials.NewCredentials(assumeRole), nil
 }

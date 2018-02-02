@@ -426,7 +426,6 @@ func TestNotFoundHandler(t *testing.T) {
 	srvr.Register(&benchmarkSimpleService{false})
 
 	wt := httptest.NewRecorder()
-	// hit the CORS middlware
 	r := httptest.NewRequest(http.MethodGet, "/svc/v1/1/blah", nil)
 	r.RemoteAddr = "0.0.0.0:8080"
 

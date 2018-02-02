@@ -418,3 +418,31 @@ func TestSimpleServerCORSMiddleware(t *testing.T) {
 			gotOrig)
 	}
 }
+
+func TestNotFoundHandler(t *testing.T) {
+	cfg := &Config{HealthCheckType: "simple", HealthCheckPath: "/status", NotFoundHandler: http.HandlerFunc(http.NotFound)}
+	srvr := NewSimpleServer(cfg)
+	RegisterHealthHandler(cfg, srvr.monitor, srvr.mux)
+	srvr.Register(&benchmarkSimpleService{false})
+
+	wt := httptest.NewRecorder()
+	// hit the CORS middlware
+	r := httptest.NewRequest(http.MethodGet, "/svc/v1/1/blah", nil)
+	r.RemoteAddr = "0.0.0.0:8080"
+
+	srvr.ServeHTTP(wt, r)
+
+	w := wt.Result()
+
+	if w.StatusCode != http.StatusNotFound {
+		t.Errorf("expected 400 response code, got %d", w.StatusCode)
+	}
+	gb, err := ioutil.ReadAll(w.Body)
+	if err != nil {
+		t.Fatalf("unable to read response body: %s", err)
+	}
+
+	if gotBody := string(gb); gotBody != "404 page not found\n" {
+		t.Errorf("expected response body to be \"\", got %q", gotBody)
+	}
+}

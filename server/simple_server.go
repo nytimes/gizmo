@@ -103,7 +103,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	registeredPath := r.URL.Path
 	if muxr, ok := s.mux.(*GorillaRouter); ok {
 		var match mux.RouteMatch
-		if muxr.mux.Match(r, &match) {
+		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
 			tmpl, err := match.Route.GetPathTemplate()
 			if err == nil {
 				registeredPath = tmpl

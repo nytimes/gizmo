@@ -48,5 +48,7 @@ This package contains a handful of very useful functions for parsing types from 
 #### Examples
 
 * Several reference implementations utilizing `server` and `pubsub` are available in the [`examples`](https://github.com/NYTimes/gizmo/tree/master/examples) subdirectory.
+* There are also examples within the GoDoc: [here](https://godoc.org/github.com/NYTimes/gizmo/examples)
+
 
 <sub>The Gizmo logo was based on the Go mascot designed by Renée French and copyrighted under the Creative Commons Attribution 3.0 license.</sub>

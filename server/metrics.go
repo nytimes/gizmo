@@ -16,6 +16,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var (
+	// DefaultBuckets which gonna be used in duration histogram
+	DefaultBuckets = []float64{0.05, 0.50, 0.90, 0.95, 0.99}
+)
+
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	fmt.Fprintf(w, "{\n")
@@ -158,8 +163,12 @@ func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
 	}
 }
 
+func prometheusMetricName(name string) string {
+	return strings.Replace(name, "/", "_", -1)
+}
+
 func prometheusCounter(name string) *prometheus.CounterVec {
-	mname := strings.Replace(name, "/", "_", -1)
+	mname := prometheusMetricName(name)
 
 	// create a request code counter
 	counter := prometheus.NewCounterVec(
@@ -175,20 +184,20 @@ func prometheusCounter(name string) *prometheus.CounterVec {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			counter = are.ExistingCollector.(*prometheus.CounterVec)
 		} else {
-			panic(err)
+			Log.Fatal("Fail to register prometheus.CounterVec: ", err)
 		}
 	}
 	return counter
 }
 
 func prometheusHistogram(name string) *prometheus.HistogramVec {
-	mname := strings.Replace(name, "/", "_", -1)
+	mname := prometheusMetricName(name)
 
 	histogram := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    mname + "_requests_duration",
 			Help:    "Duration of Requests for " + name,
-			Buckets: []float64{0.05, 0.50, 0.90, 0.95, 0.99},
+			Buckets: DefaultBuckets,
 		},
 		[]string{"code", "method"},
 	)
@@ -198,7 +207,7 @@ func prometheusHistogram(name string) *prometheus.HistogramVec {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			histogram = are.ExistingCollector.(*prometheus.HistogramVec)
 		} else {
-			panic(err)
+			Log.Fatal("Fail to register prometheus.HistogramVec: ", err)
 		}
 	}
 	return histogram

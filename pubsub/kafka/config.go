@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/NYTimes/gizmo/config"
+	"github.com/Shopify/sarama"
 )
 
 // Config holds the basic information for working with Kafka.
@@ -18,6 +19,9 @@ type Config struct {
 	Topic     string `envconfig:"KAFKA_TOPIC"`
 
 	MaxRetry int `envconfig:"KAFKA_MAX_RETRY"`
+
+	// Config is a sarama config struct for more control over the underlying Kafka client.
+	Config *sarama.Config
 }
 
 // LoadConfigFromEnv will attempt to load an Kafka object

@@ -35,9 +35,13 @@ func NewPublisher(cfg *Config) (pubsub.Publisher, error) {
 	}
 	p.topic = cfg.Topic
 
-	sconfig := sarama.NewConfig()
-	sconfig.Producer.Retry.Max = cfg.MaxRetry
-	sconfig.Producer.RequiredAcks = RequiredAcks
+	sconfig := cfg.Config
+	if sconfig == nil {
+		sconfig = sarama.NewConfig()
+		sconfig.Producer.Retry.Max = cfg.MaxRetry
+		sconfig.Producer.RequiredAcks = RequiredAcks
+	}
+	// we always want successes to return
 	sconfig.Producer.Return.Successes = true
 	p.producer, err = sarama.NewSyncProducer(cfg.BrokerHosts, sconfig)
 	return p, err
@@ -130,7 +134,11 @@ func NewSubscriber(cfg *Config, offsetProvider func() int64, offsetBroadcast fun
 	}
 	s.topic = cfg.Topic
 
-	sconfig := sarama.NewConfig()
+	sconfig := cfg.Config
+	if sconfig == nil {
+		sconfig = sarama.NewConfig()
+	}
+	// we always want to see errors, no matter what
 	sconfig.Consumer.Return.Errors = true
 	s.cnsmr, err = sarama.NewConsumer(cfg.BrokerHosts, sconfig)
 	return s, err

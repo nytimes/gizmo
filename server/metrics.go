@@ -13,6 +13,7 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
@@ -148,10 +149,53 @@ func TimedAndCounted(handler http.Handler, fullPath string, method string, p pro
 	}
 }
 
-// PrometheusTimedAndCounted wraps a http.Handler with via prometheus.InstrumentHandler
+// PrometheusTimedAndCounted wraps a http.Handler with via promhttp.InstrumentHandlerCounter and promhttp.InstrumentHandlerDuration
 func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
 	return &Timer{
-		isProm:  true,
-		handler: prometheus.InstrumentHandler(name, handler),
+		isProm: true,
+		handler: promhttp.InstrumentHandlerCounter(prometheusCounter(name),
+			promhttp.InstrumentHandlerDuration(prometheusHistogram(name), handler)),
 	}
+}
+
+func prometheusCounter(name string) *prometheus.CounterVec {
+	mname := strings.Replace(name, "/", "_", -1)
+
+	// create a request code counter
+	counter := prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: mname + "_requests_total",
+			Help: "Total Requests for " + name,
+		},
+		[]string{"code", "method"},
+	)
+	// do not panic when metric already registered
+	err := prometheus.Register(counter)
+	if err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			counter = are.ExistingCollector.(*prometheus.CounterVec)
+		}
+	}
+	return counter
+}
+
+func prometheusHistogram(name string) *prometheus.HistogramVec {
+	mname := strings.Replace(name, "/", "_", -1)
+
+	histogram := prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    mname + "_requests_duration",
+			Help:    "Duration of Requests for " + name,
+			Buckets: []float64{0.05, 0.50, 0.90, 0.95, 0.99},
+		},
+		[]string{"code", "method"},
+	)
+
+	err := prometheus.Register(histogram)
+	if err != nil {
+		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			histogram = are.ExistingCollector.(*prometheus.HistogramVec)
+		}
+	}
+	return histogram
 }

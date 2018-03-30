@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/nu7hatch/gouuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/gizmo/web"
@@ -31,6 +31,9 @@ type Server interface {
 }
 
 var (
+	// ErrMultiRegister occurs when a Register method is called multiple times
+	ErrMultiRegister = errors.New("register method has been called multiple times")
+
 	// Name is used for status and logging.
 	Name = "nyt-awesome-go-server"
 	// Log is the global logger for the server. It will take care of logrotate

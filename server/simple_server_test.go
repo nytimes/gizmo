@@ -367,20 +367,34 @@ func TestFactory(*testing.T) {
 }
 
 func TestBasicRegistration(t *testing.T) {
-	s := NewSimpleServer(nil)
-	services := []Service{
-		&benchmarkSimpleService{},
-		&benchmarkJSONService{},
-		&testMixedService{},
-		&benchmarkContextService{},
+	tests := []struct {
+		server  *SimpleServer
+		service Service
+	}{
+		{
+			NewSimpleServer(nil),
+			&benchmarkSimpleService{},
+		},
+		{
+			NewSimpleServer(nil),
+			&benchmarkJSONService{},
+		},
+		{
+			NewSimpleServer(nil),
+			&testMixedService{},
+		},
+		{
+			NewSimpleServer(nil),
+			&benchmarkContextService{},
+		},
 	}
-	for _, svc := range services {
-		if err := s.Register(svc); err != nil {
+	for _, test := range tests {
+		if err := test.server.Register(test.service); err != nil {
 			t.Errorf("Basic registration of services should not encounter an error: %s\n", err)
 		}
 	}
-
-	if err := s.Register(&testInvalidService{}); err == nil {
+	invServer := NewSimpleServer(nil)
+	if err := invServer.Register(&testInvalidService{}); err == nil {
 		t.Error("Invalid services should produce an error in service registration")
 	}
 }

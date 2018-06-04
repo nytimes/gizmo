@@ -218,10 +218,10 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	// lookup metric name if we can
 	registeredPath := req.URL.Path
 	if muxr, ok := r.mux.(*GorillaRouter); ok {
+		registeredPath = "__404__"
 		var match mux.RouteMatch
 		if muxr.mux.Match(req, &match) {
-			tmpl, err := match.Route.GetPathTemplate()
-			if err == nil {
+			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
 				registeredPath = tmpl
 			}
 		}

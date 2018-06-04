@@ -106,10 +106,10 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	// lookup metric name if we can
 	registeredPath := r.URL.Path
 	if muxr, ok := s.mux.(*GorillaRouter); ok {
+		registeredPath = "__404__"
 		var match mux.RouteMatch
 		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
-			tmpl, err := match.Route.GetPathTemplate()
-			if err == nil {
+			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
 				registeredPath = tmpl
 			}
 		}

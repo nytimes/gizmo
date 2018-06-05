@@ -174,8 +174,6 @@ func prometheusCounter(name string) *prometheus.CounterVec {
 	if err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			counter = are.ExistingCollector.(*prometheus.CounterVec)
-		} else {
-			panic(err)
 		}
 	}
 	return counter
@@ -197,8 +195,6 @@ func prometheusHistogram(name string) *prometheus.HistogramVec {
 	if err != nil {
 		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
 			histogram = are.ExistingCollector.(*prometheus.HistogramVec)
-		} else {
-			panic(err)
 		}
 	}
 	return histogram

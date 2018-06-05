@@ -5,13 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/api/option"
-
 	gpubsub "cloud.google.com/go/pubsub"
+	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-
-	"github.com/NYTimes/gizmo/pubsub"
+	"google.golang.org/api/option"
 )
 
 // Subscriber is a Google Cloud Platform PubSub client that allows a user to
@@ -27,8 +25,7 @@ type Subscriber struct {
 	err error
 }
 
-// NewSubscriber will instantiate a new Subscriber that wraps
-// a pubsub.Iterator.
+// NewSubscriber will instantiate a new Subscriber that wraps a pubsub.Iterator.
 func NewSubscriber(ctx context.Context, projID, subscription string, opts ...option.ClientOption) (*Subscriber, error) {
 	client, err := gpubsub.NewClient(ctx, projID, opts...)
 	if err != nil {
@@ -133,14 +130,21 @@ var _ pubsub.Publisher = &publisher{}
 var _ pubsub.MultiPublisher = &publisher{}
 
 // NewPublisher will instantiate a new GCP MultiPublisher.
-func NewPublisher(ctx context.Context, projID, topic string, opts ...option.ClientOption) (pubsub.MultiPublisher, error) {
-	client, err := gpubsub.NewClient(ctx, projID, opts...)
+func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) (pubsub.MultiPublisher, error) {
+	if cfg.Config.ProjectID == "" {
+		return nil, errors.New("project id is required")
+	}
+	if cfg.Topic == "" {
+		return nil, errors.New("topic name is required")
+	}
+
+	c, err := gpubsub.NewClient(ctx, cfg.Config.ProjectID, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &publisher{
-		topic: client.Topic(topic),
+		topic: c.Topic(cfg.Topic),
 	}, nil
 }
 

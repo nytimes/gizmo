@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	// DefaultBuckets are used by prometheus instrumentation.
-	// If you wish to have different buckets, alter this variable before registering your service.
+	// DefaultBuckets which gonna be used in duration histogram
 	DefaultBuckets = []float64{0.05, 0.50, 0.90, 0.95, 0.99}
 )
 

@@ -125,7 +125,7 @@ Also, the one service type that works with an `RPCServer`:
 		// route - method - func
 		JSONEndpoints() map[string]map[string]JSONContextEndpoint
 		// JSONMiddleware provides a hook for service-wide middleware around JSONContextEndpoints.
-		JSONMiddlware(JSONContextEndpoint) JSONContextEndpoint
+		JSONMiddleware(JSONContextEndpoint) JSONContextEndpoint
 	}
 
 The `Middleware(..)` functions offer each service a 'hook' to wrap each of its endpoints. This may be handy for adding additional headers or context to the request. This is also the point where other, third-party middleware could be easily be plugged in (ie. oauth, tracing, metrics, logging, etc.)

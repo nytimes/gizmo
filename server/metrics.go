@@ -13,13 +13,6 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-)
-
-var (
-	// DefaultBuckets are used by prometheus instrumentation.
-	// If you wish to have different buckets, alter this variable before registering your service.
-	DefaultBuckets = []float64{0.05, 0.50, 0.90, 0.95, 0.99}
 )
 
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
@@ -155,61 +148,10 @@ func TimedAndCounted(handler http.Handler, fullPath string, method string, p pro
 	}
 }
 
-// PrometheusTimedAndCounted wraps a http.Handler with via promhttp.InstrumentHandlerCounter and promhttp.InstrumentHandlerDuration
+// PrometheusTimedAndCounted wraps a http.Handler with via prometheus.InstrumentHandler
 func PrometheusTimedAndCounted(handler http.Handler, name string) *Timer {
 	return &Timer{
-		isProm: true,
-		handler: promhttp.InstrumentHandlerCounter(prometheusCounter(name),
-			promhttp.InstrumentHandlerDuration(prometheusHistogram(name), handler)),
+		isProm:  true,
+		handler: prometheus.InstrumentHandler(name, handler),
 	}
-}
-
-func prometheusMetricName(name string) string {
-	return strings.Replace(name, "/", "_", -1)
-}
-
-func prometheusCounter(name string) *prometheus.CounterVec {
-	mname := prometheusMetricName(name)
-
-	// create a request code counter
-	counter := prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: mname + "_requests_total",
-			Help: "Total Requests for " + name,
-		},
-		[]string{"code", "method"},
-	)
-	// do not panic when metric already registered
-	err := prometheus.Register(counter)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			counter = are.ExistingCollector.(*prometheus.CounterVec)
-		} else {
-			Log.Fatal("Fail to register prometheus.CounterVec: ", err)
-		}
-	}
-	return counter
-}
-
-func prometheusHistogram(name string) *prometheus.HistogramVec {
-	mname := prometheusMetricName(name)
-
-	histogram := prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    mname + "_requests_duration",
-			Help:    "Duration of Requests for " + name,
-			Buckets: DefaultBuckets,
-		},
-		[]string{"code", "method"},
-	)
-
-	err := prometheus.Register(histogram)
-	if err != nil {
-		if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-			histogram = are.ExistingCollector.(*prometheus.HistogramVec)
-		} else {
-			Log.Fatal("Fail to register prometheus.HistogramVec: ", err)
-		}
-	}
-	return histogram
 }

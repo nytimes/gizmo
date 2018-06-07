@@ -23,6 +23,9 @@ import (
 // RPCServer is an experimental server that serves a gRPC server on one
 // port and the same endpoints via JSON on another port.
 type RPCServer struct {
+	// tracks if the Register function is already called or not
+	registered bool
+
 	cfg *Config
 
 	// exit chan for graceful shutdown
@@ -67,6 +70,13 @@ func NewRPCServer(cfg *Config) *RPCServer {
 // Register will attempt to register the given RPCService with the server.
 // If any other types are passed, Register will panic.
 func (r *RPCServer) Register(svc Service) error {
+	// check multiple register call error
+	if r.registered {
+		return ErrMultiRegister
+	}
+	// set registered to true because we called it
+	r.registered = true
+
 	rpcsvc, ok := svc.(RPCService)
 	if !ok {
 		Log.Fatalf("invalid service type for rpc server: %T", svc)
@@ -208,10 +218,10 @@ func (r *RPCServer) safelyExecuteHTTPRequest(w http.ResponseWriter, req *http.Re
 	// lookup metric name if we can
 	registeredPath := req.URL.Path
 	if muxr, ok := r.mux.(*GorillaRouter); ok {
+		registeredPath = "__404__"
 		var match mux.RouteMatch
 		if muxr.mux.Match(req, &match) {
-			tmpl, err := match.Route.GetPathTemplate()
-			if err == nil {
+			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
 				registeredPath = tmpl
 			}
 		}

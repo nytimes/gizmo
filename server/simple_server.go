@@ -23,6 +23,9 @@ import (
 // SimpleServer is a basic http Server implementation for
 // serving SimpleService, JSONService or MixedService implementations.
 type SimpleServer struct {
+	// tracks if the Register function is already called or not
+	registered bool
+
 	cfg *Config
 
 	// exit chan for graceful shutdown
@@ -102,10 +105,10 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	// lookup metric name if we can
 	registeredPath := r.URL.Path
 	if muxr, ok := s.mux.(*GorillaRouter); ok {
+		registeredPath = "__404__"
 		var match mux.RouteMatch
 		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
-			tmpl, err := match.Route.GetPathTemplate()
-			if err == nil {
+			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
 				registeredPath = tmpl
 			}
 		}
@@ -217,6 +220,13 @@ func (s *SimpleServer) Stop() error {
 
 // Register will accept and register SimpleServer, JSONService or MixedService implementations.
 func (s *SimpleServer) Register(svcI Service) error {
+	// check multiple register call error
+	if s.registered {
+		return ErrMultiRegister
+	}
+	// set registered to true because we called it
+	s.registered = true
+
 	s.svc = svcI
 	prefix := svcI.Prefix()
 	// quick fix for backwards compatibility

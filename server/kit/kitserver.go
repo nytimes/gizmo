@@ -210,6 +210,9 @@ func (s *Server) start() error {
 		ctx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
 		defer cancel()
 
+		if shutdown, ok := s.svc.(Shutdowner); ok {
+			shutdown.Shutdown()
+		}
 		if s.gsvr != nil {
 			s.gsvr.GracefulStop()
 		}

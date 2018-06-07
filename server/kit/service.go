@@ -91,3 +91,9 @@ type Service interface {
 	// at startup. We recommend using RPCMiddleware() to fill this need.
 	RPCOptions() []grpc.ServerOption
 }
+
+// Shutdowner allows your service to shutdown gracefully when http server stops.
+// This may used when service has any background task which needs to be completed gracefully.
+type Shutdowner interface {
+	Shutdown()
+}

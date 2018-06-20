@@ -2,6 +2,7 @@ package pubsubtest
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
@@ -14,6 +15,7 @@ type (
 	TestPublisher struct {
 		// Published will contain a list of all messages that have been published.
 		Published []TestPublishMsg
+		pmu       sync.Mutex
 
 		// GivenError will be returned by the TestPublisher on publish.
 		// Good for testing error scenarios.
@@ -44,6 +46,8 @@ func (t *TestPublisher) Publish(ctx context.Context, key string, msg proto.Messa
 
 // PublishRaw publishes the raw message byte slice.
 func (t *TestPublisher) PublishRaw(_ context.Context, key string, msg []byte) error {
+	t.pmu.Lock()
+	defer t.pmu.Unlock()
 	t.Published = append(t.Published, TestPublishMsg{key, msg})
 	return t.GivenError
 }

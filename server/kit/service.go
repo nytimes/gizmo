@@ -26,7 +26,7 @@ type HTTPEndpoint struct {
 // handling errors and serializing the apprioriate response.
 //
 // In other words, each Endpoint is similar to a 'controller' and the Service
-// a container for injecting depedencies (business services, repositories, etc.)
+// a container for injecting dependencies (business services, repositories, etc.)
 // into each request handler.
 type Service interface {
 	// Middleware is for any service-wide go-kit middlewares. This middleware

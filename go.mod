@@ -5,6 +5,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.6.0 // indirect
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/NYTimes/logrotate v0.0.0-20170824154650-2b6e866fd507
+	github.com/NYTimes/sqliface v0.0.0-20180310195202-f8e6c8b78d37
 	github.com/Shopify/sarama v1.17.0
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.15.21
@@ -16,12 +17,15 @@ require (
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/go-kit/kit v0.7.0
 	github.com/go-logfmt/logfmt v0.3.0 // indirect
+	github.com/go-sql-driver/mysql v1.4.0
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
+	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.6.2
+	github.com/gorilla/websocket v1.3.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0
 	github.com/hashicorp/consul v1.2.2
 	github.com/hashicorp/go-cleanhttp v0.0.0-20171218145408-d5fe4b57a186 // indirect
@@ -49,6 +53,7 @@ require (
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
 	golang.org/x/sys v0.0.0-20180824143301-4910a1d54f87 // indirect
 	golang.org/x/text v0.3.0 // indirect
+	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2 // indirect
 	google.golang.org/api v0.0.0-20180826000528-7954115fcf34
 	google.golang.org/appengine v1.1.0
 	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8

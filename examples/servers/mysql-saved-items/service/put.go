@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/server"
 	"github.com/gorilla/context"
+	"github.com/nytimes/gizmo/server"
 )
 
 // Put is a JSONEndpoint for adding a new saved item to a user's list.

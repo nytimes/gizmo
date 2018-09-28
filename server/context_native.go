@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/web"
 )
 
 // AddIPToContext will attempt to pull an IP address out of the request and

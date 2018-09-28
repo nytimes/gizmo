@@ -16,9 +16,9 @@ import (
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	gserver "github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/server/kit"
-	"github.com/NYTimes/gziphandler"
+	gserver "github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gizmo/server/kit"
+	"github.com/nytimes/gziphandler"
 )
 
 func TestKitServerHTTPMiddleware(t *testing.T) {

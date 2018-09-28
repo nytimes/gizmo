@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/nytimes/gizmo/config"
 )
 
 // Config holds everything you need to

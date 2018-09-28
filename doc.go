@@ -1,4 +1,4 @@
-/* 
+/*
 Package gizmo is a toolkit that provides packages to put together server and pubsub daemons with the following features:
 
 	* standardized configuration and logging

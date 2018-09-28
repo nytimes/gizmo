@@ -8,10 +8,10 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/NYTimes/gizmo/pubsub/kafka"
-	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/pubsub"
+	"github.com/nytimes/gizmo/pubsub/kafka"
+	"github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gizmo/web"
 )
 
 var (

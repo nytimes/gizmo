@@ -9,7 +9,7 @@ import (
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/go-kit/kit/metrics/statsd"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/nytimes/gizmo/config"
 )
 
 // Type acts as an 'enum' type to represent

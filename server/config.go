@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/handlers"
+	"github.com/nytimes/logrotate"
 
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/metrics"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/config/metrics"
 )
 
 // Config holds info required to configure a gizmo server.Server.

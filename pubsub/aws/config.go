@@ -3,8 +3,8 @@ package aws
 import (
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/aws"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/config/aws"
 )
 
 type (

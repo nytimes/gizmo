@@ -16,8 +16,8 @@ import (
 	netContext "golang.org/x/net/context"
 	"google.golang.org/appengine"
 
-	metricscfg "github.com/NYTimes/gizmo/config/metrics"
-	"github.com/NYTimes/gizmo/web"
+	metricscfg "github.com/nytimes/gizmo/config/metrics"
+	"github.com/nytimes/gizmo/web"
 )
 
 // SimpleServer is a basic http Server implementation for

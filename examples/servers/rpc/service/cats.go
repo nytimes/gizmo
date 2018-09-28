@@ -8,8 +8,8 @@ import (
 
 	ocontext "golang.org/x/net/context"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/server"
 )
 
 func (s *RPCService) GetCats(ctx ocontext.Context, r *CatsRequest) (*CatsResponse, error) {

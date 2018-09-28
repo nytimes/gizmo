@@ -8,7 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/server"
 )
 
 // JSONMiddleware provides a JSONContextEndpoint hook wrapped around all requests.

@@ -1,6 +1,6 @@
 package cookie
 
-import "github.com/NYTimes/gizmo/config"
+import "github.com/nytimes/gizmo/config"
 
 // Config holds information for creating
 // a secure cookie.

@@ -8,9 +8,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
-	"github.com/NYTimes/gizmo/examples/nyt/nyttest"
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/examples/nyt/nyttest"
+	"github.com/nytimes/gizmo/server"
 )
 
 func TestGetCats(t *testing.T) {

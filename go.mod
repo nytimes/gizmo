@@ -1,11 +1,11 @@
-module github.com/NYTimes/gizmo
+module github.com/nytimes/gizmo
 
 require (
 	cloud.google.com/go v0.26.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.6.0 // indirect
-	github.com/NYTimes/gziphandler v1.0.1
-	github.com/NYTimes/logrotate v0.0.0-20170824154650-2b6e866fd507
-	github.com/NYTimes/sqliface v0.0.0-20180310195202-f8e6c8b78d37
+	github.com/nytimes/gziphandler v1.0.1
+	github.com/nytimes/logrotate v0.0.0-20170824154650-2b6e866fd507
+	github.com/nytimes/sqliface v0.0.0-20180310195202-f8e6c8b78d37
 	github.com/Shopify/sarama v1.17.0
 	github.com/VividCortex/gohistogram v1.0.0 // indirect
 	github.com/aws/aws-sdk-go v1.15.21

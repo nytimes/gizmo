@@ -3,11 +3,11 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/config/combined"
-	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/NYTimes/gizmo/pubsub/aws"
-	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gziphandler"
+	"github.com/nytimes/gizmo/config/combined"
+	"github.com/nytimes/gizmo/pubsub"
+	"github.com/nytimes/gizmo/pubsub/aws"
+	"github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gziphandler"
 	"github.com/sirupsen/logrus"
 )
 

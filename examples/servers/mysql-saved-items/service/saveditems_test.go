@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NYTimes/sqliface"
+	"github.com/nytimes/sqliface"
 )
 
 // TestScanItems will test our repo's logic for scanning data

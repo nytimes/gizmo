@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/examples/pubsub/api-sns-pub/service"
+	"github.com/nytimes/gizmo/examples/pubsub/api-sns-pub/service"
 
-	"github.com/NYTimes/gizmo/config/combined"
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/config/combined"
+	"github.com/nytimes/gizmo/server"
 )
 
 func main() {

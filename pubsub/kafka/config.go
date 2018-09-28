@@ -3,8 +3,8 @@ package kafka
 import (
 	"strings"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/Shopify/sarama"
+	"github.com/nytimes/gizmo/config"
 )
 
 // Config holds the basic information for working with Kafka.

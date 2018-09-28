@@ -3,17 +3,17 @@ package combined
 import (
 	"strings"
 
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/aws"
-	"github.com/NYTimes/gizmo/config/cookie"
-	"github.com/NYTimes/gizmo/config/metrics"
-	"github.com/NYTimes/gizmo/config/mongodb"
-	"github.com/NYTimes/gizmo/config/mysql"
-	"github.com/NYTimes/gizmo/config/oracle"
-	"github.com/NYTimes/gizmo/config/postgresql"
-	awsps "github.com/NYTimes/gizmo/pubsub/aws"
-	"github.com/NYTimes/gizmo/pubsub/kafka"
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/config/aws"
+	"github.com/nytimes/gizmo/config/cookie"
+	"github.com/nytimes/gizmo/config/metrics"
+	"github.com/nytimes/gizmo/config/mongodb"
+	"github.com/nytimes/gizmo/config/mysql"
+	"github.com/nytimes/gizmo/config/oracle"
+	"github.com/nytimes/gizmo/config/postgresql"
+	awsps "github.com/nytimes/gizmo/pubsub/aws"
+	"github.com/nytimes/gizmo/pubsub/kafka"
+	"github.com/nytimes/gizmo/server"
 )
 
 // Config is a generic struct to hold information for applications that

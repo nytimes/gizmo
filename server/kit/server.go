@@ -8,9 +8,6 @@ import (
 	"syscall"
 )
 
-// TODO(jprobinson): built in stackdriver error reporting
-// TODO(jprobinson): built in stackdriver tracing (sampling)
-
 // Run will use environment variables to configure the server then register the given
 // Service and start up the server(s).
 // This will block until the server shuts down.

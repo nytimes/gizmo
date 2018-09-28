@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NYTimes/gizmo/web"
 	"github.com/gorilla/mux"
+	"github.com/nytimes/gizmo/web"
 )
 
 func TestParseISODate(t *testing.T) {

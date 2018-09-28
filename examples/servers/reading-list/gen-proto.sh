@@ -1,6 +1,6 @@
 #!/bin/sh
 
-go get -u github.com/NYTimes/openapi2proto/cmd/openapi2proto
+go get -u github.com/nytimes/openapi2proto/cmd/openapi2proto
 
 openapi2proto -spec service.yaml -options > service.proto;
 

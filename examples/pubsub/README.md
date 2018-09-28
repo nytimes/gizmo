@@ -1,6 +1,6 @@
 # Example on how to use AWS SNS + SQS for pub/sub communication
 
-We're going to set up two services to follow the pub/sub pattern using AWS SNS and AWS SQS.  One service is api-sns-pub and the other service is sqs-sub.  They can both be found at https://github.com/NYTimes/gizmo/tree/master/examples/pubsub. For more information about pub/sub pattern, SNS, and SQS check out http://www.infoq.com/articles/AmazonPubSub. 
+We're going to set up two services to follow the pub/sub pattern using AWS SNS and AWS SQS.  One service is api-sns-pub and the other service is sqs-sub.  They can both be found at https://github.com/nytimes/gizmo/tree/master/examples/pubsub. For more information about pub/sub pattern, SNS, and SQS check out http://www.infoq.com/articles/AmazonPubSub. 
 
 ### High level overview
 
@@ -63,8 +63,8 @@ We're going to set up two services to follow the pub/sub pattern using AWS SNS a
 * `chmod -R 777 dogs-pubsub/`
 
 ### Set up api-sns-pub example server
-1. run `go get github.com/NYTimes/gizmo` inside your $GOPATH folder
-* run `cd $GOPATH/src/github.com/NYTimes/gizmo/examples/pubsub/api-sns-pub`
+1. run `go get github.com/nytimes/gizmo` inside your $GOPATH folder
+* run `cd $GOPATH/src/github.com/nytimes/gizmo/examples/pubsub/api-sns-pub`
 * run `go get ./...`
 * update the config.json file to point to your newly created ARN for "Topic".  Example: `arn:aws:sns:us-east-1:123456789:TestTopic`
 * also update the config.json file to contain your AccessKey and SecretKey
@@ -86,7 +86,7 @@ We're going to set up two services to follow the pub/sub pattern using AWS SNS a
 4. If you check your SQS Queue, you should now have one message in it
 
 ### Read a message from your SQS Queue 
-1. run `cd $GOPATH/src/github.com/NYTimes/gizmo/examples/pubsub/sqs-sub`
+1. run `cd $GOPATH/src/github.com/nytimes/gizmo/examples/pubsub/sqs-sub`
 *  run `go get ./...`
 *  update the config.json file to contain your AccessKey and SecretKey
 *  also make sure it points to the correct region 

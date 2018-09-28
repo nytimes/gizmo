@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
-	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/NYTimes/gizmo/pubsub/gcp"
 	"github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/pubsub"
+	"github.com/nytimes/gizmo/pubsub/gcp"
 	"github.com/sirupsen/logrus"
 )
 

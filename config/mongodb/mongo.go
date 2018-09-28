@@ -7,7 +7,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/nytimes/gizmo/config"
 )
 
 // Config holds the information required for connecting

@@ -15,9 +15,9 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 
-	"github.com/NYTimes/gizmo/config/metrics"
-	"github.com/NYTimes/gizmo/web"
-	"github.com/NYTimes/logrotate"
+	"github.com/nytimes/gizmo/config/metrics"
+	"github.com/nytimes/gizmo/web"
+	"github.com/nytimes/logrotate"
 )
 
 // Version is meant to be set with the current package version at build time.

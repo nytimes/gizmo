@@ -1,6 +1,6 @@
 package nyttest
 
-import "github.com/NYTimes/gizmo/examples/nyt"
+import "github.com/nytimes/gizmo/examples/nyt"
 
 type Client struct {
 	TestGetMostPopular        func(string, string, uint) ([]*nyt.MostPopularResult, error)

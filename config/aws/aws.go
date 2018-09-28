@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elasticache"
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/nytimes/gizmo/config"
 )
 
 const (
@@ -22,11 +22,11 @@ const (
 type (
 	// Config holds common AWS credentials and keys.
 	Config struct {
-		AccessKey string `envconfig:"AWS_ACCESS_KEY"`
+		AccessKey       string `envconfig:"AWS_ACCESS_KEY"`
 		MFASerialNumber string `envconfig:"AWS_MFA_SERIAL_NUMBER"`
-		Region string `envconfig:"AWS_REGION"`
-		RoleARN string `envconfig:"AWS_ROLE_ARN"`
-		SecretKey string `envconfig:"AWS_SECRET_KEY"`
+		Region          string `envconfig:"AWS_REGION"`
+		RoleARN         string `envconfig:"AWS_ROLE_ARN"`
+		SecretKey       string `envconfig:"AWS_SECRET_KEY"`
 	}
 
 	// S3 holds the info required to work with Amazon S3.

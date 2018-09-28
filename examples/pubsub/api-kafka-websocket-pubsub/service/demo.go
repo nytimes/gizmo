@@ -4,8 +4,8 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gizmo/web"
 )
 
 // Demo will serve an HTML page that demonstrates how to use the 'stream'

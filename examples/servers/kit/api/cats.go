@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/NYTimes/gizmo/server/kit"
 	google_protobuf "github.com/golang/protobuf/ptypes/empty"
+	"github.com/nytimes/gizmo/server/kit"
 	ocontext "golang.org/x/net/context"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/examples/nyt"
 )
 
 // GRPC layer, add the service-wide middleware ourselves

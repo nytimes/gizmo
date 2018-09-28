@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/server"
 )
 
 func TestDelete(t *testing.T) {

@@ -32,4 +32,4 @@ Before submitting changes, please follow these guidelines:
 Unless otherwise noted, the Gizmo source files are distributed under
 the Apache 2.0-style license found in the LICENSE.md file.
 
-[Please review our Code of Conduct](https://github.com/NYTimes/gizmo/blob/master/CODE_OF_CONDUCT.md)
+[Please review our Code of Conduct](https://github.com/nytimes/gizmo/blob/master/CODE_OF_CONDUCT.md)

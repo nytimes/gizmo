@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/web"
 )
 
 // Router is an interface to wrap different router types to be embedded within

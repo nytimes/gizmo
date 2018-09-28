@@ -3,8 +3,8 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/server"
 	"github.com/gorilla/context"
+	"github.com/nytimes/gizmo/server"
 )
 
 // Delete is JSONEndpoint for deleting a saved item from a user's list.

@@ -1,8 +1,8 @@
 package main
 
 import (
-	readinglist "github.com/NYTimes/gizmo/examples/servers/reading-list"
-	"github.com/NYTimes/gizmo/server/kit"
+	readinglist "github.com/nytimes/gizmo/examples/servers/reading-list"
+	"github.com/nytimes/gizmo/server/kit"
 )
 
 // a tiny main package that simply initializes and initiates the server.

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/server/kit"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/server/kit"
 
-	"github.com/NYTimes/gizmo/examples/servers/kit/api"
+	"github.com/nytimes/gizmo/examples/servers/kit/api"
 )
 
 func main() {

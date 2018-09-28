@@ -8,16 +8,16 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/combined"
-	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/NYTimes/gizmo/pubsub/aws"
-	"github.com/NYTimes/logrotate"
-	"github.com/sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/config/combined"
+	"github.com/nytimes/gizmo/pubsub"
+	"github.com/nytimes/gizmo/pubsub/aws"
+	"github.com/nytimes/logrotate"
+	"github.com/sirupsen/logrus"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/examples/nyt"
 )
 
 var (

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NYTimes/gizmo/server"
+	"github.com/nytimes/gizmo/server"
 )
 
 // testSavedItemsRepo is a mock implementation of the SavedItemsRepo interface.

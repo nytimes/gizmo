@@ -4,8 +4,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/pubsub"
 	"golang.org/x/net/context"
 )
 

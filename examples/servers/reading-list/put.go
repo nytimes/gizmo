@@ -9,8 +9,8 @@ import (
 
 	ocontext "golang.org/x/net/context"
 
-	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/server/kit"
 )
 
 // gRPC stub

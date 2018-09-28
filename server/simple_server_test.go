@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/web"
 )
 
 func BenchmarkFastSimpleServer_NoParam(b *testing.B) {

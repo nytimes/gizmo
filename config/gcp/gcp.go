@@ -9,7 +9,7 @@ import (
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/option"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/nytimes/gizmo/config"
 )
 
 // Config holds common Google Cloud Platform credentials.

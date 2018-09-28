@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 	"github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/pubsub"
 )
 
 func TestSubscriberNoBase64(t *testing.T) {

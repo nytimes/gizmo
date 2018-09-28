@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/mux"
+	"github.com/nytimes/logrotate"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"

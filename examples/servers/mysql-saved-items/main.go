@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config/combined"
-	"github.com/NYTimes/gizmo/server"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/nytimes/gizmo/config/combined"
+	"github.com/nytimes/gizmo/server"
 
-	"github.com/NYTimes/gizmo/examples/servers/mysql-saved-items/service"
+	"github.com/nytimes/gizmo/examples/servers/mysql-saved-items/service"
 )
 
 func main() {

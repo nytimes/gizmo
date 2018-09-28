@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
 	proto "github.com/golang/protobuf/proto"
+	"github.com/nytimes/gizmo/examples/nyt"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )

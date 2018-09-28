@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/NYTimes/gizmo/config/mysql"
-	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/context"
+	"github.com/nytimes/gizmo/config/mysql"
+	"github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gziphandler"
 )
 
 // SavedItemsService will keep a handle on the saved items repository and implement

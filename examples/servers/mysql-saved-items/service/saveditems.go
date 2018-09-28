@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/NYTimes/gizmo/config/mysql"
-	"github.com/NYTimes/sqliface"
+	"github.com/nytimes/gizmo/config/mysql"
+	"github.com/nytimes/sqliface"
 )
 
 type (

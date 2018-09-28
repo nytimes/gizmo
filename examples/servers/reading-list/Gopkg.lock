@@ -9,13 +9,13 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/NYTimes/gizmo"
+  name = "github.com/nytimes/gizmo"
   packages = ["config","config/metrics","server","server/kit","web"]
   revision = "1c0e1e9ca7a78cccba0be9bbb930543a186591f7"
 
 [[projects]]
   branch = "master"
-  name = "github.com/NYTimes/logrotate"
+  name = "github.com/nytimes/logrotate"
   packages = ["."]
   revision = "a5276429b5aadf067486dcb082e41a600c757d2c"
 

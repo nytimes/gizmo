@@ -11,9 +11,9 @@ import (
 
 	"cloud.google.com/go/trace"
 
-	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/nytimes/gizmo/server/kit"
 	"github.com/pkg/errors"
 
 	"google.golang.org/grpc"

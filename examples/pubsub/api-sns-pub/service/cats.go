@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/examples/nyt"
 )
 
 func (s *JSONPubService) PublishCats(r *http.Request) (int, interface{}, error) {

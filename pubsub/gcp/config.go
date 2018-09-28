@@ -1,8 +1,8 @@
 package gcp
 
 import (
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/gcp"
+	"github.com/nytimes/gizmo/config"
+	"github.com/nytimes/gizmo/config/gcp"
 )
 
 // Config holds common credentials and config values for

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/web"
 )
 
 type benchmarkContextService struct {

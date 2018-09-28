@@ -8,9 +8,9 @@ import (
 
 	ocontext "golang.org/x/net/context"
 
-	"github.com/NYTimes/gizmo/examples/nyt"
-	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/web"
+	"github.com/nytimes/gizmo/examples/nyt"
+	"github.com/nytimes/gizmo/server"
+	"github.com/nytimes/gizmo/web"
 )
 
 func (s *RPCService) GetMostPopular(ctx ocontext.Context, r *MostPopularRequest) (*MostPopularResponse, error) {

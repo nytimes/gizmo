@@ -7,7 +7,7 @@ import (
 
 	ocontext "golang.org/x/net/context"
 
-	"github.com/NYTimes/gizmo/server/kit"
+	"github.com/nytimes/gizmo/server/kit"
 	"github.com/pkg/errors"
 )
 

@@ -13,7 +13,8 @@ type (
 		aws.Config
 		QueueName           string `envconfig:"AWS_SQS_NAME"`
 		QueueOwnerAccountID string `envconfig:"AWS_SQS_OWNER_ACCOUNT_ID"`
-		// If SQS queue URL is provided it overrides QueueName and QueueOwnerAccountID
+		// QueueURL can be used instead of QueueName and QueueOwnerAccountID.
+		// If provided, the client will skip the "GetQueueUrl" call to AWS.
 		QueueURL string `envconfig:"AWS_SQS_QUEUE_URL"`
 		// MaxMessages will override the DefaultSQSMaxMessages.
 		MaxMessages *int64 `envconfig:"AWS_SQS_MAX_MESSAGES"`

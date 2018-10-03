@@ -236,7 +236,7 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 
 		s.queueURL = urlResp.QueueUrl
 	} else {
-		s.queueURL = cfg.QueueURL
+		s.queueURL = &cfg.QueueURL
 	}
 
 	return s, nil

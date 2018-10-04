@@ -196,8 +196,8 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		stop:     make(chan chan error, 1),
 	}
 
-	if len(cfg.QueueName) == 0 {
-		return s, errors.New("sqs queue name is required")
+	if (len(cfg.QueueName) == 0) && (len(cfg.QueueURL) == 0) {
+		return s, errors.New("sqs queue name or url is required")
 	}
 
 	var creds *credentials.Credentials
@@ -223,17 +223,22 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		Region:      &cfg.Region,
 	})
 
-	var urlResp *sqs.GetQueueUrlOutput
-	urlResp, err = s.sqs.GetQueueUrl(&sqs.GetQueueUrlInput{
-		QueueName:              &cfg.QueueName,
-		QueueOwnerAWSAccountId: &cfg.QueueOwnerAccountID,
-	})
+	if len(cfg.QueueURL) == 0 {
+		var urlResp *sqs.GetQueueUrlOutput
+		urlResp, err = s.sqs.GetQueueUrl(&sqs.GetQueueUrlInput{
+			QueueName:              &cfg.QueueName,
+			QueueOwnerAWSAccountId: &cfg.QueueOwnerAccountID,
+		})
 
-	if err != nil {
-		return s, err
+		if err != nil {
+			return s, err
+		}
+
+		s.queueURL = urlResp.QueueUrl
+	} else {
+		s.queueURL = &cfg.QueueURL
 	}
 
-	s.queueURL = urlResp.QueueUrl
 	return s, nil
 }
 

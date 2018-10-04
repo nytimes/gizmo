@@ -45,7 +45,7 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 
 	var creds *credentials.Credentials
 	if cfg.AccessKey != "" {
-		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, "")
+		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
 	} else {
 		creds = credentials.NewEnvCredentials()
 	}
@@ -202,7 +202,7 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 
 	var creds *credentials.Credentials
 	if cfg.AccessKey != "" {
-		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, "")
+		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
 	} else {
 		creds = credentials.NewEnvCredentials()
 	}

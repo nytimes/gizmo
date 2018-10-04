@@ -22,11 +22,12 @@ const (
 type (
 	// Config holds common AWS credentials and keys.
 	Config struct {
-		AccessKey string `envconfig:"AWS_ACCESS_KEY"`
+		AccessKey       string `envconfig:"AWS_ACCESS_KEY"`
 		MFASerialNumber string `envconfig:"AWS_MFA_SERIAL_NUMBER"`
-		Region string `envconfig:"AWS_REGION"`
-		RoleARN string `envconfig:"AWS_ROLE_ARN"`
-		SecretKey string `envconfig:"AWS_SECRET_KEY"`
+		Region          string `envconfig:"AWS_REGION"`
+		RoleARN         string `envconfig:"AWS_ROLE_ARN"`
+		SecretKey       string `envconfig:"AWS_SECRET_KEY"`
+		SessionToken    string `envconfig:"AWS_SESSION_TOKEN"`
 	}
 
 	// S3 holds the info required to work with Amazon S3.

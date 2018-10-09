@@ -13,25 +13,28 @@ import (
 	"golang.org/x/net/context"
 )
 
-type publisher struct {
+// Publisher implements the pubsub.Publisher and MultiPublisher interfaces for use in a
+// plain HTTP environment.
+type Publisher struct {
 	url    string
 	client *http.Client
 }
 
-type gcpPublisher struct {
+// GCPPublisher publishes data in the same format as a GCP push-style payload.
+type GCPPublisher struct {
 	pubsub.Publisher
 }
 
 // NewPublisher will return a pubsub.Publisher that simply posts the payload to
 // the given URL. If no http.Client is provided, the default one has a 5 second
 // timeout.
-func NewPublisher(url string, client *http.Client) pubsub.Publisher {
+func NewPublisher(url string, client *http.Client) Publisher {
 	if client == nil {
 		client = &http.Client{
 			Timeout: 5 * time.Second,
 		}
 	}
-	return publisher{url: url, client: client}
+	return Publisher{url: url, client: client}
 }
 
 // NewGCPStylePublisher will return a pubsub.Publisher that wraps the payload
@@ -39,20 +42,46 @@ func NewPublisher(url string, client *http.Client) pubsub.Publisher {
 // Google's PubSub posting messages to a server.
 // If no http.Client is provided, the default one has a 5 second
 // timeout.
-func NewGCPStylePublisher(url string, client *http.Client) pubsub.Publisher {
-	return gcpPublisher{NewPublisher(url, client)}
+func NewGCPStylePublisher(url string, client *http.Client) GCPPublisher {
+	return GCPPublisher{NewPublisher(url, client)}
 }
 
-func (p publisher) Publish(ctx context.Context, key string, msg proto.Message) error {
+// Publish will serialize the given message and pass it to PublishRaw.
+func (p Publisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	payload, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
 	return p.PublishRaw(ctx, key, payload)
-
 }
 
-func (p publisher) PublishRaw(_ context.Context, _ string, payload []byte) error {
+// PublishMulti will serialize the given messages and pass them to PublishMultiRaw.
+func (p Publisher) PublishMulti(ctx context.Context, keys []string, msgs []proto.Message) error {
+	bmsgs := make([][]byte, len(msgs))
+	for i, msg := range msgs {
+		payload, err := proto.Marshal(msg)
+		if err != nil {
+			return err
+		}
+		bmsgs[i] = payload
+	}
+	return p.PublishMultiRaw(ctx, keys, bmsgs)
+}
+
+// PublishMultiRaw will call PublishRaw for each message given.
+func (p Publisher) PublishMultiRaw(ctx context.Context, _ []string, msgs [][]byte) error {
+	for _, msg := range msgs {
+		err := p.PublishRaw(ctx, "", msg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// PublishRaw will POST the given message payload at the URL provided in the Publisher
+// construct.
+func (p Publisher) PublishRaw(_ context.Context, _ string, payload []byte) error {
 	req, err := http.NewRequest("POST", p.url, bytes.NewReader(payload))
 	if err != nil {
 		return err
@@ -82,7 +111,8 @@ type message struct {
 	Data []byte `json:"data"`
 }
 
-func (p gcpPublisher) Publish(ctx context.Context, key string, msg proto.Message) error {
+// Publish will serialize the given message and pass it to PublishRaw.
+func (p GCPPublisher) Publish(ctx context.Context, key string, msg proto.Message) error {
 	payload, err := proto.Marshal(msg)
 	if err != nil {
 		return err
@@ -90,10 +120,36 @@ func (p gcpPublisher) Publish(ctx context.Context, key string, msg proto.Message
 	return p.PublishRaw(ctx, key, payload)
 }
 
-func (p gcpPublisher) PublishRaw(ctx context.Context, key string, msg []byte) error {
+// PublishRaw will wrap the given message in a struct similar to GCP's push-style PubSub
+// subscriptions and then POST the message payload at the URL provided in the construct.
+func (p GCPPublisher) PublishRaw(ctx context.Context, key string, msg []byte) error {
 	payload, err := json.Marshal(gcpPayload{Message: message{Data: msg}})
 	if err != nil {
 		return err
 	}
 	return p.Publisher.PublishRaw(ctx, key, payload)
+}
+
+// PublishMulti will serialize the given messages and pass them to PublishMultiRaw.
+func (p GCPPublisher) PublishMulti(ctx context.Context, keys []string, msgs []proto.Message) error {
+	bmsgs := make([][]byte, len(msgs))
+	for i, msg := range msgs {
+		payload, err := proto.Marshal(msg)
+		if err != nil {
+			return err
+		}
+		bmsgs[i] = payload
+	}
+	return p.PublishMultiRaw(ctx, keys, bmsgs)
+}
+
+// PublishMultiRaw will call PublishRaw for each message given.
+func (p GCPPublisher) PublishMultiRaw(ctx context.Context, _ []string, msgs [][]byte) error {
+	for _, msg := range msgs {
+		err := p.PublishRaw(ctx, "", msg)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

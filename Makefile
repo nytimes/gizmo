@@ -19,7 +19,7 @@ install: deps
 	go install github.com/NYTimes/gizmo/...
 
 lint: testdeps
-	go get -v github.com/golang/lint/golint
+	go get -v golang.org/x/lint/golint
 	for file in $$(find . -name '*.go' | grep -v '\.pb\.go\|\.pb\.gw\.go\|examples\|pubsub\/aws\/awssub_test\.go' | grep -v 'server\/kit\/kitserver_pb_test\.go'); do \
 		golint $${file}; \
 		if [ -n "$$(golint $${file})" ]; then \

@@ -28,6 +28,12 @@ type (
 		RoleARN         string `envconfig:"AWS_ROLE_ARN"`
 		SecretKey       string `envconfig:"AWS_SECRET_KEY"`
 		SessionToken    string `envconfig:"AWS_SESSION_TOKEN"`
+		// Endpoint is an optional endpoint URL (hostname only or fully qualified URI)
+		// that overrides the default endpoint for a client. Leave the value as "nil"
+		// to use the default endpoint. Currently, only the gizmo SNS Publisher is
+		// using this value. Note that AWS emulators (such as localstack) often have
+		// different endpoint URL for each emulated service.
+		EndpointURL *string `envconfig:"AWS_ENDPOINT_URL"`
 	}
 
 	// S3 holds the info required to work with Amazon S3.

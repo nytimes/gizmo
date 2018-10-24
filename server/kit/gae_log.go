@@ -42,7 +42,7 @@ func NewAppEngineLogger(ctx context.Context, projectID, service, version string)
 }
 
 func (l gaeLogger) Log(keyvals ...interface{}) error {
-	kvs, traceContext := keyValsToMap(keyvals)
+	kvs, traceContext := logKeyValsToMap(keyvals)
 	var traceID string
 	if traceContext != "" {
 		traceID = l.getTraceID(traceContext)
@@ -66,7 +66,7 @@ const cloudTraceLogKey = "cloud-trace"
 // we needed the magic for keyvals => map[string]interface{} but we're doing the
 // writing the JSON ourselves
 
-func logkeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
+func logKeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
 	var traceContext string
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
 	m := make(map[string]interface{}, n)
@@ -78,7 +78,7 @@ func logkeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
 		}
 		merge(m, k, v)
 		if k == cloudTraceLogKey {
-			traceContext = v
+			traceContext = v.(string)
 		}
 	}
 	return m, traceContext

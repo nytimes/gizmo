@@ -22,10 +22,10 @@ type gaeLogger struct {
 	lgr     *logging.Logger
 }
 
-func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
+func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, func() error, error) {
 	client, err := logging.NewClient(ctx, fmt.Sprintf("projects/%s", projectID))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to initiate stackdriver log client")
+		return nil, nil, errors.Wrap(err, "unable to initiate stackdriver log client")
 	}
 	return gaeLogger{
 		lc:      client,
@@ -40,7 +40,7 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 			},
 			Type: "gae_app",
 		},
-	}, nil
+	}, client.Close, nil
 }
 
 func (l gaeLogger) Log(keyvals ...interface{}) error {

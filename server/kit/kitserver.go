@@ -21,7 +21,8 @@ import (
 
 // Server encapsulates all logic for registering and running a gizmo kit server.
 type Server struct {
-	logger log.Logger
+	logger   log.Logger
+	logClose func() error
 
 	mux Router
 
@@ -75,14 +76,15 @@ func NewServer(svc Service) *Server {
 	svcVersion := os.Getenv("GAE_VERSION")
 
 	var (
-		err error
-		lg  log.Logger
+		err      error
+		lg       log.Logger
+		logClose func() error
 	)
 	// use the version variable to determine if we're in the GAE environment
 	if svcVersion == "" {
 		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	} else {
-		lg, err = newAppEngineLogger(context.Background(),
+		lg, logClose, err = newAppEngineLogger(context.Background(),
 			projectID, serviceID, svcVersion)
 		if err != nil {
 			stdlog.Fatalf("unable to start up app engine logger: %s", err)
@@ -90,10 +92,11 @@ func NewServer(svc Service) *Server {
 	}
 
 	s := &Server{
-		cfg:    cfg,
-		mux:    r,
-		exit:   make(chan chan error),
-		logger: lg,
+		cfg:      cfg,
+		mux:      r,
+		exit:     make(chan chan error),
+		logger:   lg,
+		logClose: logClose,
 	}
 	s.svr = &http.Server{
 		Handler:        s,
@@ -239,6 +242,12 @@ func (s *Server) start() error {
 		// stop the listener with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
 		defer cancel()
+		defer func() {
+			// flush the logger after server shuts down
+			if s.logClose != nil {
+				s.logClose()
+			}
+		}()
 
 		if shutdown, ok := s.svc.(Shutdowner); ok {
 			shutdown.Shutdown()

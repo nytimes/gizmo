@@ -42,28 +42,14 @@ func NewAppEngineLogger(ctx context.Context, projectID, service, version string)
 }
 
 func (l gaeLogger) Log(keyvals ...interface{}) error {
-	var traceContext string
-	// grab out trace value, if needed
-	kvs := keyValsToMap(keyvals)
-	for k, v := range kvs {
-		if k != cloudTraceLogKey {
-			continue
-		}
-		val, ok := v.(string)
-		if !ok {
-			break
-		}
-		traceContext = val
+	kvs, traceContext := keyValsToMap(keyvals)
+	var traceID string
+	if traceContext != "" {
+		traceID = l.getTraceID(traceContext)
 	}
-
-	payload, err := json.Marshal(kvs)
-	if err != nil {
-		return err
-	}
-
 	l.lgr.Log(logging.Entry{
-		Payload:  payload,
-		Trace:    l.getTraceID(traceContext),
+		Payload:  kvs,
+		Trace:    traceID,
 		Resource: l.monRes,
 	})
 	return nil
@@ -77,9 +63,11 @@ const cloudTraceLogKey = "cloud-trace"
 
 // below funcs are straight up copied out of go-kit/kit/log:
 // https://github.com/go-kit/kit/blob/master/log/json_logger.go
-// we needed the magic for keyvals => JSON but we're doing the writing ourselves
+// we needed the magic for keyvals => map[string]interface{} but we're doing the
+// writing the JSON ourselves
 
-func keyValsToMap(keyvals ...interface{}) map[string]interface{} {
+func logkeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
+	var traceContext string
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
 	m := make(map[string]interface{}, n)
 	for i := 0; i < len(keyvals); i += 2 {
@@ -89,8 +77,11 @@ func keyValsToMap(keyvals ...interface{}) map[string]interface{} {
 			v = keyvals[i+1]
 		}
 		merge(m, k, v)
+		if k == cloudTraceLogKey {
+			traceContext = v
+		}
 	}
-	return m
+	return m, traceContext
 }
 
 func merge(dst map[string]interface{}, k, v interface{}) {

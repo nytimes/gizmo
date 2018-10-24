@@ -15,11 +15,10 @@ import (
 )
 
 type gaeLogger struct {
-	project, module, version string
-
-	monRes *monitoredres.MonitoredResource
-	lc     *logging.Client
-	lgr    *logging.Logger
+	project string
+	monRes  *monitoredres.MonitoredResource
+	lc      *logging.Client
+	lgr     *logging.Logger
 }
 
 func NewAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
@@ -28,8 +27,9 @@ func NewAppEngineLogger(ctx context.Context, projectID, service, version string)
 		return nil, errors.Wrap(err, "unable to initiate stackdriver log client")
 	}
 	return gaeLogger{
-		lc:  client,
-		lgr: client.Logger("app_logs"),
+		lc:      client,
+		lgr:     client.Logger("app_logs"),
+		project: projectID,
 		monRes: &monitoredres.MonitoredResource{
 			Labels: map[string]string{
 				"module_id":  service,
@@ -42,13 +42,19 @@ func NewAppEngineLogger(ctx context.Context, projectID, service, version string)
 }
 
 func (l gaeLogger) Log(keyvals ...interface{}) error {
-	kvs, traceContext := logKeyValsToMap(keyvals)
+	kvs, traceContext := logKeyValsToMap(keyvals...)
 	var traceID string
 	if traceContext != "" {
 		traceID = l.getTraceID(traceContext)
 	}
+
+	payload, err := json.Marshal(kvs)
+	if err != nil {
+		return err
+	}
+
 	l.lgr.Log(logging.Entry{
-		Payload:  kvs,
+		Payload:  json.RawMessage(payload),
 		Trace:    traceID,
 		Resource: l.monRes,
 	})

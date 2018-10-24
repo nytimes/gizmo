@@ -21,7 +21,7 @@ type gaeLogger struct {
 	lgr     *logging.Logger
 }
 
-func NewAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
+func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
 	client, err := logging.NewClient(ctx, fmt.Sprintf("projects/%s", projectID))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to initiate stackdriver log client")

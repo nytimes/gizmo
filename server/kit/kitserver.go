@@ -45,7 +45,9 @@ const (
 	logKey
 
 	// ContextKeyCloudTraceContext is a context key for storing and retrieving the
-	// inbound 'x-cloud-trace-context' header.
+	// inbound 'x-cloud-trace-context' header. This server will automatically look for
+	// and inject the value into the request context. If in the App Engine environment
+	// this will be used to enable combined access and application logs.
 	ContextKeyCloudTraceContext
 )
 
@@ -71,18 +73,16 @@ func NewServer(svc Service) *Server {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	serviceID := os.Getenv("GAE_SERVICE")
 	svcVersion := os.Getenv("GAE_VERSION")
-	local := os.Getenv("DEVELOPMENT_MODE") != ""
 
 	var (
 		err error
 		lg  log.Logger
 	)
-	// use the version variable to determine if we're in the real environment
-	if svcVersion == "" || local {
+	// use the version variable to determine if we're in the GAE environment
+	if svcVersion == "" {
 		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
-
 	} else {
-		lg, err = NewAppEngineLogger(context.Background(),
+		lg, err = newAppEngineLogger(context.Background(),
 			projectID, serviceID, svcVersion)
 		if err != nil {
 			stdlog.Fatalf("unable to start up app engine logger: %s", err)

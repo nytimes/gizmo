@@ -36,7 +36,6 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 				"module_id":  service,
 				"project_id": projectID,
 				"version_id": version,
-				"zone":       "us6",
 			},
 			Type: "gae_app",
 		},

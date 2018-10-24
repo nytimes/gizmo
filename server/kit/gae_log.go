@@ -63,18 +63,14 @@ func (l gaeLogger) Log(keyvals ...interface{}) error {
 
 	l.lgr.Log(logging.Entry{
 		Payload:  payload,
-		Trace:    traceContext,
+		Trace:    l.getTraceID(traceContext),
 		Resource: l.monRes,
 	})
 	return nil
 }
 
-func (l gaeLogger) getTraceID(ctx context.Context) string {
-	traceContext, ok := ctx.Value(ContextKeyCloudTraceContext).(string)
-	if !ok {
-		return ""
-	}
-	return "projects/" + l.project + "/traces/" + strings.Split(traceContext, "/")[0]
+func (l gaeLogger) getTraceID(traceCtx string) string {
+	return "projects/" + l.project + "/traces/" + strings.Split(traceCtx, "/")[0]
 }
 
 const cloudTraceLogKey = "cloud-trace"

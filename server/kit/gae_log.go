@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/logging"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 )
@@ -19,6 +20,8 @@ type gaeLogger struct {
 	monRes  *monitoredres.MonitoredResource
 	lc      *logging.Client
 	lgr     *logging.Logger
+
+	lvlKey interface{}
 }
 
 func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
@@ -27,6 +30,7 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 		return nil, errors.Wrap(err, "unable to initiate stackdriver log client")
 	}
 	return gaeLogger{
+		lvlKey:  level.Key(),
 		lc:      client,
 		lgr:     client.Logger("app_logs"),
 		project: projectID,
@@ -35,6 +39,7 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 				"module_id":  service,
 				"project_id": projectID,
 				"version_id": version,
+				"zone":       "us6",
 			},
 			Type: "gae_app",
 		},
@@ -42,10 +47,22 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 }
 
 func (l gaeLogger) Log(keyvals ...interface{}) error {
-	kvs, traceContext := logKeyValsToMap(keyvals...)
+	kvs, lvl, traceContext := logKeyValsToMap(keyvals...)
 	var traceID string
 	if traceContext != "" {
 		traceID = l.getTraceID(traceContext)
+	}
+
+	svrty := logging.Default
+	switch lvl {
+	case level.DebugValue():
+		svrty = logging.Debug
+	case level.ErrorValue():
+		svrty = logging.Error
+	case level.InfoValue():
+		svrty = logging.Info
+	case level.WarnValue():
+		svrty = logging.Warning
 	}
 
 	payload, err := json.Marshal(kvs)
@@ -54,6 +71,7 @@ func (l gaeLogger) Log(keyvals ...interface{}) error {
 	}
 
 	l.lgr.Log(logging.Entry{
+		Severity: svrty,
 		Payload:  json.RawMessage(payload),
 		Trace:    traceID,
 		Resource: l.monRes,
@@ -67,13 +85,18 @@ func (l gaeLogger) getTraceID(traceCtx string) string {
 
 const cloudTraceLogKey = "cloud-trace"
 
+///////////////////////////////////////////////////
 // below funcs are straight up copied out of go-kit/kit/log:
 // https://github.com/go-kit/kit/blob/master/log/json_logger.go
 // we needed the magic for keyvals => map[string]interface{} but we're doing the
 // writing the JSON ourselves
+///////////////////////////////////////////////////
 
-func logKeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
-	var traceContext string
+func logKeyValsToMap(keyvals ...interface{}) (map[string]interface{}, level.Value, string) {
+	var (
+		lvl          level.Value
+		traceContext string
+	)
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
 	m := make(map[string]interface{}, n)
 	for i := 0; i < len(keyvals); i += 2 {
@@ -86,8 +109,11 @@ func logKeyValsToMap(keyvals ...interface{}) (map[string]interface{}, string) {
 		if k == cloudTraceLogKey {
 			traceContext = v.(string)
 		}
+		if k == level.Key() {
+			lvl = v.(level.Value)
+		}
 	}
-	return m, traceContext
+	return m, lvl, traceContext
 }
 
 func merge(dst map[string]interface{}, k, v interface{}) {

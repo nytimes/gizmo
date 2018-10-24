@@ -20,8 +20,6 @@ type gaeLogger struct {
 	monRes  *monitoredres.MonitoredResource
 	lc      *logging.Client
 	lgr     *logging.Logger
-
-	lvlKey interface{}
 }
 
 func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, error) {
@@ -30,7 +28,6 @@ func newAppEngineLogger(ctx context.Context, projectID, service, version string)
 		return nil, errors.Wrap(err, "unable to initiate stackdriver log client")
 	}
 	return gaeLogger{
-		lvlKey:  level.Key(),
 		lc:      client,
 		lgr:     client.Logger("app_logs"),
 		project: projectID,

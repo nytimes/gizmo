@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	stdlog "log"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -42,6 +43,10 @@ const (
 	varsKey contextKey = iota
 	// key for logger
 	logKey
+
+	// ContextKeyCloudTraceContext is a context key for storing and retrieving the
+	// inbound 'x-cloud-trace-context' header.
+	ContextKeyCloudTraceContext
 )
 
 // NewServer will create a new kit server for the given Service.
@@ -62,11 +67,33 @@ func NewServer(svc Service) *Server {
 		r = opt(r)
 	}
 
+	// check if we're running on GAE via env variables
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	serviceID := os.Getenv("GAE_SERVICE")
+	svcVersion := os.Getenv("GAE_VERSION")
+	local := os.Getenv("DEVELOPMENT_MODE") != ""
+
+	var (
+		err error
+		lg  log.Logger
+	)
+	// use the version variable to determine if we're in the real environment
+	if svcVersion == "" || local {
+		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+
+	} else {
+		lg, err = NewAppEngineLogger(context.Background(),
+			projectID, serviceID, svcVersion)
+		if err != nil {
+			stdlog.Fatalf("unable to start up app engine logger: %s", err)
+		}
+	}
+
 	s := &Server{
 		cfg:    cfg,
 		mux:    r,
 		exit:   make(chan chan error),
-		logger: log.NewJSONLogger(log.NewSyncWriter(os.Stdout)),
+		logger: lg,
 	}
 	s.svr = &http.Server{
 		Handler:        s,
@@ -88,9 +115,12 @@ func (s *Server) register(svc Service) {
 	s.svc = svc
 	opts := []httptransport.ServerOption{
 		// populate context with helpful keys
-		httptransport.ServerBefore(
-			httptransport.PopulateRequestContext,
-		),
+		httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+			ctx = httptransport.PopulateRequestContext(ctx, r)
+			// add google trace header to use in tracing and logging
+			return context.WithValue(ctx, ContextKeyCloudTraceContext,
+				r.Header.Get("X-Cloud-Trace-Context"))
+		}),
 		// inject the server logger into every request context
 		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
 			return context.WithValue(ctx, logKey, AddLogKeyVals(ctx, s.logger))

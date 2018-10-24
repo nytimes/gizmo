@@ -35,6 +35,7 @@ func AddLogKeyVals(ctx context.Context, l log.Logger) log.Logger {
 		http.ContextKeyRequestRemoteAddr:    "http-remote-addr",
 		http.ContextKeyRequestXForwardedFor: "http-x-forwarded-for",
 		http.ContextKeyRequestUserAgent:     "http-user-agent",
+		ContextKeyCloudTraceContext:         cloudTraceLogKey,
 	}
 	for k, v := range keys {
 		if val, ok := ctx.Value(k).(string); ok && val != "" {
@@ -53,13 +54,13 @@ func AddLogKeyVals(ctx context.Context, l log.Logger) log.Logger {
 }
 
 // LogMsg will log the given message to the server logger
-// with the key "msg" along with all the common request headers or gRPC metadata.
-func LogMsg(ctx context.Context, msg string) error {
-	return Logger(ctx).Log("msg", msg)
+// with the key "message" along with all the common request headers or gRPC metadata.
+func LogMsg(ctx context.Context, message string) error {
+	return Logger(ctx).Log("message", message)
 }
 
 // LogErrorMsg will log the given error under the key "error", the given message under
-// the key "msg" along with all the common request headers or gRPC metadata.
-func LogErrorMsg(ctx context.Context, err error, msg string) error {
-	return Logger(ctx).Log("error", err, "msg", msg)
+// the key "message" along with all the common request headers or gRPC metadata.
+func LogErrorMsg(ctx context.Context, err error, message string) error {
+	return Logger(ctx).Log("error", err, "message", message)
 }

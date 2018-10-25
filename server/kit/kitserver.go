@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	stdlog "log"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -20,7 +21,8 @@ import (
 
 // Server encapsulates all logic for registering and running a gizmo kit server.
 type Server struct {
-	logger log.Logger
+	logger   log.Logger
+	logClose func() error
 
 	mux Router
 
@@ -42,6 +44,12 @@ const (
 	varsKey contextKey = iota
 	// key for logger
 	logKey
+
+	// ContextKeyCloudTraceContext is a context key for storing and retrieving the
+	// inbound 'x-cloud-trace-context' header. This server will automatically look for
+	// and inject the value into the request context. If in the App Engine environment
+	// this will be used to enable combined access and application logs.
+	ContextKeyCloudTraceContext
 )
 
 // NewServer will create a new kit server for the given Service.
@@ -62,11 +70,33 @@ func NewServer(svc Service) *Server {
 		r = opt(r)
 	}
 
+	// check if we're running on GAE via env variables
+	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	serviceID := os.Getenv("GAE_SERVICE")
+	svcVersion := os.Getenv("GAE_VERSION")
+
+	var (
+		err      error
+		lg       log.Logger
+		logClose func() error
+	)
+	// use the version variable to determine if we're in the GAE environment
+	if svcVersion == "" {
+		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+	} else {
+		lg, logClose, err = newAppEngineLogger(context.Background(),
+			projectID, serviceID, svcVersion)
+		if err != nil {
+			stdlog.Fatalf("unable to start up app engine logger: %s", err)
+		}
+	}
+
 	s := &Server{
-		cfg:    cfg,
-		mux:    r,
-		exit:   make(chan chan error),
-		logger: log.NewJSONLogger(log.NewSyncWriter(os.Stdout)),
+		cfg:      cfg,
+		mux:      r,
+		exit:     make(chan chan error),
+		logger:   lg,
+		logClose: logClose,
 	}
 	s.svr = &http.Server{
 		Handler:        s,
@@ -88,9 +118,12 @@ func (s *Server) register(svc Service) {
 	s.svc = svc
 	opts := []httptransport.ServerOption{
 		// populate context with helpful keys
-		httptransport.ServerBefore(
-			httptransport.PopulateRequestContext,
-		),
+		httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
+			ctx = httptransport.PopulateRequestContext(ctx, r)
+			// add google trace header to use in tracing and logging
+			return context.WithValue(ctx, ContextKeyCloudTraceContext,
+				r.Header.Get("X-Cloud-Trace-Context"))
+		}),
 		// inject the server logger into every request context
 		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
 			return context.WithValue(ctx, logKey, AddLogKeyVals(ctx, s.logger))
@@ -209,6 +242,12 @@ func (s *Server) start() error {
 		// stop the listener with timeout
 		ctx, cancel := context.WithTimeout(context.Background(), s.cfg.ShutdownTimeout)
 		defer cancel()
+		defer func() {
+			// flush the logger after server shuts down
+			if s.logClose != nil {
+				s.logClose()
+			}
+		}()
 
 		if shutdown, ok := s.svc.(Shutdowner); ok {
 			shutdown.Shutdown()

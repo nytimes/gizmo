@@ -139,9 +139,6 @@ func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, e
 				return ks, err
 			}
 			ei := big.NewInt(0).SetBytes(e).Int64()
-			if err != nil {
-				return ks, err
-			}
 			ks.keys[key.Kid] = &rsa.PublicKey{
 				N: big.NewInt(0).SetBytes(n),
 				E: int(ei),

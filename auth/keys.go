@@ -51,6 +51,10 @@ type PublicKeySet struct {
 	keys map[string]*rsa.PublicKey
 }
 
+func NewPublicKeySet(keys map[string]*rsa.PublicKey, exp time.Time) PublicKeySet {
+	return PublicKeySet{keys: keys, exp: exp}
+}
+
 func (ks PublicKeySet) Expired() bool {
 	return timeNow().Before(ks.exp)
 }

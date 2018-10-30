@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -13,28 +12,30 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // PublicKeySource is to be used by servers who need to acquire public key sets for
 // verifying inbound request's JWTs.
 type PublicKeySource interface {
-	Get(context.Context) (*PublicKeySet, error)
+	Get(context.Context) (PublicKeySet, error)
 }
 
 // NewReusePublicKeySource is a wrapper around PublicKeySources to only fetch a new key
 // set once the current key cache has expired.
-func NewReusePublicKeySource(set *PublicKeySet, src PublicKeySource) KeySource {
-	return reuseKeySource{ks: ks, src: src}
+func NewReusePublicKeySource(ks PublicKeySet, src PublicKeySource) PublicKeySource {
+	return &reuseKeySource{ks: ks, src: src}
 }
 
 type reuseKeySource struct {
-	src KeySource
+	src PublicKeySource
 
 	mu sync.Mutex
-	ks
+	ks PublicKeySet
 }
 
-func (r *reuseKeySource) Get(ctx context.Context) (*PublicKeySet, error) {
+func (r *reuseKeySource) Get(ctx context.Context) (PublicKeySet, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.ks.Expired() {
@@ -59,7 +60,7 @@ func (ks PublicKeySet) GetKey(id string) (*rsa.PublicKey, error) {
 	if !ok {
 		return nil, errors.New("unkown key")
 	}
-	return key
+	return key, nil
 }
 
 // JSONKey represents a public or private key in JWK format.
@@ -72,22 +73,23 @@ type JSONKey struct {
 	E   string `json:"e"`
 }
 
-// JSON represents a JWK Set object.
-type JSON struct {
-	Keys []*key `json:"keys"`
+// JSONKeyResponse represents a JWK Set object.
+type JSONKeyResponse struct {
+	Keys []*JSONKey `json:"keys"`
 }
 
 var reMaxAge = regexp.MustCompile("max-age=([0-9]*)")
 
-func NewFromURL(hc *http.Client, url string, defaultTTL time.Duration) (PublicKeySet, error) {
+func NewPublicKeySetFromURL(hc *http.Client, url string, defaultTTL time.Duration) (PublicKeySet, error) {
+	var ks PublicKeySet
 	r, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create request")
+		return ks, errors.Wrap(err, "unable to create request")
 	}
 
 	resp, err := hc.Do(r)
 	if err != nil {
-		return nil, err
+		return ks, err
 	}
 	defer resp.Body.Close()
 
@@ -96,7 +98,7 @@ func NewFromURL(hc *http.Client, url string, defaultTTL time.Duration) (PublicKe
 		if match := reMaxAge.FindStringSubmatch(ccHeader); len(match) > 1 {
 			maxAgeSeconds, err := strconv.ParseInt(match[1], 10, 64)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to parse cache-control max age")
+				return ks, errors.Wrap(err, "unable to parse cache-control max age")
 			}
 			ttl = time.Second * time.Duration(maxAgeSeconds)
 		}
@@ -104,20 +106,23 @@ func NewFromURL(hc *http.Client, url string, defaultTTL time.Duration) (PublicKe
 
 	payload, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to read response")
+		return ks, errors.Wrap(err, "unable to read response")
 	}
 
-	return NewFromJSON(payload, ttl)
+	return NewPublicKeySetFromJSON(payload, ttl)
 }
 
-func NewFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, error) {
-	var keys JSON
-	err = json.Unmarshal(payload, &keys)
+func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, error) {
+	var (
+		ks   PublicKeySet
+		keys JSONKeyResponse
+	)
+	err := json.Unmarshal(payload, &keys)
 	if err != nil {
-		return err
+		return ks, err
 	}
 
-	ks := PublicKeySet{
+	ks = PublicKeySet{
 		exp:  timeNow().Add(ttl),
 		keys: map[string]*rsa.PublicKey{},
 	}
@@ -127,15 +132,15 @@ func NewFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, error) {
 		if key.Use == "sig" && key.Kty == "RSA" {
 			n, err := base64.RawURLEncoding.DecodeString(key.N)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to decode key")
+				return ks, err
 			}
 			e, err := base64.RawURLEncoding.DecodeString(key.E)
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to decode key")
+				return ks, err
 			}
 			ei := big.NewInt(0).SetBytes(e).Int64()
 			if err != nil {
-				return nil, errors.Wrap(err, "unable to setup key")
+				return ks, err
 			}
 			ks.keys[key.Kid] = &rsa.PublicKey{
 				N: big.NewInt(0).SetBytes(n),
@@ -145,3 +150,5 @@ func NewFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, error) {
 	}
 	return ks, nil
 }
+
+var timeNow = func() time.Time { return time.Now() }

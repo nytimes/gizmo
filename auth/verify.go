@@ -12,7 +12,7 @@ import (
 )
 
 type Verifier struct {
-	ks KeySource
+	ks PublicKeySource
 	df ClaimsDecoderFunc
 	vf VerifyFunc
 
@@ -29,8 +29,13 @@ type ClaimsDecoderFunc func(context.Context, []byte) (ClaimSetter, error)
 
 type VerifyFunc func(context.Context, interface{}) bool
 
-func NewVerifier(ks KeySource, df ClaimsDecoderFunc) *Verifier {
-	return &Verifier{ks: ks, df: df, skewAllowance: defaultSkewAllowance}
+func NewVerifier(ks PublicKeySource, df ClaimsDecoderFunc, vf VerifyFunc) *Verifier {
+	return &Verifier{
+		ks:            ks,
+		df:            df,
+		vf:            vf,
+		skewAllowance: int64(defaultSkewAllowance.Seconds()),
+	}
 }
 
 func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
@@ -41,7 +46,7 @@ func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 	}
 
 	// get keyset
-	keys, err := c.ks.GetKeys(ctx)
+	keys, err := c.ks.Get(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -65,6 +70,7 @@ func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 	}
 
 	claims := clmstr.BaseClaims()
+	nowUnix := timeNow().Unix()
 
 	if nowUnix < (claims.Iat - c.skewAllowance) {
 		return false, errors.New("invalid issue time")

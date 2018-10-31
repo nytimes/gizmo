@@ -96,7 +96,15 @@ type IAMConfig struct {
 // used as a bridge for users as they transition from the 1st generation App Engine
 // runtime to the 2nd generation.
 // This implementation can be used in the 2nd gen runtime as it can reuse an http.Client.
-func NewIAMTokenSource(cfg IAMConfig) (oauth2.TokenSource, error) {
+func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, error) {
+	tknSrc, err := defaultTokenSource(ctx, iam.CloudPlatformScope)
+	if err != nil {
+		return nil, err
+	}
+	svc, err := iam.New(oauth2.NewClient(ctx, tknSrc))
+	if err != nil {
+		return nil, err
+	}
 	src := &iamTokenSource{
 		iamAddr:  cfg.IAMAddress,
 		metaAddr: cfg.MetadataAddress,
@@ -104,6 +112,7 @@ func NewIAMTokenSource(cfg IAMConfig) (oauth2.TokenSource, error) {
 
 		svcAccount: cfg.ServiceAccountEmail,
 		project:    cfg.Project,
+		svc:        svc,
 	}
 
 	tkn, err := src.Token()
@@ -122,7 +131,7 @@ func NewIAMTokenSource(cfg IAMConfig) (oauth2.TokenSource, error) {
 // This implementation can be used in the 1st gen runtime as it allows users to pass a
 // context.Context while fetching the token. The context allows the implementation to
 // reuse clients while changing out the HTTP client under the hood.
-func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, error) {
+func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (ContextTokenSource, error) {
 	src := &iamTokenSource{
 		iamAddr:  cfg.IAMAddress,
 		metaAddr: cfg.MetadataAddress,
@@ -132,16 +141,16 @@ func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenS
 		project:    cfg.Project,
 	}
 
-	tkn, err := src.Token()
+	tkn, err := src.ContextToken(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create initial token")
 	}
 
-	return oauth2.ReuseTokenSource(tkn, src), nil
+	return &reuseTokenSource{t: tkn, new: src}, nil
 }
 
 type ContextTokenSource interface {
-	Token(context.Context) (*oauth2.Token, error)
+	ContextToken(context.Context) (*oauth2.Token, error)
 }
 
 type iamTokenSource struct {
@@ -151,36 +160,35 @@ type iamTokenSource struct {
 
 	svcAccount, project string
 
-	// used just for the initial token fetch (1st gen GAE problems)
-	ctx context.Context
 	svc *iam.Service
-	mu  sync.Mutex
 }
 
 var defaultTokenSource = google.DefaultTokenSource
 
-func (s *iamTokenSource) setContext(ctx context.Context) error {
+func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error) {
 	tknSrc, err := defaultTokenSource(ctx, iam.CloudPlatformScope)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.svc, err = iam.New(oauth2.NewClient(ctx, tknSrc))
+	svc, err := iam.New(oauth2.NewClient(ctx, tknSrc))
 	if err != nil {
-		return errors.Wrap(err, "unable to init iam client")
+		return nil, err
 	}
 
-	if s.iamAddr != "" {
-		s.svc.BasePath = s.iamAddr
+	tkn, exp, err := s.newIAMToken(ctx, svc, s.audience)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	return &oauth2.Token{
+		AccessToken: tkn,
+		TokenType:   "Bearer",
+		Expiry:      exp,
+	}, nil
 }
 
 func (s iamTokenSource) Token() (*oauth2.Token, error) {
-	tkn, exp, err := s.newIAMToken(s.ctx, s.audience)
+	tkn, exp, err := s.newIAMToken(context.Background(), s.svc, s.audience)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +208,7 @@ type IAMToken struct {
 	Email string `json:"email"` // Email of the default service account
 }
 
-func (s iamTokenSource) newIAMToken(ctx context.Context, audience string) (string, time.Time, error) {
+func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service, audience string) (string, time.Time, error) {
 	iss := timeNow()
 	exp := iss.Add(defaultTokenTTL)
 	payload, err := json.Marshal(IAMToken{
@@ -213,7 +221,7 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, audience string) (strin
 		return "", exp, errors.Wrap(err, "unable to encode JWT payload")
 	}
 
-	resp, err := s.svc.Projects.ServiceAccounts.SignJwt(
+	resp, err := svc.Projects.ServiceAccounts.SignJwt(
 		fmt.Sprintf("projects/%s/serviceAccounts/%s",
 			s.project, s.svcAccount),
 		&iam.SignJwtRequest{Payload: string(payload)}).Context(ctx).Do()
@@ -229,7 +237,7 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, audience string) (strin
 // Token. If it's expired, it will be auto-refreshed using the
 // new TokenSource.
 type reuseTokenSource struct {
-	new oauth2.TokenSource // called when t is expired.
+	new ContextTokenSource // called when t is expired.
 
 	mu sync.Mutex // guards t
 	t  *oauth2.Token
@@ -238,13 +246,13 @@ type reuseTokenSource struct {
 // Token returns the current token if it's still valid, else will
 // refresh the current token (using r.Context for HTTP client
 // information) and return the new one.
-func (s *reuseTokenSource) Token(ctx context.Context) (*oauth2.Token, error) {
+func (s *reuseTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.t.Valid() {
 		return s.t, nil
 	}
-	t, err := s.new.Token()
+	t, err := s.new.ContextToken(ctx)
 	if err != nil {
 		return nil, err
 	}

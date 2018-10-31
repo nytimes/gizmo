@@ -62,7 +62,7 @@ func (ks PublicKeySet) Expired() bool {
 func (ks PublicKeySet) GetKey(id string) (*rsa.PublicKey, error) {
 	key, ok := ks.keys[id]
 	if !ok {
-		return nil, errors.New("unkown key")
+		return nil, errors.Errorf("key [%s] not found in set of size %d", id, len(ks.keys))
 	}
 	return key, nil
 }

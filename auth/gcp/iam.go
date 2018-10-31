@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/oauth2/jws"
 	iam "google.golang.org/api/iam/v1"
 )
 
@@ -27,6 +28,36 @@ var (
 	// https://cloud.google.com/compute/docs/instances/verifying-instance-identity#verify_signature
 	defaultTokenTTL = time.Minute * 20
 )
+
+type IAMClaimSet struct {
+	jws.ClaimSet
+
+	// Email address of the default service account
+	Email string `json:"email"`
+}
+
+// BaseClaims implements the auth.ClaimSetter interface.
+func (s IAMClaimSet) BaseClaims() *jws.ClaimSet {
+	return &s.ClaimSet
+}
+
+// IAMClaimsDecoderFunc is an auth.ClaimsDecoderFunc for GCP identity tokens.
+func IAMClaimsDecoderFunc(_ context.Context, b []byte) (auth.ClaimSetter, error) {
+	var cs IAMClaimSet
+	err := json.Unmarshal(b, &cs)
+	return cs, err
+}
+
+// IdentityVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.
+func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.VerifyFunc {
+	return func(ctx context.Context, c interface{}) bool {
+		ics, ok := c.(IAMClaimSet)
+		if !ok {
+			return false
+		}
+		return vf(ctx, ics)
+	}
+}
 
 type iamKeySource struct {
 	cf   func(context.Context) *http.Client
@@ -61,7 +92,14 @@ func (s iamKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 	}
 
 	keys := map[string]*rsa.PublicKey{}
-	for _, key := range resp.Keys {
+	for _, keyData := range resp.Keys {
+		// we need to fetch each key's PublicKey data since List only returns metadata.
+		key, err := svc.Projects.ServiceAccounts.Keys.Get(keyData.Name).
+			PublicKeyType("TYPE_X509_PEM_FILE").Context(ctx).Do()
+		if err != nil {
+			return ks, errors.Wrap(err, "unable to get public key data")
+		}
+
 		pemBytes, err := base64.StdEncoding.DecodeString(key.PublicKeyData)
 		if err != nil {
 			return ks, err
@@ -74,7 +112,7 @@ func (s iamKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			return ks, err
+			return ks, errors.Wrap(err, "unable to parse x509 certificate")
 		}
 
 		pkey, ok := cert.PublicKey.(*rsa.PublicKey)
@@ -208,22 +246,16 @@ func (s iamTokenSource) Token() (*oauth2.Token, error) {
 	}, nil
 }
 
-type IAMToken struct {
-	Aud string `json:"aud"` // descriptor of the intended target.
-	Exp int64  `json:"exp"` // the expiration time of the assertion (seconds since Unix epoch)
-	Iat int64  `json:"iat"` // the time the assertion was issued (seconds since Unix epoch)
-
-	Email string `json:"email"` // Email of the default service account
-}
-
 func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service, audience string) (string, time.Time, error) {
 	iss := timeNow()
 	exp := iss.Add(defaultTokenTTL)
-	payload, err := json.Marshal(IAMToken{
-		Aud:   s.audience,
+	payload, err := json.Marshal(IAMClaimSet{
+		ClaimSet: jws.ClaimSet{
+			Aud: s.audience,
+			Exp: exp.Unix(),
+			Iat: iss.Unix(),
+		},
 		Email: s.svcAccount,
-		Exp:   exp.Unix(),
-		Iat:   iss.Unix(),
 	})
 	if err != nil {
 		return "", exp, errors.Wrap(err, "unable to encode JWT payload")

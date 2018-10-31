@@ -1,3 +1,5 @@
+// +build !appengine
+
 package gcp
 
 import (
@@ -66,10 +68,6 @@ type idTokenSource struct {
 	audience string
 }
 
-// docs say up to 1 hour, this plays it safe?
-// https://cloud.google.com/compute/docs/instances/verifying-instance-identity#verify_signature
-var defaultTokenTTL = time.Minute * 20
-
 func (c *idTokenSource) Token() (*oauth2.Token, error) {
 	tkn, err := c.mdc.Get(
 		fmt.Sprintf("instance/service-accounts/default/identity?audience=%s&format=full",
@@ -111,8 +109,6 @@ func IdentityClaimsDecoderFunc(_ context.Context, b []byte) (auth.ClaimSetter, e
 	err := json.Unmarshal(b, &cs)
 	return cs, err
 }
-
-var timeNow = func() time.Time { return time.Now() }
 
 // IdentityVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.
 func IdentityVerifyFunc(vf func(ctx context.Context, cs IdentityClaimSet) bool) auth.VerifyFunc {

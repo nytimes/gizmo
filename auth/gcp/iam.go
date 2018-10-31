@@ -20,6 +20,14 @@ import (
 	iam "google.golang.org/api/iam/v1"
 )
 
+var (
+	timeNow = func() time.Time { return time.Now() }
+
+	// docs say up to 1 hour, this plays it safe?
+	// https://cloud.google.com/compute/docs/instances/verifying-instance-identity#verify_signature
+	defaultTokenTTL = time.Minute * 20
+)
+
 type iamKeySource struct {
 	cf   func(context.Context) *http.Client
 	name string

@@ -95,9 +95,8 @@ type IAMConfig struct {
 // Users should use the Identity token source if they can. This client is meant to be
 // used as a bridge for users as they transition from the 1st generation App Engine
 // runtime to the 2nd generation.
-// A function to set a new context is provided so users can cache/reuse tokens
-// while dealing with the limitations of urlfetch and the 1st gen runtime.
-func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, func(context.Context) error, error) {
+// This implementation can be used in the 2nd gen runtime as it can reuse an http.Client.
+func NewIAMTokenSource(cfg IAMConfig) (oauth2.TokenSource, error) {
 	src := &iamTokenSource{
 		iamAddr:  cfg.IAMAddress,
 		metaAddr: cfg.MetadataAddress,
@@ -107,16 +106,42 @@ func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, 
 		project:    cfg.Project,
 	}
 
-	err := src.setContext(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
 	tkn, err := src.Token()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to create initial token")
+		return nil, errors.Wrap(err, "unable to create initial token")
 	}
 
-	return oauth2.ReuseTokenSource(tkn, src), src.setContext, nil
+	return oauth2.ReuseTokenSource(tkn, src), nil
+}
+
+// NewContextIAMTokenSource returns an oauth2.TokenSource that uses Google's IAM services
+// to sign a JWT with the default service account and the given audience.
+// Users should use the Identity token source if they can. This client is meant to be
+// used as a bridge for users as they transition from the 1st generation App Engine
+// runtime to the 2nd generation.
+// This implementation can be used in the 1st gen runtime as it allows users to pass a
+// context.Context while fetching the token. The context allows the implementation to
+// reuse clients while changing out the HTTP client under the hood.
+func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, error) {
+	src := &iamTokenSource{
+		iamAddr:  cfg.IAMAddress,
+		metaAddr: cfg.MetadataAddress,
+		audience: cfg.Audience,
+
+		svcAccount: cfg.ServiceAccountEmail,
+		project:    cfg.Project,
+	}
+
+	tkn, err := src.Token()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create initial token")
+	}
+
+	return oauth2.ReuseTokenSource(tkn, src), nil
+}
+
+type ContextTokenSource interface {
+	Token(context.Context) (*oauth2.Token, error)
 }
 
 type iamTokenSource struct {
@@ -188,9 +213,6 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, audience string) (strin
 		return "", exp, errors.Wrap(err, "unable to encode JWT payload")
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	resp, err := s.svc.Projects.ServiceAccounts.SignJwt(
 		fmt.Sprintf("projects/%s/serviceAccounts/%s",
 			s.project, s.svcAccount),
@@ -199,4 +221,33 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, audience string) (strin
 		return "", exp, errors.Wrap(err, "unable to sign JWT")
 	}
 	return resp.SignedJwt, exp, nil
+}
+
+// TAKEN FROM golang.org/x/oauth2 so we can add context bc GAE 1st gen + urlfetch.
+// reuseCtxTokenSource is a TokenSource that holds a single token in memory
+// and validates its expiry before each call to retrieve it with
+// Token. If it's expired, it will be auto-refreshed using the
+// new TokenSource.
+type reuseTokenSource struct {
+	new oauth2.TokenSource // called when t is expired.
+
+	mu sync.Mutex // guards t
+	t  *oauth2.Token
+}
+
+// Token returns the current token if it's still valid, else will
+// refresh the current token (using r.Context for HTTP client
+// information) and return the new one.
+func (s *reuseTokenSource) Token(ctx context.Context) (*oauth2.Token, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.t.Valid() {
+		return s.t, nil
+	}
+	t, err := s.new.Token()
+	if err != nil {
+		return nil, err
+	}
+	s.t = t
+	return t, nil
 }

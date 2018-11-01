@@ -47,22 +47,22 @@ func (r *reuseKeySource) Get(ctx context.Context) (PublicKeySet, error) {
 }
 
 type PublicKeySet struct {
-	exp  time.Time
-	keys map[string]*rsa.PublicKey
+	Expiry time.Time
+	Keys   map[string]*rsa.PublicKey
 }
 
 func NewPublicKeySet(keys map[string]*rsa.PublicKey, exp time.Time) PublicKeySet {
-	return PublicKeySet{keys: keys, exp: exp}
+	return PublicKeySet{Keys: keys, Expiry: exp}
 }
 
 func (ks PublicKeySet) Expired() bool {
-	return timeNow().Before(ks.exp)
+	return timeNow().After(ks.Expiry)
 }
 
 func (ks PublicKeySet) GetKey(id string) (*rsa.PublicKey, error) {
-	key, ok := ks.keys[id]
+	key, ok := ks.Keys[id]
 	if !ok {
-		return nil, errors.Errorf("key [%s] not found in set of size %d", id, len(ks.keys))
+		return nil, errors.Errorf("key [%s] not found in set of size %d", id, len(ks.Keys))
 	}
 	return key, nil
 }
@@ -127,8 +127,8 @@ func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, e
 	}
 
 	ks = PublicKeySet{
-		exp:  timeNow().Add(ttl),
-		keys: map[string]*rsa.PublicKey{},
+		Expiry: timeNow().Add(ttl),
+		Keys:   map[string]*rsa.PublicKey{},
 	}
 
 	for _, key := range keys.Keys {
@@ -143,7 +143,7 @@ func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, e
 				return ks, err
 			}
 			ei := big.NewInt(0).SetBytes(e).Int64()
-			ks.keys[key.Kid] = &rsa.PublicKey{
+			ks.Keys[key.Kid] = &rsa.PublicKey{
 				N: big.NewInt(0).SetBytes(n),
 				E: int(ei),
 			}

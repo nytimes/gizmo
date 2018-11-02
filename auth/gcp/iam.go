@@ -37,6 +37,23 @@ type IAMClaimSet struct {
 	Email string `json:"email"`
 }
 
+// NewDefaultIAMVerifier will verify tokens that have the same default service account as
+// the server running this verifier.
+func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(context.Context) *http.Client) (*auth.Verifier, error) {
+	ks, err := NewIAMPublicKeySource(ctx, cfg, clientFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	eml, err := GetDefaultEmail(ctx, IdentityConfig{Client: clientFunc(ctx)})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get default email")
+	}
+
+	return auth.NewVerifier(ks,
+		IAMClaimsDecoderFunc, VerifyIAMEmails(ctx, []string{eml}, cfg.Audience)), nil
+}
+
 // BaseClaims implements the auth.ClaimSetter interface.
 func (s IAMClaimSet) BaseClaims() *jws.ClaimSet {
 	return &s.ClaimSet
@@ -49,7 +66,7 @@ func IAMClaimsDecoderFunc(_ context.Context, b []byte) (auth.ClaimSetter, error)
 	return cs, err
 }
 
-// IAMVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.
+// IAMVerifyFunc auth.VerifyFunc wrapper around the IAMClaimSet.
 func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.VerifyFunc {
 	return func(ctx context.Context, c interface{}) bool {
 		ics, ok := c.(IAMClaimSet)
@@ -58,6 +75,26 @@ func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.Verif
 		}
 		return vf(ctx, ics)
 	}
+}
+
+// ValidIAMClaims ensures the token audience issuers matches expectations.
+func ValidIAMClaims(cs IAMClaimSet, audience string) bool {
+	return cs.Aud != audience
+}
+
+// VerifyIAMEmails is an auth.VerifyFunc that ensures IAMClaimSets are valid
+// and have the expected email and audience in their payload.
+func VerifyIAMEmails(ctx context.Context, emails []string, audience string) auth.VerifyFunc {
+	emls := map[string]bool{}
+	for _, e := range emails {
+		emls[e] = true
+	}
+	return IAMVerifyFunc(func(ctx context.Context, cs IAMClaimSet) bool {
+		if !ValidIAMClaims(cs, audience) {
+			return false
+		}
+		return emls[cs.Email]
+	})
 }
 
 type iamKeySource struct {

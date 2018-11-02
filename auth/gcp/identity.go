@@ -6,33 +6,43 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
-	"cloud.google.com/go/compute/metadata"
 	"github.com/NYTimes/gizmo/auth"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/jws"
 )
 
-type idKeySource struct {
-	MetadataAddress string
-	CertURL         string
+// IdentityConfig contains the information required for generating or verifying identity
+// JWTs.
+type IdentityConfig struct {
+	Audience string
 
-	hc *http.Client
+	MetadataAddress string       // optional override for token and email retrieval
+	CertURL         string       // optional override for public key source
+	Client          *http.Client // optional override
+}
+
+type idKeySource struct {
+	cfg IdentityConfig
 }
 
 // NewIdentityPublicKeySource fetches Google's public oauth2 certificates to be used with
 // the auth.Verifier tool.
-func NewIdentityPublicKeySource(ctx context.Context) (auth.PublicKeySource, error) {
-	hc := &http.Client{
-		Timeout: 5 * time.Second,
+func NewIdentityPublicKeySource(ctx context.Context, cfg IdentityConfig) (auth.PublicKeySource, error) {
+	if cfg.Client == nil {
+		cfg.Client = &http.Client{
+			Timeout: 5 * time.Second,
+		}
 	}
-	src := idKeySource{
-		hc:      hc,
-		CertURL: "https://www.googleapis.com/oauth2/v3/certs",
+	if cfg.CertURL == "" {
+		cfg.CertURL = "https://www.googleapis.com/oauth2/v3/certs"
 	}
+
+	src := idKeySource{cfg: cfg}
 
 	ks, err := src.Get(ctx)
 	if err != nil {
@@ -43,19 +53,24 @@ func NewIdentityPublicKeySource(ctx context.Context) (auth.PublicKeySource, erro
 }
 
 func (s idKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
-	return auth.NewPublicKeySetFromURL(s.hc, s.CertURL, time.Hour*2)
+	return auth.NewPublicKeySetFromURL(s.cfg.Client, s.cfg.CertURL, time.Hour*2)
 }
 
 // NewIdentityTokenSource will use the GCP metadata services to generate GCP Identity
 // tokens. More information on asserting GCP identities can be found here:
 // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
-func NewIdentityTokenSource(audience string) (oauth2.TokenSource, error) {
-	ts := &idTokenSource{
-		audience: audience,
-		mdc: metadata.NewClient(&http.Client{
-			Timeout: 2 * time.Second,
-		}),
+func NewIdentityTokenSource(cfg IdentityConfig) (oauth2.TokenSource, error) {
+	if cfg.Client == nil {
+		cfg.Client = &http.Client{
+			Timeout: 5 * time.Second,
+		}
 	}
+	if cfg.MetadataAddress == "" {
+		cfg.MetadataAddress = "http://metadata/computeMetadata/v1/"
+	}
+
+	ts := &idTokenSource{cfg: cfg}
+
 	tok, err := ts.Token()
 	if err != nil {
 		return nil, err
@@ -64,17 +79,18 @@ func NewIdentityTokenSource(audience string) (oauth2.TokenSource, error) {
 }
 
 type idTokenSource struct {
-	mdc      *metadata.Client
-	audience string
+	cfg IdentityConfig
 }
 
 func (c *idTokenSource) Token() (*oauth2.Token, error) {
-	tkn, err := c.mdc.Get(
-		fmt.Sprintf("instance/service-accounts/default/identity?audience=%s&format=full",
-			c.audience))
+	suffix := fmt.Sprintf("instance/service-accounts/default/identity?audience=%s&format=full",
+		c.cfg.Audience)
+
+	tkn, err := metadataGet(context.Background(), c.cfg, suffix)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to get token")
 	}
+
 	return &oauth2.Token{
 		AccessToken: tkn,
 		TokenType:   "Bearer",
@@ -158,7 +174,29 @@ func VerifyIdentityEmails(ctx context.Context, emails []string, audience string)
 
 // GetDefaultEmail is a helper method for users on GCE or the 2nd generation GAE
 // environment.
-func GetDefaultEmail(ctx context.Context, mdc *metadata.Client) (string, error) {
-	email, err := mdc.Get("instance/service-accounts/default/email")
+func GetDefaultEmail(ctx context.Context, cfg IdentityConfig) (string, error) {
+	email, err := metadataGet(ctx, cfg, "instance/service-accounts/default/email")
 	return email, errors.Wrap(err, "unable to get default email from metadata")
+}
+
+func metadataGet(ctx context.Context, cfg IdentityConfig, suffix string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, cfg.MetadataAddress+suffix, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create metadata request")
+	}
+	req.Header.Set("Metadata-Flavor", "Google")
+
+	resp, err := cfg.Client.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to send request to metadata")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("metadata service returned a non-200 response: %d",
+			resp.StatusCode)
+	}
+
+	tkn, err := ioutil.ReadAll(resp.Body)
+	return string(tkn), errors.Wrap(err, "unable to read metadata response")
 }

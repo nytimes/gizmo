@@ -48,7 +48,7 @@ func NewVerifier(ks PublicKeySource, df ClaimsDecoderFunc, vf VerifyFunc) *Verif
 	}
 }
 
-// VerifyInboundKitRequest is meant to be used within a go-kit stack that has populated
+// VerifyInboundKitContext is meant to be used within a go-kit stack that has populated
 // the context with common headers, specficially
 // kit/transport/http.ContextKeyRequestAuthorization.
 func (c Verifier) VerifyInboundKitContext(ctx context.Context) (bool, error) {

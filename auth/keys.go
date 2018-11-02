@@ -46,19 +46,19 @@ func (r *reuseKeySource) Get(ctx context.Context) (PublicKeySet, error) {
 	return r.ks, nil
 }
 
+// PublicKeySet contains a set of keys acquired from a JWKS that has an expiration.
 type PublicKeySet struct {
 	Expiry time.Time
 	Keys   map[string]*rsa.PublicKey
 }
 
-func NewPublicKeySet(keys map[string]*rsa.PublicKey, exp time.Time) PublicKeySet {
-	return PublicKeySet{Keys: keys, Expiry: exp}
-}
-
+// Expired will return true if the current key set is expire according to its Expiry
+// field.
 func (ks PublicKeySet) Expired() bool {
 	return timeNow().After(ks.Expiry)
 }
 
+// GetKey will look for the given key ID in the key set and return it, if it exists.
 func (ks PublicKeySet) GetKey(id string) (*rsa.PublicKey, error) {
 	key, ok := ks.Keys[id]
 	if !ok {
@@ -84,6 +84,9 @@ type JSONKeyResponse struct {
 
 var reMaxAge = regexp.MustCompile("max-age=([0-9]*)")
 
+// NewPublicKeySetFromURL will attempt to fetch a JWKS from the given URL and parse it
+// into a PublicKeySet. The endpoint the URL points to must return the same format as the
+// JSONKeyResponse struct.
 func NewPublicKeySetFromURL(hc *http.Client, url string, defaultTTL time.Duration) (PublicKeySet, error) {
 	var ks PublicKeySet
 	r, err := http.NewRequest(http.MethodGet, url, nil)
@@ -116,6 +119,8 @@ func NewPublicKeySetFromURL(hc *http.Client, url string, defaultTTL time.Duratio
 	return NewPublicKeySetFromJSON(payload, ttl)
 }
 
+// NewPublicKeySetFromJSON will accept a JSON payload in the format of the
+// JSONKeyResponse and parse it into a PublicKeySet.
 func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, error) {
 	var (
 		ks   PublicKeySet

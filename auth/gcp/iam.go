@@ -161,6 +161,11 @@ func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, 
 	if err != nil {
 		return nil, err
 	}
+
+	if cfg.IAMAddress != "" {
+		svc.BasePath = cfg.IAMAddress
+	}
+
 	src := &iamTokenSource{
 		cfg: cfg,
 		svc: svc,
@@ -216,6 +221,10 @@ func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error)
 	svc, err := iam.New(oauth2.NewClient(ctx, tknSrc))
 	if err != nil {
 		return nil, err
+	}
+
+	if s.cfg.IAMAddress != "" {
+		svc.BasePath = s.cfg.IAMAddress
 	}
 
 	tkn, exp, err := s.newIAMToken(ctx, svc, s.cfg.Audience)

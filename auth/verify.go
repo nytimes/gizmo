@@ -67,25 +67,21 @@ func (c Verifier) VerifyInboundKitContext(ctx context.Context) (bool, error) {
 
 // Verify will accept an opaque JWT token, decode it and verify it.
 func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
-	// decode token to get header
 	hdr, rawPayload, err := decodeToken(token)
 	if err != nil {
 		return false, err
 	}
 
-	// get keyset
 	keys, err := c.ks.Get(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	// get key from keyset
 	key, err := keys.GetKey(hdr.KeyID)
 	if err != nil {
 		return false, err
 	}
 
-	// verify token
 	err = jws.Verify(token, key)
 	if err != nil {
 		return false, err

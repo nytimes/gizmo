@@ -29,6 +29,7 @@ var (
 	defaultTokenTTL = time.Minute * 20
 )
 
+// IAMClaimSet contains just an email for service account identification.
 type IAMClaimSet struct {
 	jws.ClaimSet
 
@@ -48,7 +49,7 @@ func IAMClaimsDecoderFunc(_ context.Context, b []byte) (auth.ClaimSetter, error)
 	return cs, err
 }
 
-// IdentityVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.
+// IAMVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.
 func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.VerifyFunc {
 	return func(ctx context.Context, c interface{}) bool {
 		ics, ok := c.(IAMClaimSet)
@@ -60,12 +61,15 @@ func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.Verif
 }
 
 type iamKeySource struct {
-	cf   func(context.Context) *http.Client
-	name string
+	cf  func(context.Context) *http.Client
+	cfg IAMConfig
 }
 
-func NewIAMPublicKeySource(ctx context.Context, name string, clientFunc func(context.Context) *http.Client) (auth.PublicKeySource, error) {
-	src := iamKeySource{cf: clientFunc, name: name}
+// NewIAMPublicKeySource returns a PublicKeySource that uses the Google IAM service
+// for fetching public keys of a given service account. The function for returning an
+// HTTP client is to allow 1st generation App Engine users to lean on urlfetch.
+func NewIAMPublicKeySource(ctx context.Context, cfg IAMConfig, clientFunc func(context.Context) *http.Client) (auth.PublicKeySource, error) {
+	src := iamKeySource{cf: clientFunc, cfg: cfg}
 
 	ks, err := src.Get(ctx)
 	if err != nil {
@@ -86,7 +90,13 @@ func (s iamKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 		return ks, errors.Wrap(err, "unable to init iam client")
 	}
 
-	resp, err := svc.Projects.ServiceAccounts.Keys.List(s.name).Context(ctx).Do()
+	if s.cfg.IAMAddress != "" {
+		svc.BasePath = s.cfg.IAMAddress
+	}
+
+	name := fmt.Sprintf("projects/%s/serviceAccounts/%s",
+		s.cfg.Project, s.cfg.ServiceAccountEmail)
+	resp, err := svc.Projects.ServiceAccounts.Keys.List(name).Context(ctx).Do()
 	if err != nil {
 		return ks, errors.Wrap(err, "unable to list service account keys")
 	}
@@ -124,12 +134,12 @@ func (s iamKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 		keys[name] = pkey
 	}
 
-	return auth.NewPublicKeySet(keys, timeNow().Add(20*time.Minute)), nil
+	return auth.PublicKeySet{Keys: keys, Expiry: timeNow().Add(20 * time.Minute)}, nil
 }
 
+// IAMConfig contains the information required for generating or verifying IAM JWTs.
 type IAMConfig struct {
-	IAMAddress      string
-	MetadataAddress string
+	IAMAddress string // optional, for testing
 
 	Audience            string
 	Project             string
@@ -152,13 +162,8 @@ func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, 
 		return nil, err
 	}
 	src := &iamTokenSource{
-		iamAddr:  cfg.IAMAddress,
-		metaAddr: cfg.MetadataAddress,
-		audience: cfg.Audience,
-
-		svcAccount: cfg.ServiceAccountEmail,
-		project:    cfg.Project,
-		svc:        svc,
+		cfg: cfg,
+		svc: svc,
 	}
 
 	tkn, err := src.Token()
@@ -178,14 +183,7 @@ func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, 
 // context.Context while fetching the token. The context allows the implementation to
 // reuse clients while changing out the HTTP client under the hood.
 func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (ContextTokenSource, error) {
-	src := &iamTokenSource{
-		iamAddr:  cfg.IAMAddress,
-		metaAddr: cfg.MetadataAddress,
-		audience: cfg.Audience,
-
-		svcAccount: cfg.ServiceAccountEmail,
-		project:    cfg.Project,
-	}
+	src := &iamTokenSource{cfg: cfg}
 
 	tkn, err := src.ContextToken(ctx)
 	if err != nil {
@@ -195,16 +193,15 @@ func NewContextIAMTokenSource(ctx context.Context, cfg IAMConfig) (ContextTokenS
 	return &reuseTokenSource{t: tkn, new: src}, nil
 }
 
+// ContextTokenSource is an oauth2.TokenSource that is capable of running on the 1st
+// generation App Engine environment because it can create a urlfetch.Client from the
+// given context.
 type ContextTokenSource interface {
 	ContextToken(context.Context) (*oauth2.Token, error)
 }
 
 type iamTokenSource struct {
-	iamAddr  string
-	metaAddr string
-	audience string
-
-	svcAccount, project string
+	cfg IAMConfig
 
 	svc *iam.Service
 }
@@ -221,7 +218,7 @@ func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error)
 		return nil, err
 	}
 
-	tkn, exp, err := s.newIAMToken(ctx, svc, s.audience)
+	tkn, exp, err := s.newIAMToken(ctx, svc, s.cfg.Audience)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +231,7 @@ func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error)
 }
 
 func (s iamTokenSource) Token() (*oauth2.Token, error) {
-	tkn, exp, err := s.newIAMToken(context.Background(), s.svc, s.audience)
+	tkn, exp, err := s.newIAMToken(context.Background(), s.svc, s.cfg.Audience)
 	if err != nil {
 		return nil, err
 	}
@@ -251,11 +248,11 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service, audie
 	exp := iss.Add(defaultTokenTTL)
 	payload, err := json.Marshal(IAMClaimSet{
 		ClaimSet: jws.ClaimSet{
-			Aud: s.audience,
+			Aud: s.cfg.Audience,
 			Exp: exp.Unix(),
 			Iat: iss.Unix(),
 		},
-		Email: s.svcAccount,
+		Email: s.cfg.ServiceAccountEmail,
 	})
 	if err != nil {
 		return "", exp, errors.Wrap(err, "unable to encode JWT payload")
@@ -263,7 +260,7 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service, audie
 
 	resp, err := svc.Projects.ServiceAccounts.SignJwt(
 		fmt.Sprintf("projects/%s/serviceAccounts/%s",
-			s.project, s.svcAccount),
+			s.cfg.Project, s.cfg.ServiceAccountEmail),
 		&iam.SignJwtRequest{Payload: string(payload)}).Context(ctx).Do()
 	if err != nil {
 		return "", exp, errors.Wrap(err, "unable to sign JWT")

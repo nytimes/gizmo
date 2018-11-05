@@ -264,7 +264,7 @@ func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error)
 		svc.BasePath = s.cfg.IAMAddress
 	}
 
-	tkn, exp, err := s.newIAMToken(ctx, svc, s.cfg.Audience)
+	tkn, exp, err := s.newIAMToken(ctx, svc)
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func (s iamTokenSource) ContextToken(ctx context.Context) (*oauth2.Token, error)
 }
 
 func (s iamTokenSource) Token() (*oauth2.Token, error) {
-	tkn, exp, err := s.newIAMToken(context.Background(), s.svc, s.cfg.Audience)
+	tkn, exp, err := s.newIAMToken(context.Background(), s.svc)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (s iamTokenSource) Token() (*oauth2.Token, error) {
 	}, nil
 }
 
-func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service, audience string) (string, time.Time, error) {
+func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service) (string, time.Time, error) {
 	iss := timeNow()
 	exp := iss.Add(defaultTokenTTL)
 	payload, err := json.Marshal(IAMClaimSet{

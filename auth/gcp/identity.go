@@ -148,10 +148,7 @@ func ValidIdentityClaims(cs IdentityClaimSet, audience string) bool {
 	if cs.Aud != audience {
 		return false
 	}
-	if gcpIssuer := Issuers[cs.Iss]; !gcpIssuer {
-		return false
-	}
-	return true
+	return Issuers[cs.Iss]
 }
 
 // VerifyIdentityEmails is an auth.VerifyFunc that ensures IdentityClaimSets are valid

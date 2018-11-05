@@ -45,7 +45,7 @@ func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(c
 		return nil, err
 	}
 
-	eml, err := GetDefaultEmail(ctx, IdentityConfig{Client: clientFunc(ctx)})
+	eml, err := GetDefaultEmail(ctx, "", clientFunc(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get default email")
 	}

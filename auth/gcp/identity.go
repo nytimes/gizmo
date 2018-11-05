@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -88,7 +87,7 @@ func (c *idTokenSource) Token() (*oauth2.Token, error) {
 	suffix := fmt.Sprintf("instance/service-accounts/default/identity?audience=%s&format=full",
 		c.cfg.Audience)
 
-	tkn, err := metadataGet(context.Background(), c.cfg, suffix)
+	tkn, err := metadataGet(context.Background(), c.cfg.MetadataAddress, c.cfg.Client, suffix)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get token")
 	}
@@ -169,33 +168,4 @@ func VerifyIdentityEmails(ctx context.Context, emails []string, audience string)
 		}
 		return emls[cs.Email]
 	})
-}
-
-// GetDefaultEmail is a helper method for users on GCE or the 2nd generation GAE
-// environment.
-func GetDefaultEmail(ctx context.Context, cfg IdentityConfig) (string, error) {
-	email, err := metadataGet(ctx, cfg, "instance/service-accounts/default/email")
-	return email, errors.Wrap(err, "unable to get default email from metadata")
-}
-
-func metadataGet(ctx context.Context, cfg IdentityConfig, suffix string) (string, error) {
-	req, err := http.NewRequest(http.MethodGet, cfg.MetadataAddress+suffix, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to create metadata request")
-	}
-	req.Header.Set("Metadata-Flavor", "Google")
-
-	resp, err := cfg.Client.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to send request to metadata")
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("metadata service returned a non-200 response: %d",
-			resp.StatusCode)
-	}
-
-	tkn, err := ioutil.ReadAll(resp.Body)
-	return string(tkn), errors.Wrap(err, "unable to read metadata response")
 }

@@ -52,7 +52,7 @@ The `auth` package provides primitives for verifying inbound authentication toke
 The `auth/gcp` package provides 2 Google Cloud Platform based `auth.PublicKeySource` and `oauth2.TokenSource` implementations:
 
 * The "Identity" key source and token source rely on GCP's [identity JWT mechanism for asserting instance identities](https://cloud.google.com/compute/docs/instances/verifying-instance-identity). This is the preferred method for asserting instance identity on GCP.
-* The `IAM` key source and token source rely on GCP's IAM services for [signing](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signJwt) and [verifying JWTs](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts.keys/get). This method can be used outside of GCP, if needed and can provide a bridge for users transitioning from the 1st generation App Engine (where Identity tokens are not available) runtime to the 2nd.
+* The "IAM" key source and token source rely on GCP's IAM services for [signing](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signJwt) and [verifying JWTs](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts.keys/get). This method can be used outside of GCP, if needed and can provide a bridge for users transitioning from the 1st generation App Engine (where Identity tokens are not available) runtime to the 2nd.
 
 
 #### [`config`](https://godoc.org/github.com/NYTimes/gizmo/config)

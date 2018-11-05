@@ -46,16 +46,14 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 	var creds *credentials.Credentials
 	if cfg.AccessKey != "" {
 		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
-	} else {
-		creds = credentials.NewEnvCredentials()
-	}
-
-	if cfg.RoleARN != "" {
+	} else if cfg.RoleARN != "" {
 		var err error
 		creds, err = requestRoleCredentials(creds, cfg.RoleARN, cfg.MFASerialNumber)
 		if err != nil {
 			return p, err
 		}
+	} else {
+		creds = credentials.NewEnvCredentials()
 	}
 
 	sess, err := session.NewSession()
@@ -204,15 +202,14 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	var creds *credentials.Credentials
 	if cfg.AccessKey != "" {
 		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
-	} else {
-		creds = credentials.NewEnvCredentials()
-	}
-
-	if cfg.RoleARN != "" {
+	} else if cfg.RoleARN != "" {
+		var err error
 		creds, err = requestRoleCredentials(creds, cfg.RoleARN, cfg.MFASerialNumber)
 		if err != nil {
 			return s, err
 		}
+	} else {
+		creds = credentials.NewEnvCredentials()
 	}
 
 	sess, err := session.NewSession()

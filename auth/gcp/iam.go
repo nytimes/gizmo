@@ -40,18 +40,17 @@ type IAMClaimSet struct {
 // NewDefaultIAMVerifier will verify tokens that have the same default service account as
 // the server running this verifier.
 func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(context.Context) *http.Client) (*auth.Verifier, error) {
-	ks, err := NewIAMPublicKeySource(ctx, cfg, clientFunc)
-	if err != nil {
-		return nil, err
-	}
-
 	eml := cfg.ServiceAccountEmail
-	// only fall back if one isn't injected
 	if eml == "" {
 		eml, err = GetDefaultEmail(ctx, "", clientFunc(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get default email")
 		}
+	}
+
+	ks, err := NewIAMPublicKeySource(ctx, cfg, clientFunc)
+	if err != nil {
+		return nil, err
 	}
 
 	return auth.NewVerifier(ks,

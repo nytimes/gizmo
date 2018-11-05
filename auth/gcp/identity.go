@@ -31,6 +31,28 @@ type idKeySource struct {
 	cfg IdentityConfig
 }
 
+// NewDefaultIdentityVerifier will verify tokens that have the same default service
+// account as the server running this verifier.
+func NewDefaultIdentityVerifier(ctx context.Context, cfg IdentityConfig) (*auth.Verifier, error) {
+	if cfg.Client == nil {
+		cfg.Client = &http.Client{Timeout: 2 * time.Second}
+	}
+
+	ks, err := NewIdentityPublicKeySource(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	eml, err := GetDefaultEmail(ctx, "", cfg.Client)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get default email")
+	}
+
+	return auth.NewVerifier(ks,
+		IdentityClaimsDecoderFunc,
+		VerifyIdentityEmails(ctx, []string{eml}, cfg.Audience)), nil
+}
+
 // NewIdentityPublicKeySource fetches Google's public oauth2 certificates to be used with
 // the auth.Verifier tool.
 func NewIdentityPublicKeySource(ctx context.Context, cfg IdentityConfig) (auth.PublicKeySource, error) {

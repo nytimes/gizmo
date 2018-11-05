@@ -41,9 +41,8 @@ type IAMClaimSet struct {
 // the server running this verifier.
 func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(context.Context) *http.Client) (*auth.Verifier, error) {
 	var err error
-	eml := cfg.ServiceAccountEmail
-	if eml == "" {
-		eml, err = GetDefaultEmail(ctx, "", clientFunc(ctx))
+	if cfg.ServiceAccountEmail == "" {
+		cfg.ServiceAccountEmail, err = GetDefaultEmail(ctx, "", clientFunc(ctx))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get default email")
 		}
@@ -55,7 +54,8 @@ func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(c
 	}
 
 	return auth.NewVerifier(ks,
-		IAMClaimsDecoderFunc, VerifyIAMEmails(ctx, []string{eml}, cfg.Audience)), nil
+		IAMClaimsDecoderFunc,
+		VerifyIAMEmails(ctx, []string{cfg.ServiceAccountEmail}, cfg.Audience)), nil
 }
 
 // BaseClaims implements the auth.ClaimSetter interface.

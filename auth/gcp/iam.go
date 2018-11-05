@@ -176,11 +176,11 @@ func (s iamKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 
 // IAMConfig contains the information required for generating or verifying IAM JWTs.
 type IAMConfig struct {
-	IAMAddress string // optional, for testing
+	IAMAddress string `envconfig:"IAM_ADDR"` // optional, for testing
 
-	Audience            string
-	Project             string
-	ServiceAccountEmail string
+	Audience            string `envconfig:"IAM_AUDIENCE"`
+	Project             string `envconfig:"IAM_PROJECT"`
+	ServiceAccountEmail string `envconfig:"IAM_SERVICE_ACCOUNT_EMAIL"`
 }
 
 // NewIAMTokenSource returns an oauth2.TokenSource that uses Google's IAM services

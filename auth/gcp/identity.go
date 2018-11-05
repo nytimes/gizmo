@@ -19,11 +19,13 @@ import (
 // IdentityConfig contains the information required for generating or verifying identity
 // JWTs.
 type IdentityConfig struct {
-	Audience string
+	Audience string `envconfig:"ID_AUDIENCE"`
 
-	MetadataAddress string       // optional override for token and email retrieval
-	CertURL         string       // optional override for public key source
-	Client          *http.Client // optional override
+	CertURL string `envconfig:"ID_CERT_URL"` // optional override for public key source
+
+	Client *http.Client // optional override
+
+	MetadataAddress string `envconfig:"ID_METADATA_ADDR"` // optional override for token and email retrieval
 }
 
 type idKeySource struct {

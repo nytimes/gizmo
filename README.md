@@ -40,6 +40,21 @@ This is an experimental package in Gizmo!
     * Services using this package are meant for deploy to GCP with GKE and Cloud Endpoints.
 
 
+#### [`auth`](https://godoc.org/github.com/NYTimes/gizmo/auth)
+
+The `auth` package provides primitives for verifying inbound authentication tokens:
+
+* The `PublicKeySource` interface is meant to provide `*rsa.PublicKeys` from JSON Web Key Sets.
+* The `Verifier` struct composes key source implementations with custom decoders and verifier functions to streamline server side token verification.
+
+#### [`auth/gcp`](https://godoc.org/github.com/NYTimes/gizmo/auth/gcp)
+
+The `auth/gcp` package provides 2 Google Cloud Platform based `auth.PublicKeySource` and `oauth2.TokenSource` implementations:
+
+* The "Identity" key source and token source rely on GCP's [identity JWT mechanism for asserting instance identities](https://cloud.google.com/compute/docs/instances/verifying-instance-identity). This is the preferred method for asserting instance identity on GCP.
+* The "IAM" key source and token source rely on GCP's IAM services for [signing](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts/signJwt) and [verifying JWTs](https://cloud.google.com/iam/reference/rest/v1/projects.serviceAccounts.keys/get). This method can be used outside of GCP, if needed and can provide a bridge for users transitioning from the 1st generation App Engine (where Identity tokens are not available) runtime to the 2nd.
+
+
 #### [`config`](https://godoc.org/github.com/NYTimes/gizmo/config)
 
 The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v, or environment variables.

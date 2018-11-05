@@ -45,9 +45,13 @@ func NewDefaultIAMVerifier(ctx context.Context, cfg IAMConfig, clientFunc func(c
 		return nil, err
 	}
 
-	eml, err := GetDefaultEmail(ctx, "", clientFunc(ctx))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get default email")
+	eml := cfg.ServiceAccountEmail
+	// only fall back if one isn't injected
+	if eml == "" {
+		eml, err = GetDefaultEmail(ctx, "", clientFunc(ctx))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get default email")
+		}
 	}
 
 	return auth.NewVerifier(ks,
@@ -79,7 +83,7 @@ func IAMVerifyFunc(vf func(ctx context.Context, cs IAMClaimSet) bool) auth.Verif
 
 // ValidIAMClaims ensures the token audience issuers matches expectations.
 func ValidIAMClaims(cs IAMClaimSet, audience string) bool {
-	return cs.Aud != audience
+	return cs.Aud == audience
 }
 
 // VerifyIAMEmails is an auth.VerifyFunc that ensures IAMClaimSets are valid

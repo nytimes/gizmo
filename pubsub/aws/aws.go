@@ -409,7 +409,5 @@ func requestRoleCredentials(sess *session.Session, roleARN string, MFASerialNumb
 			provider.SerialNumber = &MFASerialNumber
 			provider.TokenProvider = stscreds.StdinTokenProvider
 		}
-
-		provider.Duration = stscreds.DefaultDuration
 	}), nil
 }

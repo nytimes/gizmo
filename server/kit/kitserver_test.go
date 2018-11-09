@@ -82,8 +82,9 @@ func TestKitServer(t *testing.T) {
 		t.Fatal("unable to read health check response:", err)
 	}
 
-	if string(b) != "OK" {
-		t.Fatalf("unexpected health check response. got %q, wanted 'OK'", string(b))
+	const wantOK = "\"OK\"\n"
+	if string(b) != wantOK {
+		t.Fatalf("unexpected health check response. got %q, wanted %q", string(b), wantOK)
 	}
 
 	// hit the HTTP server

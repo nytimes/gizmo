@@ -133,7 +133,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, err = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
 			if err != nil {
-				s.logger.Log("error", err, "message", "unable to response post-panic")
+				s.logger.Log("error", err, "message", "unable to respond post-panic")
 			}
 
 			// if we have an error client, send out a report

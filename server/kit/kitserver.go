@@ -3,7 +3,6 @@ package kit
 import (
 	"context"
 	"fmt"
-	"io"
 	stdlog "log"
 	"net"
 	"net/http"
@@ -170,7 +169,11 @@ func (s *Server) register(svc Service) {
 	}
 	opts = append(opts, svc.HTTPOptions()...)
 
-	var healthzFound bool
+	const warmupPath = "/_ah/warmup"
+	var (
+		healthzFound bool
+		warmupFound  bool
+	)
 	// register all endpoints with our wrappers & default decoders/encoders
 	for path, epMethods := range svc.HTTPEndpoints() {
 		for method, ep := range epMethods {
@@ -180,11 +183,14 @@ func (s *Server) register(svc Service) {
 				healthzFound = true
 			}
 
+			// check for a GAE "warm up" request endpoint
+			if method == http.MethodGet && path == warmupPath {
+				warmupFound = true
+			}
+
 			// just pass the http.Request in if no decoder provided
 			if ep.Decoder == nil {
-				ep.Decoder = func(_ context.Context, r *http.Request) (interface{}, error) {
-					return r, nil
-				}
+				ep.Decoder = basicDecoder
 			}
 			// default to the httptransport helper
 			if ep.Encoder == nil {
@@ -201,10 +207,22 @@ func (s *Server) register(svc Service) {
 
 	// register a simple health check if none provided
 	if !healthzFound {
-		s.mux.HandleFunc(http.MethodGet, s.cfg.HealthCheckPath, func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			io.WriteString(w, "OK")
-		})
+		s.mux.Handle(http.MethodGet, s.cfg.HealthCheckPath,
+			httptransport.NewServer(
+				svc.Middleware(okEndpoint),
+				basicDecoder,
+				httptransport.EncodeJSONResponse,
+				opts...))
+	}
+
+	// register a warmup request for App Engine apps that dont have one already.
+	if !warmupFound {
+		s.mux.Handle(http.MethodGet, warmupPath,
+			httptransport.NewServer(
+				svc.Middleware(okEndpoint),
+				basicDecoder,
+				httptransport.EncodeJSONResponse,
+				opts...))
 	}
 
 	// add all pprof endpoints by default to HTTP
@@ -234,6 +252,14 @@ func (s *Server) register(svc Service) {
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
 
 	s.gsvr.RegisterService(gdesc, svc)
+}
+
+func okEndpoint(ctx context.Context, _ interface{}) (interface{}, error) {
+	return "OK", nil
+}
+
+func basicDecoder(_ context.Context, r *http.Request) (interface{}, error) {
+	return r, nil
 }
 
 func (s *Server) start() error {

@@ -131,9 +131,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.logger.Log("error", err, "message", "the server encountered a panic")
 
 			w.WriteHeader(http.StatusInternalServerError)
-			_, err = w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-			if err != nil {
-				s.logger.Log("error", err, "message", "unable to respond post-panic")
+			_, werr := w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			if werr != nil {
+				s.logger.Log("error", werr, "message", "unable to respond post-panic")
 			}
 
 			// if we have an error client, send out a report
@@ -268,12 +268,12 @@ func (s *Server) start() error {
 		if err != nil && err != http.ErrServerClosed {
 			s.logger.Log(
 				"error", err,
-				"msg", "HTTP server error - initiating shutting down")
+				"message", "HTTP server error - initiating shutting down")
 			s.stop()
 		}
 	}()
 
-	s.logger.Log("msg",
+	s.logger.Log("message",
 		fmt.Sprintf("listening on HTTP port: %d", s.cfg.HTTPPort))
 
 	if s.gsvr != nil {
@@ -293,11 +293,11 @@ func (s *Server) start() error {
 			if err != nil {
 				s.logger.Log(
 					"error", err,
-					"msg", "gRPC server error - initiating shutting down")
+					"message", "gRPC server error - initiating shutting down")
 				s.stop()
 			}
 		}()
-		s.logger.Log("msg",
+		s.logger.Log("message",
 			fmt.Sprintf("listening on RPC port: %d", s.cfg.RPCPort))
 	}
 

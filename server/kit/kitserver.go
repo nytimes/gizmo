@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"cloud.google.com/go/errorreporting"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -22,6 +23,8 @@ import (
 type Server struct {
 	logger   log.Logger
 	logClose func() error
+
+	errs *errorreporting.Client
 
 	mux Router
 
@@ -78,16 +81,27 @@ func NewServer(svc Service) *Server {
 		err      error
 		lg       log.Logger
 		logClose func() error
+		errs     *errorreporting.Client
 	)
 	// use the version variable to determine if we're in the GAE environment
 	if svcVersion == "" {
 		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	} else {
-		lg, logClose, err = newAppEngineLogger(context.Background(),
+		ctx := context.Background()
+		lg, logClose, err = newAppEngineLogger(ctx,
 			projectID, serviceID, svcVersion)
 		if err != nil {
 			stdlog.Fatalf("unable to start up app engine logger: %s", err)
 		}
+
+		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+			ServiceName:    serviceID,
+			ServiceVersion: svcVersion,
+			OnError: func(err error) {
+				lg.Log("error", err,
+					"message", "error reporting client encountered an error")
+			},
+		})
 	}
 
 	s := &Server{
@@ -96,6 +110,7 @@ func NewServer(svc Service) *Server {
 		exit:     make(chan chan error),
 		logger:   lg,
 		logClose: logClose,
+		errs:     errs,
 	}
 	s.svr = &http.Server{
 		Handler:        s,
@@ -110,6 +125,34 @@ func NewServer(svc Service) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if x := recover(); x != nil {
+			var err error
+			if e, ok := x.(error); ok {
+				err = e
+			}
+
+			s.logger.Log("error", err, "message", "the server encountered a panic")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			_, werr := w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+			if werr != nil {
+				s.logger.Log("error", werr, "message", "unable to respond post-panic")
+			}
+
+			// if we have an error client, send out a report
+			if s.errs == nil {
+				return
+			}
+
+			s.errs.Report(errorreporting.Entry{
+				Req:   r,
+				Error: err,
+			})
+			s.errs.Flush()
+		}
+	}()
+
 	s.svc.HTTPMiddleware(s.mux).ServeHTTP(w, r)
 }
 
@@ -229,12 +272,12 @@ func (s *Server) start() error {
 		if err != nil && err != http.ErrServerClosed {
 			s.logger.Log(
 				"error", err,
-				"msg", "HTTP server error - initiating shutting down")
+				"message", "HTTP server error - initiating shutting down")
 			s.stop()
 		}
 	}()
 
-	s.logger.Log("msg",
+	s.logger.Log("message",
 		fmt.Sprintf("listening on HTTP port: %d", s.cfg.HTTPPort))
 
 	if s.gsvr != nil {
@@ -254,11 +297,11 @@ func (s *Server) start() error {
 			if err != nil {
 				s.logger.Log(
 					"error", err,
-					"msg", "gRPC server error - initiating shutting down")
+					"message", "gRPC server error - initiating shutting down")
 				s.stop()
 			}
 		}()
-		s.logger.Log("msg",
+		s.logger.Log("message",
 			fmt.Sprintf("listening on RPC port: %d", s.cfg.RPCPort))
 	}
 
@@ -272,6 +315,10 @@ func (s *Server) start() error {
 			// flush the logger after server shuts down
 			if s.logClose != nil {
 				s.logClose()
+			}
+
+			if s.errs != nil {
+				s.errs.Close()
 			}
 		}()
 

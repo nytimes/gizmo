@@ -97,6 +97,10 @@ func NewServer(svc Service) *Server {
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
 			ServiceName:    serviceID,
 			ServiceVersion: svcVersion,
+			OnError: func(err error) {
+				lg.Log("error", err,
+					"message", "error reporting client encountered an error")
+			},
 		})
 	}
 

@@ -102,6 +102,16 @@ func NewServer(svc Service) *Server {
 					"message", "error reporting client encountered an error")
 			},
 		})
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error reporting client")
+		}
+
+		err = initGAETrace(projectID, serviceID, svcVersion, lg)
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error tracing exporter")
+		}
 	}
 
 	s := &Server{

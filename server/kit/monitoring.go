@@ -20,6 +20,7 @@ func initGAETrace(projectID, service, version string, lg log.Logger) error {
 			lg.Log("error", err,
 				"message", "tracing client encountered an error")
 		},
+		DefaultMonitoringLabels: &stackdriver.Labels{},
 	})
 	if err != nil {
 		return err

@@ -27,22 +27,29 @@ type ProtoStatusResponse struct {
 	res  proto.Message
 }
 
-// to implement httptransport.StatusCoder
+// StatusCode implements httptransport.StatusCoder and will return the given HTTP code.
 func (c *ProtoStatusResponse) StatusCode() int {
 	return c.code
 }
 
-// to implement proto.Marshaler
+// Marshal is to implement proto.Marshaler. It will marshal the given message, not this
+// struct.
 func (c *ProtoStatusResponse) Marshal() ([]byte, error) {
 	return proto.Marshal(c.res)
 }
 
-// to implement proto.Message
-func (c *ProtoStatusResponse) Reset()         { c.res.Reset() }
-func (c *ProtoStatusResponse) String() string { return c.res.String() }
-func (c *ProtoStatusResponse) ProtoMessage()  { c.res.ProtoMessage() }
+// Reset is to implement proto.Message. It uses the given message's Reset method.
+func (c *ProtoStatusResponse) Reset() { c.res.Reset() }
 
-// to implement json.Marshaler
+// String is to implement proto.Message. It uses the given message's String method.
+func (c *ProtoStatusResponse) String() string { return c.res.String() }
+
+// ProtoMessage is to implement proto.Message. It uses the given message's ProtoMessage
+// method.
+func (c *ProtoStatusResponse) ProtoMessage() { c.res.ProtoMessage() }
+
+// MarshalJSON is to implement json.Marshaler. It will marshal the given message, not
+// this struct.
 func (c *ProtoStatusResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(c.res)
 }

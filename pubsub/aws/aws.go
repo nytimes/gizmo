@@ -219,6 +219,7 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 	s.sqs = sqs.New(sess, &aws.Config{
 		Credentials: creds,
 		Region:      &cfg.Region,
+		Endpoint:    cfg.EndpointURL,
 	})
 
 	if len(cfg.QueueURL) == 0 {

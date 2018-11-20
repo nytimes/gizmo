@@ -16,6 +16,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
+	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/trace/propagation"
 	ocontext "golang.org/x/net/context"
@@ -111,7 +112,7 @@ func NewServer(svc Service) *Server {
 				"message", "unable to initiate error reporting client")
 		}
 
-		err = initGAETrace(projectID, serviceID, svcVersion, lg)
+		err = initSDExporter(projectID, serviceID, svcVersion, lg)
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")
@@ -271,7 +272,8 @@ func (s *Server) register(svc Service) {
 	}
 
 	s.gsvr = grpc.NewServer(append(svc.RPCOptions(),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)),
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}))...)
 
 	s.gsvr.RegisterService(gdesc, svc)
 }

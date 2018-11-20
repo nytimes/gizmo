@@ -3,10 +3,11 @@ package kit
 import (
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/go-kit/kit/log"
+	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
 
-func initGAETrace(projectID, service, version string, lg log.Logger) error {
+func initSDExporter(projectID, service, version string, lg log.Logger) error {
 	exporter, err := stackdriver.NewExporter(stackdriver.Options{
 		ProjectID: projectID,
 		MonitoredResource: gaeInterface{
@@ -29,6 +30,7 @@ func initGAETrace(projectID, service, version string, lg log.Logger) error {
 		return err
 	}
 	trace.RegisterExporter(exporter)
+	view.RegisterExporter(exporter)
 	return nil
 }
 

@@ -11,9 +11,7 @@ func initGAETrace(projectID, service, version string, lg log.Logger) error {
 		ProjectID: projectID,
 		MonitoredResource: gaeInterface{
 			labels: map[string]string{
-				"module_id":  service,
 				"project_id": projectID,
-				"version_id": version,
 			},
 		},
 		OnError: func(err error) {
@@ -21,6 +19,11 @@ func initGAETrace(projectID, service, version string, lg log.Logger) error {
 				"message", "tracing client encountered an error")
 		},
 		DefaultMonitoringLabels: &stackdriver.Labels{},
+		DefaultTraceAttributes: map[string]interface{}{
+			"g.co/gae/app/module_version": version,
+			"service":                     service,
+			"version":                     version,
+		},
 	})
 	if err != nil {
 		return err

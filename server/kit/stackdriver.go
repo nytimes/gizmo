@@ -21,9 +21,8 @@ func initSDExporter(projectID, service, version string, lg log.Logger) error {
 		},
 		DefaultMonitoringLabels: &stackdriver.Labels{},
 		DefaultTraceAttributes: map[string]interface{}{
-			"g.co/gae/app/module_version": version,
-			"service":                     service,
-			"version":                     version,
+			"service": service,
+			"version": version,
 		},
 	})
 	if err != nil {

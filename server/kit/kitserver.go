@@ -11,10 +11,14 @@ import (
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
+	sdpropagation "contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
+	"go.opencensus.io/plugin/ocgrpc"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/trace/propagation"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -83,6 +87,7 @@ func NewServer(svc Service) *Server {
 		logClose func() error
 		errs     *errorreporting.Client
 	)
+	var propr propagation.HTTPFormat
 	// use the version variable to determine if we're in the GAE environment
 	if svcVersion == "" {
 		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
@@ -102,6 +107,18 @@ func NewServer(svc Service) *Server {
 					"message", "error reporting client encountered an error")
 			},
 		})
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error reporting client")
+		}
+
+		err = initSDExporter(projectID, serviceID, svcVersion, lg)
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error tracing exporter")
+		}
+
+		propr = &sdpropagation.HTTPFormat{}
 	}
 
 	s := &Server{
@@ -113,7 +130,7 @@ func NewServer(svc Service) *Server {
 		errs:     errs,
 	}
 	s.svr = &http.Server{
-		Handler:        s,
+		Handler:        &ochttp.Handler{Handler: s, Propagation: propr},
 		Addr:           fmt.Sprintf(":%d", cfg.HTTPPort),
 		MaxHeaderBytes: cfg.MaxHeaderBytes,
 		ReadTimeout:    cfg.ReadTimeout,
@@ -152,7 +169,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.errs.Flush()
 		}
 	}()
-
 	s.svc.HTTPMiddleware(s.mux).ServeHTTP(w, r)
 }
 
@@ -201,32 +217,35 @@ func (s *Server) register(svc Service) {
 				ep.Encoder = httptransport.EncodeJSONResponse
 			}
 			s.mux.Handle(method, path,
-				httptransport.NewServer(
-					svc.Middleware(ep.Endpoint),
-					ep.Decoder,
-					ep.Encoder,
-					append(opts, ep.Options...)...))
+				ochttp.WithRouteTag(
+					httptransport.NewServer(
+						svc.Middleware(ep.Endpoint),
+						ep.Decoder,
+						ep.Encoder,
+						append(opts, ep.Options...)...), path))
 		}
 	}
 
 	// register a simple health check if none provided
 	if !healthzFound {
 		s.mux.Handle(http.MethodGet, s.cfg.HealthCheckPath,
-			httptransport.NewServer(
-				svc.Middleware(okEndpoint),
-				basicDecoder,
-				httptransport.EncodeJSONResponse,
-				opts...))
+			ochttp.WithRouteTag(
+				httptransport.NewServer(
+					svc.Middleware(okEndpoint),
+					basicDecoder,
+					httptransport.EncodeJSONResponse,
+					opts...), s.cfg.HealthCheckPath))
 	}
 
 	// register a warmup request for App Engine apps that dont have one already.
 	if !warmupFound {
 		s.mux.Handle(http.MethodGet, warmupPath,
-			httptransport.NewServer(
-				svc.Middleware(okEndpoint),
-				basicDecoder,
-				httptransport.EncodeJSONResponse,
-				opts...))
+			ochttp.WithRouteTag(
+				httptransport.NewServer(
+					svc.Middleware(okEndpoint),
+					basicDecoder,
+					httptransport.EncodeJSONResponse,
+					opts...), warmupPath))
 	}
 
 	// add all pprof endpoints by default to HTTP
@@ -253,7 +272,8 @@ func (s *Server) register(svc Service) {
 	}
 
 	s.gsvr = grpc.NewServer(append(svc.RPCOptions(),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)))...)
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(inters...)),
+		grpc.StatsHandler(&ocgrpc.ServerHandler{}))...)
 
 	s.gsvr.RegisterService(gdesc, svc)
 }

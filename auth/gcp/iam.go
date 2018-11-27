@@ -205,7 +205,11 @@ func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, 
 		tknSrc oauth2.TokenSource
 	)
 	if cfg.JSON != nil {
-		tknSrc, err = google.JWTAccessTokenSourceFromJSON(cfg.JSON, iam.CloudPlatformScope)
+		creds, err := google.CredentialsFromJSON(ctx, cfg.JSON, iam.CloudPlatformScope)
+		if err != nil {
+			return nil, err
+		}
+		tknSrc = creds.TokenSource
 	} else {
 		tknSrc, err = defaultTokenSource(ctx, iam.CloudPlatformScope)
 	}

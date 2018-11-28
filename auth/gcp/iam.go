@@ -185,6 +185,12 @@ type IAMConfig struct {
 	Audience            string `envconfig:"IAM_AUDIENCE"`
 	Project             string `envconfig:"IAM_PROJECT"`
 	ServiceAccountEmail string `envconfig:"IAM_SERVICE_ACCOUNT_EMAIL"`
+
+	// JSON contains the raw bytes from a JSON credentials file.
+	// This field may be nil if authentication is provided by the
+	// environment and not with a credentials file, e.g. when code is
+	// running on Google Cloud Platform.
+	JSON []byte
 }
 
 // NewIAMTokenSource returns an oauth2.TokenSource that uses Google's IAM services
@@ -194,10 +200,23 @@ type IAMConfig struct {
 // runtime to the 2nd generation.
 // This implementation can be used in the 2nd gen runtime as it can reuse an http.Client.
 func NewIAMTokenSource(ctx context.Context, cfg IAMConfig) (oauth2.TokenSource, error) {
-	tknSrc, err := defaultTokenSource(ctx, iam.CloudPlatformScope)
+	var (
+		err    error
+		tknSrc oauth2.TokenSource
+	)
+	if cfg.JSON != nil {
+		creds, err := google.CredentialsFromJSON(ctx, cfg.JSON, iam.CloudPlatformScope)
+		if err != nil {
+			return nil, err
+		}
+		tknSrc = creds.TokenSource
+	} else {
+		tknSrc, err = defaultTokenSource(ctx, iam.CloudPlatformScope)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	svc, err := iam.New(oauth2.NewClient(ctx, tknSrc))
 	if err != nil {
 		return nil, err

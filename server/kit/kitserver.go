@@ -1,4 +1,4 @@
-// package kit implements an opinionated server based on go-kit primitives.
+// Package kit implements an opinionated server based on go-kit primitives.
 package kit
 
 import (

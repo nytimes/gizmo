@@ -1,5 +1,3 @@
-// +build !appengine
-
 package kit
 
 import (
@@ -7,9 +5,6 @@ import (
 	"os/signal"
 	"syscall"
 )
-
-// TODO(jprobinson): built in stackdriver error reporting
-// TODO(jprobinson): built in stackdriver tracing (sampling)
 
 // Run will use environment variables to configure the server then register the given
 // Service and start up the server(s).

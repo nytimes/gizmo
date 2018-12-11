@@ -1,3 +1,4 @@
+// Package kit implements an opinionated server based on go-kit primitives.
 package kit
 
 import (
@@ -7,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
@@ -76,29 +76,20 @@ func NewServer(svc Service) *Server {
 		r = opt(r)
 	}
 
-	// check if we're running on GAE via env variables
-	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	serviceID := os.Getenv("GAE_SERVICE")
-	svcVersion := os.Getenv("GAE_VERSION")
+	ctx := context.Background()
+
+	lg, logClose, err := NewLogger(ctx)
+	if err != nil {
+		stdlog.Fatalf("unable to start up logger: %s", err)
+	}
 
 	var (
-		err      error
-		lg       log.Logger
-		logClose func() error
-		errs     *errorreporting.Client
+		errs  *errorreporting.Client
+		propr propagation.HTTPFormat
 	)
-	var propr propagation.HTTPFormat
-	// use the version variable to determine if we're in the GAE environment
-	if svcVersion == "" {
-		lg = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
-	} else {
-		ctx := context.Background()
-		lg, logClose, err = newAppEngineLogger(ctx,
-			projectID, serviceID, svcVersion)
-		if err != nil {
-			stdlog.Fatalf("unable to start up app engine logger: %s", err)
-		}
-
+	// if in App Engine, initiate an error reporter and the stackdriver exporters
+	if isGAE() {
+		projectID, serviceID, svcVersion := getGAEInfo()
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
 			ServiceName:    serviceID,
 			ServiceVersion: svcVersion,

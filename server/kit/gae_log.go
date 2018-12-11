@@ -5,6 +5,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -14,6 +15,17 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 )
+
+// project, service, version
+func getGAEInfo() (string, string, string) {
+	return os.Getenv("GOOGLE_CLOUD_PROJECT"),
+		os.Getenv("GAE_SERVICE"),
+		os.Getenv("GAE_VERSION")
+}
+
+func isGAE() bool {
+	return os.Getenv("GAE_DEPLOYMENT_ID") != ""
+}
 
 type gaeLogger struct {
 	project string

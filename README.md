@@ -29,16 +29,15 @@ It offers 2 server implementations:
 
 #### [`server/kit`](https://godoc.org/github.com/NYTimes/gizmo/server/kit)
 
-This is an experimental package in Gizmo!
+The `server/kit` package embodies Gizmo's goals to combine with go-kit.
 
-* The rationale behind this package:
-    * A more opinionated server with fewer choices
-    * go-kit is used for serving HTTP/JSON & gRPC is used for serving HTTP2/RPC
-    * Monitoring and metrics are handled by a sidecar (ie. Cloud Endpoints)
-    * Logs always go to stdout/stderr
-    * Using Go's 1.8 graceful HTTP shutdown
-    * Services using this package are meant for deploy to GCP with GKE and Cloud Endpoints.
-
+* In this package you'll find:
+    * A more opinionated server with fewer choices.
+    * go-kit used for serving HTTP/JSON & gRPC used for serving HTTP2/RPC
+    * Monitoring and metrics are automatically registered if running within App Engine.
+    * Logs go to stdout locally or directly to Stackdriver when in GCP.
+    * Using Go's 1.8 graceful HTTP shutdown.
+    * Services using this package are expected to deploy to GCP.
 
 #### [`auth`](https://godoc.org/github.com/NYTimes/gizmo/auth)
 

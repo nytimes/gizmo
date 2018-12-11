@@ -2,11 +2,30 @@ package kit
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport/http"
 	"google.golang.org/grpc/metadata"
 )
+
+// NewLogger will inspect the environment and, if running in the Google App Engine
+// environment, it will return a new Stackdriver logger annotated with the current
+// server's project ID, service ID and version. If not in App Engine, a normal JSON
+// logger pointing to stdout will be returned.
+// This function can be used for services that need to log information outside the
+// context of an inbound request.
+// When using the Stackdriver logger, any go-kit/log/levels will be translated to
+// Stackdriver severity levels.
+func NewLogger(ctx context.Context) (log.Logger, func() error, error) {
+	// running locally or in a non-GAE environment? use JSON
+	if !isGAE() {
+		return log.NewJSONLogger(log.NewSyncWriter(os.Stdout)), func() error { return nil }, nil
+	}
+
+	projectID, serviceID, svcVersion := getGAEInfo()
+	return newAppEngineLogger(ctx, projectID, serviceID, svcVersion)
+}
 
 // Logger will return a kit/log.Logger that has been injected into the context by the kit
 // server. This logger has had request headers and metadata added as key values.

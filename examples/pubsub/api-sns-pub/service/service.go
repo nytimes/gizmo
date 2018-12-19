@@ -3,7 +3,6 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/config/combined"
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/gizmo/server"
@@ -21,8 +20,8 @@ type (
 
 // NewJSONPubService will instantiate a JSONPubService
 // with the given configuration.
-func NewJSONPubService(cfg *combined.Config) *JSONPubService {
-	pub, err := aws.NewPublisher(cfg.SNS)
+func NewJSONPubService(cfg aws.SNSConfig) *JSONPubService {
+	pub, err := aws.NewPublisher(cfg)
 	if err != nil {
 		server.Log.Fatal("unable to init publisher: ", err)
 	}

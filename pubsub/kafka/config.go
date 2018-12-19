@@ -3,8 +3,8 @@ package kafka
 import (
 	"strings"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/Shopify/sarama"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Config holds the basic information for working with Kafka.
@@ -29,7 +29,7 @@ type Config struct {
 // is returned.
 func LoadConfigFromEnv() *Config {
 	var kafka Config
-	config.LoadEnvConfig(&kafka)
+	envconfig.Process("", &kafka)
 	if kafka.BrokerHostsString == "" {
 		return nil
 	}

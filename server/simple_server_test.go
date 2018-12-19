@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/NYTimes/gizmo/web"
 )
 
 func BenchmarkFastSimpleServer_NoParam(b *testing.B) {
@@ -96,7 +94,7 @@ func (s *benchmarkSimpleService) Middleware(h http.Handler) http.Handler {
 }
 
 func (s *benchmarkSimpleService) GetSimple(w http.ResponseWriter, r *http.Request) {
-	something := web.Vars(r)["something"]
+	something := Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 
@@ -235,7 +233,7 @@ func (s *benchmarkJSONService) GetJSON(r *http.Request) (int, interface{}, error
 }
 
 func (s *benchmarkJSONService) GetJSONParam(r *http.Request) (int, interface{}, error) {
-	something := web.Vars(r)["something"]
+	something := Vars(r)["something"]
 	return http.StatusOK, &testJSON{"hi", something}, nil
 }
 
@@ -329,7 +327,7 @@ func (s *testMixedService) Endpoints() map[string]map[string]http.HandlerFunc {
 }
 
 func (s *testMixedService) GetSimple(w http.ResponseWriter, r *http.Request) {
-	something := web.Vars(r)["something"]
+	something := Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 

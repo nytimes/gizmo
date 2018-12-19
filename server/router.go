@@ -5,8 +5,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/julienschmidt/httprouter"
-
-	"github.com/NYTimes/gizmo/web"
 )
 
 // Router is an interface to wrap different router types to be embedded within
@@ -43,7 +41,7 @@ func (g *GorillaRouter) Handle(method, path string, h http.Handler) {
 		// copy the route params into a shared location
 		// duplicating memory, but allowing Gizmo to be more flexible with
 		// router implementations.
-		web.SetRouteVars(r, mux.Vars(r))
+		SetRouteVars(r, mux.Vars(r))
 		h.ServeHTTP(w, r)
 	})).Methods(method)
 }
@@ -97,7 +95,7 @@ func (f *FastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // HTTPToFastRoute will convert an http.Handler to a httprouter.Handle
 // by stuffing any route parameters into a Gorilla request context.
 // To access the request parameters within the endpoint,
-// use the `web.Vars` function.
+// use the `Vars` function.
 func HTTPToFastRoute(fh http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		if len(params) > 0 {
@@ -105,7 +103,7 @@ func HTTPToFastRoute(fh http.Handler) httprouter.Handle {
 			for _, param := range params {
 				vars[param.Key] = param.Value
 			}
-			web.SetRouteVars(r, vars)
+			SetRouteVars(r, vars)
 		}
 		fh.ServeHTTP(w, r)
 	}

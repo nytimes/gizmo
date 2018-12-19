@@ -8,8 +8,7 @@ import (
 	"github.com/go-kit/kit/metrics/graphite"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/go-kit/kit/metrics/statsd"
-
-	"github.com/NYTimes/gizmo/config"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Type acts as an 'enum' type to represent
@@ -68,7 +67,7 @@ type Config struct {
 // from environment variables.
 func LoadConfigFromEnv() Config {
 	var mets Config
-	config.LoadEnvConfig(&mets)
+	envconfig.Process("", &mets)
 	return mets
 }
 

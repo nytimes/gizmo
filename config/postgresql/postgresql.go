@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Config holds everything you need to
@@ -64,7 +64,7 @@ func (p *Config) String() string {
 // is returned
 func LoadConfigFromEnv() *Config {
 	var postgres Config
-	config.LoadEnvConfig(&postgres)
+	envconfig.Process("", &postgres)
 	if postgres.Host != "" {
 		return &postgres
 	}

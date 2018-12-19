@@ -131,14 +131,14 @@ var _ pubsub.MultiPublisher = &publisher{}
 
 // NewPublisher will instantiate a new GCP MultiPublisher.
 func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) (pubsub.MultiPublisher, error) {
-	if cfg.Config.ProjectID == "" {
+	if cfg.ProjectID == "" {
 		return nil, errors.New("project id is required")
 	}
 	if cfg.Topic == "" {
 		return nil, errors.New("topic name is required")
 	}
 
-	c, err := gpubsub.NewClient(ctx, cfg.Config.ProjectID, opts...)
+	c, err := gpubsub.NewClient(ctx, cfg.ProjectID, opts...)
 	if err != nil {
 		return nil, err
 	}

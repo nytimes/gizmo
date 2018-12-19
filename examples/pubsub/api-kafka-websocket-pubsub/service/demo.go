@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/web"
 )
 
 // Demo will serve an HTML page that demonstrates how to use the 'stream'
@@ -16,7 +15,7 @@ func (s *StreamService) Demo(w http.ResponseWriter, r *http.Request) {
 		StreamID int64
 	}{
 		s.port,
-		web.GetInt64Var(r, "stream_id"),
+		server.GetInt64Var(r, "stream_id"),
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

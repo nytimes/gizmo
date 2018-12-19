@@ -6,12 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/websocket"
-
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/kafka"
 	"github.com/NYTimes/gizmo/server"
-	"github.com/NYTimes/gizmo/web"
+	"github.com/gorilla/websocket"
 )
 
 var (
@@ -32,7 +30,7 @@ func discardOffset(offset int64) {}
 // consumed from Kafka will be published to the web socket and vice versa.
 func (s *StreamService) Stream(w http.ResponseWriter, r *http.Request) {
 	cfg := *s.cfg
-	cfg.Topic = topicName(web.GetInt64Var(r, "stream_id"))
+	cfg.Topic = topicName(server.GetInt64Var(r, "stream_id"))
 	server.LogWithFields(r).WithField("topic", cfg.Topic).Info("new stream req")
 
 	sub, err := kafka.NewSubscriber(&cfg, zeroOffset, discardOffset)

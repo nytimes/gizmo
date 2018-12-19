@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/NYTimes/gizmo/config"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Config holds everything you need to
@@ -92,7 +92,7 @@ func (m *Config) String() string {
 // is returned.
 func LoadConfigFromEnv() *Config {
 	var mysql Config
-	config.LoadEnvConfig(&mysql)
+	envconfig.Process("", &mysql)
 	if mysql.Host != "" {
 		return &mysql
 	}

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elasticache"
 	"github.com/bradfitz/gomemcache/memcache"
+	"github.com/kelseyhightower/envconfig"
 )
 
 const (
@@ -95,7 +95,7 @@ func (e *ElastiCache) MustClient() *memcache.Client {
 // from environment variables.
 func LoadConfigFromEnv() Config {
 	var aws Config
-	config.LoadEnvConfig(&aws)
+	envconfig.Process("", &aws)
 	return aws
 }
 
@@ -104,7 +104,7 @@ func LoadConfigFromEnv() Config {
 // is returned.
 func LoadDynamoDBFromEnv() DynamoDB {
 	var ddb DynamoDB
-	config.LoadEnvConfig(&ddb)
+	envconfig.Process("", &ddb)
 	return ddb
 }
 
@@ -112,7 +112,7 @@ func LoadDynamoDBFromEnv() DynamoDB {
 // from environment variables.
 func LoadS3FromEnv() S3 {
 	var s3 S3
-	config.LoadEnvConfig(&s3)
+	envconfig.Process("", &s3)
 	return s3
 }
 
@@ -120,6 +120,6 @@ func LoadS3FromEnv() S3 {
 // from environment variables.
 func LoadElastiCacheFromEnv() ElastiCache {
 	var el ElastiCache
-	config.LoadEnvConfig(&el)
+	envconfig.Process("", &el)
 	return el
 }

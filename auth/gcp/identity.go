@@ -162,9 +162,12 @@ func IdentityVerifyFunc(vf func(ctx context.Context, cs IdentityClaimSet) bool) 
 
 // Issuers contains the known Google account issuers for identity tokens.
 var Issuers = map[string]bool{
-	"accounts.google.com":         true,
-	"https://accounts.google.com": true,
+	"accounts.google.com": true,
+	Issuer:                true,
 }
+
+// Issuer is the string that will be used for the "iss" field in tokens.
+const Issuer = "https://accounts.google.com"
 
 // ValidIdentityClaims ensures the token audience and issuers match expectations.
 func ValidIdentityClaims(cs IdentityClaimSet, audience string) bool {

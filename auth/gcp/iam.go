@@ -317,6 +317,7 @@ func (s iamTokenSource) newIAMToken(ctx context.Context, svc *iam.Service) (stri
 	exp := iss.Add(defaultTokenTTL)
 	payload, err := json.Marshal(IAMClaimSet{
 		ClaimSet: jws.ClaimSet{
+			Iss: Issuer,
 			Aud: s.cfg.Audience,
 			Exp: exp.Unix(),
 			Iat: iss.Unix(),

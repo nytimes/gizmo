@@ -53,7 +53,7 @@ The `auth/gcp` package provides 2 Google Cloud Platform based `auth.PublicKeySou
 
 #### [`config`](https://godoc.org/github.com/NYTimes/gizmo/config)
 
-The `config` package contains a handful of useful functions to load to configuration structs from JSON files, or environment variables.
+The `config` package contains a handful of useful functions to load to configuration structs from JSON files or environment variables.
 
 There are also many structs for common configuration options and credentials of different Cloud Services and Databases.
 

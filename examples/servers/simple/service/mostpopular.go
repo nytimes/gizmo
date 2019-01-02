@@ -3,13 +3,13 @@ package service
 import (
 	"net/http"
 
-	"github.com/NYTimes/gizmo/web"
+	"github.com/NYTimes/gizmo/server"
 )
 
 func (s *SimpleService) GetMostPopular(r *http.Request) (int, interface{}, error) {
-	resourceType := web.Vars(r)["resourceType"]
-	section := web.Vars(r)["section"]
-	timeframe := web.GetUInt64Var(r, "timeframe")
+	resourceType := server.Vars(r)["resourceType"]
+	section := server.Vars(r)["section"]
+	timeframe := server.GetUInt64Var(r, "timeframe")
 	res, err := s.client.GetMostPopular(resourceType, section, uint(timeframe))
 	if err != nil {
 		return http.StatusInternalServerError, nil, &jsonErr{err.Error()}

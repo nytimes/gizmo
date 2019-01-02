@@ -6,8 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/NYTimes/gizmo/web"
 )
 
 type benchmarkContextService struct {
@@ -38,7 +36,7 @@ func (s *benchmarkContextService) Middleware(h http.Handler) http.Handler {
 }
 
 func (s *benchmarkContextService) GetSimple(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	something := web.Vars(r)["something"]
+	something := Vars(r)["something"]
 	fmt.Fprint(w, something)
 }
 

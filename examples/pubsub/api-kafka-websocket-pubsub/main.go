@@ -1,15 +1,19 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config/combined"
-	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/NYTimes/gizmo/server"
-
+	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/examples/pubsub/api-kafka-websocket-pubsub/service"
+	"github.com/NYTimes/gizmo/pubsub"
+	"github.com/NYTimes/gizmo/pubsub/kafka"
+	"github.com/NYTimes/gizmo/server"
 )
 
 func main() {
-	cfg := combined.NewConfig("./config.json")
+	var cfg struct {
+		Server *server.Config
+		Kafka  *kafka.Config
+	}
+	config.LoadJSONFile("./config.json", &cfg)
 
 	// set the pubsub's Log to be the same as server's
 	pubsub.Log = server.Log

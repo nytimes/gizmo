@@ -20,12 +20,9 @@ This toolkit provides packages to put together server and pubsub daemons with th
 
 The `server` package is the bulk of the toolkit and relies on `server.Config` to manage `Server` implementations.
 
-It offers 2 server implementations:
+It offers 1 server implementation:
 
-1. [`SimpleServer`](https://godoc.org/github.com/NYTimes/gizmo/server#SimpleServer), which is capable of handling basic HTTP and JSON requests via 5 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`.
-
-2. [`RPCServer`](https://godoc.org/github.com/NYTimes/gizmo/server#RPCServer), which is capable of serving a gRPC server on one port and JSON endpoints on another. This kind of server can only handle the `RPCService` implementation.
-
+[`SimpleServer`](https://godoc.org/github.com/NYTimes/gizmo/server#SimpleServer), which is capable of handling basic HTTP and JSON requests via 5 of the available `Service` implementations: `SimpleService`, `JSONService`, `ContextService`, `MixedService` and a `MixedContextService`.
 
 #### [`server/kit`](https://godoc.org/github.com/NYTimes/gizmo/server/kit)
 
@@ -56,10 +53,9 @@ The `auth/gcp` package provides 2 Google Cloud Platform based `auth.PublicKeySou
 
 #### [`config`](https://godoc.org/github.com/NYTimes/gizmo/config)
 
-The `config` package contains a handful of useful functions to load to configuration structs from JSON files, JSON blobs in Consul k/v, or environment variables.
+The `config` package contains a handful of useful functions to load to configuration structs from JSON files or environment variables.
 
-* There are also many structs for common configuration options and credentials of different Cloud Services and Databases.
-* The package also has a generic `Config` type in the `config/combined` subpackage that contains all of the above types. It's meant to be a 'catch all' convenience struct that many applications should be able to use.
+There are also many structs for common configuration options and credentials of different Cloud Services and Databases.
 
 #### [`pubsub`](https://godoc.org/github.com/NYTimes/gizmo/pubsub)
  
@@ -76,14 +72,9 @@ There are 4 implementations of `pubsub` interfaces:
 * For publishing via HTTP, you can use the [`pubsub/http`](https://godoc.org/github.com/NYTimes/gizmo/pubsub/http) package
 
 
-
 #### [`pubsub/pubsubtest`](https://godoc.org/github.com/NYTimes/gizmo/pubsub/pubsubtest)
 
 The `pubsub/pubsubtest` package contains test implementations of the `pubsub.Publisher`, `pubsub.MultiPublisher`, and `pubsub.Subscriber` interfaces that will allow developers to easily mock out and test their `pubsub` implementations.
-
-#### [`web`](https://godoc.org/github.com/NYTimes/gizmo/web)
-
-The `web` package has a handful of very useful functions for parsing types from request queries and payloads.
 
 #### Examples
 

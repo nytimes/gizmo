@@ -9,15 +9,12 @@ import (
 	"runtime/debug"
 	"strings"
 
+	metricscfg "github.com/NYTimes/gizmo/config/metrics"
 	"github.com/go-kit/kit/metrics"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	netContext "golang.org/x/net/context"
-	"google.golang.org/appengine"
-
-	metricscfg "github.com/NYTimes/gizmo/config/metrics"
-	"github.com/NYTimes/gizmo/web"
 )
 
 // SimpleServer is a basic http Server implementation for
@@ -147,13 +144,6 @@ func (s *SimpleServer) Start() error {
 		}
 		s.mux.HandleFunc("GET", s.cfg.Metrics.Path,
 			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
-	}
-
-	// if this is an App Engine setup, just run it here
-	if s.cfg.appEngine {
-		http.Handle("/", s)
-		appengine.Main()
-		return nil
 	}
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
@@ -306,7 +296,7 @@ func GetForwardedIP(r *http.Request) string {
 
 // GetIP returns the IP address for the given request.
 func GetIP(r *http.Request) (string, error) {
-	ip, ok := web.Vars(r)["ip"]
+	ip, ok := Vars(r)["ip"]
 	if ok {
 		return ip, nil
 	}

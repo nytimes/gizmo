@@ -2,17 +2,16 @@ package main
 
 import (
 	"github.com/NYTimes/gizmo/examples/servers/simple/service"
-
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/server"
+	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {
 	// showing 1 way of managing gizmo/config: importing from the environment
 	var cfg service.Config
-	config.LoadEnvConfig(&cfg)
+	envconfig.Process("", &cfg)
 	cfg.Server = &server.Config{}
-	config.LoadEnvConfig(cfg.Server)
+	envconfig.Process("", &cfg.Server)
 
 	server.Init("nyt-simple-proxy", cfg.Server)
 

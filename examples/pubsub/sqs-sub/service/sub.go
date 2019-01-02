@@ -9,15 +9,14 @@ import (
 	"syscall"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/combined"
+	cmetrics "github.com/NYTimes/gizmo/config/metrics"
+	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/logrotate"
-	"github.com/sirupsen/logrus"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
-
-	"github.com/NYTimes/gizmo/examples/nyt"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -33,9 +32,11 @@ var (
 )
 
 type Config struct {
-	*combined.Config
 	MostPopularToken string
 	SemanticToken    string
+	Log              *string
+	Metrics          cmetrics.Config
+	SQS              aws.SQSConfig
 }
 
 func Init() {

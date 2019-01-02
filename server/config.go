@@ -6,20 +6,16 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/handlers"
-
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/metrics"
+	"github.com/kelseyhightower/envconfig"
 )
 
 // Config holds info required to configure a gizmo server.Server.
 type Config struct {
-	// Server will tell the server package which type of server to init. If
-	// empty, this will default to 'simple'.
-	ServerType string `envconfig:"GIZMO_SERVER_TYPE"`
-
 	// HealthCheckType is used by server to init the proper HealthCheckHandler.
 	// If empty, this will default to 'simple'.
 	HealthCheckType string `envconfig:"GIZMO_HEALTH_CHECK_TYPE"`
@@ -106,7 +102,7 @@ type Config struct {
 // is returned.
 func LoadConfigFromEnv() *Config {
 	var server Config
-	config.LoadEnvConfig(&server)
+	envconfig.Process("", &server)
 	server.Metrics = metrics.LoadConfigFromEnv()
 	return &server
 }

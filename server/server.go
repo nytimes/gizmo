@@ -11,13 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NYTimes/gizmo/config/metrics"
+	"github.com/NYTimes/logrotate"
 	"github.com/go-kit/kit/metrics/provider"
 	"github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
-
-	"github.com/NYTimes/gizmo/config/metrics"
-	"github.com/NYTimes/gizmo/web"
-	"github.com/NYTimes/logrotate"
 )
 
 // Version is meant to be set with the current package version at build time.
@@ -51,8 +49,8 @@ var (
 	// timing out write of the response. The default timeout is 10 seconds.
 	writeTimeout = 10 * time.Second
 	// jsonContentType is the content type that will be used for JSONEndpoints.
-	// It will default to the web.JSONContentType value.
-	jsonContentType = web.JSONContentType
+	// It will default to the JSONContentType value.
+	jsonContentType = JSONContentType
 	// idleTimeout is used by the http server to set a maximum duration for
 	// keep-alive connections.
 	idleTimeout = 120 * time.Second
@@ -172,17 +170,7 @@ func LogWithFields(r *http.Request) *logrus.Entry {
 // NewServer will inspect the config and generate
 // the appropriate Server implementation.
 func NewServer(cfg *Config) Server {
-	switch cfg.ServerType {
-	case "simple":
-		return NewSimpleServer(cfg)
-	case "rpc":
-		return NewRPCServer(cfg)
-	case "appengine":
-		cfg.appEngine = true
-		return NewSimpleServer(cfg)
-	default:
-		return NewSimpleServer(cfg)
-	}
+	return NewSimpleServer(cfg)
 }
 
 // NewHealthCheckHandler will inspect the config to generate
@@ -195,8 +183,6 @@ func NewHealthCheckHandler(cfg *Config) (HealthCheckHandler, error) {
 	switch cfg.HealthCheckType {
 	case "simple":
 		return NewSimpleHealthCheck(cfg.HealthCheckPath), nil
-	case "esx":
-		return NewESXHealthCheck(), nil
 	case "custom":
 		if cfg.CustomHealthCheckHandler == nil {
 			return nil, errors.New("health check type is set to 'custom', but no Config.CustomHealthCheckHandler provided")

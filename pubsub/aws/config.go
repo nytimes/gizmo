@@ -3,8 +3,8 @@ package aws
 import (
 	"time"
 
-	"github.com/NYTimes/gizmo/config"
 	"github.com/NYTimes/gizmo/config/aws"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type (
@@ -43,7 +43,7 @@ type (
 // is returned.
 func LoadSQSConfigFromEnv() SQSConfig {
 	var cfg SQSConfig
-	config.LoadEnvConfig(&cfg)
+	envconfig.Process("", &cfg)
 	return cfg
 }
 
@@ -52,6 +52,6 @@ func LoadSQSConfigFromEnv() SQSConfig {
 // is returned.
 func LoadSNSConfigFromEnv() SNSConfig {
 	var cfg SNSConfig
-	config.LoadEnvConfig(&cfg)
+	envconfig.Process("", &cfg)
 	return cfg
 }

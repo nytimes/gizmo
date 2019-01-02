@@ -45,7 +45,7 @@ func main() {
 		}).Fatal("unable to publish")
 	}
 
-	sub, err := gcp.NewSubscriber(ctx, cfg.Config.ProjectID, cfg.Subscription)
+	sub, err := gcp.NewSubscriber(ctx, cfg.ProjectID, cfg.Subscription)
 	if err != nil {
 		pubsub.Log.WithFields(logrus.Fields{
 			"error": err,

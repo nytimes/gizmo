@@ -1,15 +1,14 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/server/kit"
-
 	"github.com/NYTimes/gizmo/examples/servers/kit/api"
+	"github.com/NYTimes/gizmo/server/kit"
+	"github.com/kelseyhightower/envconfig"
 )
 
 func main() {
 	var cfg api.Config
-	config.LoadEnvConfig(&cfg)
+	envconfig.Process("", &cfg)
 
 	// runs the HTTP _AND_ gRPC servers
 	err := kit.Run(api.New(cfg))

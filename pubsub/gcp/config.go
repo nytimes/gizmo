@@ -1,14 +1,11 @@
 package gcp
 
-import (
-	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/gcp"
-)
+import "github.com/kelseyhightower/envconfig"
 
 // Config holds common credentials and config values for
 // working with GCP PubSub.
 type Config struct {
-	gcp.Config
+	ProjectID string `envconfig:"GOOGLE_CLOUD_PROJECT"`
 
 	// For publishing
 	Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
@@ -20,6 +17,6 @@ type Config struct {
 // from environment variables.
 func LoadConfigFromEnv() Config {
 	var ps Config
-	config.LoadEnvConfig(&ps)
+	envconfig.Process("", &ps)
 	return ps
 }

@@ -1,16 +1,20 @@
 package main
 
 import (
-	"github.com/NYTimes/gizmo/config/combined"
+	"github.com/NYTimes/gizmo/config"
+	"github.com/NYTimes/gizmo/config/mysql"
+	"github.com/NYTimes/gizmo/examples/servers/mysql-saved-items/service"
 	"github.com/NYTimes/gizmo/server"
 	_ "github.com/go-sql-driver/mysql"
-
-	"github.com/NYTimes/gizmo/examples/servers/mysql-saved-items/service"
 )
 
 func main() {
+	var cfg struct {
+		Server *server.Config
+		MySQL  *mysql.Config
+	}
 	// load from the local JSON file into a config.Config struct
-	cfg := combined.NewConfig("./config.json")
+	config.LoadJSONFile("./config.json", &cfg)
 	// SetConfigOverrides will allow us to override some of the values in
 	// the JSON file with CLI flags.
 	server.SetConfigOverrides(cfg.Server)

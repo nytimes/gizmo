@@ -56,15 +56,18 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		if err != nil {
 			return p, err
 		}
-	} else {
+	} else if !cfg.UseDefaultCredentials {
 		creds = credentials.NewEnvCredentials()
 	}
 
-	p.sns = sns.New(sess, &aws.Config{
-		Credentials: creds,
-		Region:      &cfg.Region,
-		Endpoint:    cfg.EndpointURL,
-	})
+	awsConfig := &aws.Config{
+		Region:   &cfg.Region,
+		Endpoint: cfg.EndpointURL,
+	}
+	if creds != nil {
+		awsConfig.Credentials = creds
+	}
+	p.sns = sns.New(sess, awsConfig)
 	return p, nil
 }
 
@@ -212,15 +215,18 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		if err != nil {
 			return s, err
 		}
-	} else {
+	} else if !cfg.UseDefaultCredentials {
 		creds = credentials.NewEnvCredentials()
 	}
 
-	s.sqs = sqs.New(sess, &aws.Config{
-		Credentials: creds,
-		Region:      &cfg.Region,
-		Endpoint:    cfg.EndpointURL,
-	})
+	awsConfig := &aws.Config{
+		Region:   &cfg.Region,
+		Endpoint: cfg.EndpointURL,
+	}
+	if creds != nil {
+		awsConfig.Credentials = creds
+	}
+	s.sqs = sqs.New(sess, awsConfig)
 
 	if len(cfg.QueueURL) == 0 {
 		var urlResp *sqs.GetQueueUrlOutput

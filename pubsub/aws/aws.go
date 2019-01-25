@@ -56,8 +56,6 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		if err != nil {
 			return p, err
 		}
-	} else {
-		creds = credentials.NewEnvCredentials()
 	}
 
 	p.sns = sns.New(sess, &aws.Config{
@@ -212,8 +210,6 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		if err != nil {
 			return s, err
 		}
-	} else {
-		creds = credentials.NewEnvCredentials()
 	}
 
 	s.sqs = sqs.New(sess, &aws.Config{

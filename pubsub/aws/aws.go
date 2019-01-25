@@ -56,8 +56,6 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		if err != nil {
 			return p, err
 		}
-	} else if !cfg.UseDefaultCredentials {
-		creds = credentials.NewEnvCredentials()
 	}
 
 	awsConfig := &aws.Config{
@@ -215,8 +213,6 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		if err != nil {
 			return s, err
 		}
-	} else if !cfg.UseDefaultCredentials {
-		creds = credentials.NewEnvCredentials()
 	}
 
 	awsConfig := &aws.Config{

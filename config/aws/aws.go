@@ -34,9 +34,6 @@ type (
 		// using this value. Note that AWS emulators (such as localstack) often have
 		// different endpoint URL for each emulated service.
 		EndpointURL *string `envconfig:"AWS_ENDPOINT_URL"`
-		// Whether to use the default credentials. In the case where the application container already has a role
-		// with AWS permissions associated with it, there is no need to configure credentials.
-		UseDefaultCredentials bool `envconfig:"AWS_USE_DEFAULT_CREDENTIALS"`
 	}
 
 	// S3 holds the info required to work with Amazon S3.

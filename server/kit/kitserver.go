@@ -99,15 +99,13 @@ func NewServer(svc Service) *Server {
 			svcName, svcVersion = n, v
 		}
 
-		if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
-			err = initSDExporter(*opt)
-			if err != nil {
-				lg.Log("error", err,
-					"message", "unable to initiate error tracing exporter")
-			}
-
-			propr = &sdpropagation.HTTPFormat{}
+		err = initSDExporter(sdExporterOptions(projectID, svcName, svcVersion, lg))
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error tracing exporter")
 		}
+
+		propr = &sdpropagation.HTTPFormat{}
 
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
 			ServiceName:    svcName,

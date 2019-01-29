@@ -10,7 +10,7 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func sdExporterOptions(projectID, service, version string, lg log.Logger) *stackdriver.Options {
+func sdExporterOptions(projectID, service, version string, lg log.Logger) stackdriver.Options {
 	opt := stackdriver.Options{
 		ProjectID: projectID,
 		MonitoredResource: mrInterface{
@@ -40,7 +40,7 @@ func sdExporterOptions(projectID, service, version string, lg log.Logger) *stack
 		}
 	}
 
-	return nil
+	return opt
 }
 
 func googleProjectID() string {

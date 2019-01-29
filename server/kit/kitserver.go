@@ -91,11 +91,10 @@ func NewServer(svc Service) *Server {
 
 	projectID := googleProjectID()
 	if projectID != "" {
-		svcName, svcVersion := "", ""
+		var svcName, svcVersion string
 		if isGAE() {
 			_, svcName, svcVersion = getGAEInfo()
-		}
-		if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
+		} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
 			svcName, svcVersion = n, v
 		}
 
@@ -108,20 +107,18 @@ func NewServer(svc Service) *Server {
 
 			propr = &sdpropagation.HTTPFormat{}
 
-			if err == nil {
-				errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
-					ServiceName:    svcName,
-					ServiceVersion: svcVersion,
+			errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+				ServiceName:    svcName,
+				ServiceVersion: svcVersion,
 
-					OnError: func(err error) {
-						lg.Log("error", err,
-							"message", "error reporting client encountered an error")
-					},
-				})
-				if err != nil {
+				OnError: func(err error) {
 					lg.Log("error", err,
-						"message", "unable to initiate error reporting client")
-				}
+						"message", "error reporting client encountered an error")
+				},
+			})
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate error reporting client")
 			}
 		}
 	}

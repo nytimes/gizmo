@@ -18,7 +18,7 @@ import (
 
 // project, service, version
 func getGAEInfo() (string, string, string) {
-	return os.Getenv("GOOGLE_CLOUD_PROJECT"),
+	return googleProjectID(),
 		os.Getenv("GAE_SERVICE"),
 		os.Getenv("GAE_VERSION")
 }

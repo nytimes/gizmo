@@ -90,36 +90,34 @@ func NewServer(svc Service) *Server {
 	)
 
 	projectID := googleProjectID()
-	if projectID != "" {
-		var svcName, svcVersion string
-		if isGAE() {
-			_, svcName, svcVersion = getGAEInfo()
-		} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
-			svcName, svcVersion = n, v
+	var svcName, svcVersion string
+	if isGAE() {
+		_, svcName, svcVersion = getGAEInfo()
+	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
+		svcName, svcVersion = n, v
+	}
+
+	if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
+		err = initSDExporter(*opt)
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error tracing exporter")
 		}
 
-		if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
-			err = initSDExporter(*opt)
-			if err != nil {
+		propr = &sdpropagation.HTTPFormat{}
+
+		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+			ServiceName:    svcName,
+			ServiceVersion: svcVersion,
+
+			OnError: func(err error) {
 				lg.Log("error", err,
-					"message", "unable to initiate error tracing exporter")
-			}
-
-			propr = &sdpropagation.HTTPFormat{}
-
-			errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
-				ServiceName:    svcName,
-				ServiceVersion: svcVersion,
-
-				OnError: func(err error) {
-					lg.Log("error", err,
-						"message", "error reporting client encountered an error")
-				},
-			})
-			if err != nil {
-				lg.Log("error", err,
-					"message", "unable to initiate error reporting client")
-			}
+					"message", "error reporting client encountered an error")
+			},
+		})
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error reporting client")
 		}
 	}
 

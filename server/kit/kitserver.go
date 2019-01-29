@@ -103,7 +103,16 @@ func NewServer(svc Service) *Server {
 				"message", "unable to initiate error reporting client")
 		}
 
-		err = initSDExporter(projectID, serviceID, svcVersion, lg)
+		err = initSDExporter(gaeSDExporterOptions(projectID, serviceID, svcVersion, lg))
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate error tracing exporter")
+		}
+
+		propr = &sdpropagation.HTTPFormat{}
+	} else if isGKE() {
+		projectID := googleProjectID()
+		err = initSDExporter(gkeSDExporterOptions(projectID, lg))
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")

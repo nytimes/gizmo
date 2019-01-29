@@ -1,16 +1,20 @@
 package kit
 
 import (
+	"os"
+
 	"contrib.go.opencensus.io/exporter/stackdriver"
+	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
 	"github.com/go-kit/kit/log"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
 
-func initSDExporter(projectID, service, version string, lg log.Logger) error {
-	exporter, err := stackdriver.NewExporter(stackdriver.Options{
+func gaeSDExporterOptions(projectID, service, version string, lg log.Logger) stackdriver.Options {
+	return stackdriver.Options{
 		ProjectID: projectID,
-		MonitoredResource: gaeInterface{
+		MonitoredResource: mrInterface{
+			typ: "gae_app",
 			labels: map[string]string{
 				"project_id": projectID,
 			},
@@ -24,7 +28,31 @@ func initSDExporter(projectID, service, version string, lg log.Logger) error {
 			"service": service,
 			"version": version,
 		},
-	})
+	}
+}
+
+func googleProjectID() string {
+	return os.Getenv("GOOGLE_CLOUD_PROJECT")
+}
+
+func isGKE() bool {
+	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+}
+
+func gkeSDExporterOptions(projectID string, lg log.Logger) stackdriver.Options {
+	return stackdriver.Options{
+		ProjectID:         projectID,
+		MonitoredResource: monitoredresource.Autodetect(),
+		OnError: func(err error) {
+			lg.Log("error", err,
+				"message", "tracing client encountered an error")
+		},
+		DefaultMonitoringLabels: &stackdriver.Labels{},
+	}
+}
+
+func initSDExporter(opt stackdriver.Options) error {
+	exporter, err := stackdriver.NewExporter(opt)
 	if err != nil {
 		return err
 	}
@@ -34,10 +62,11 @@ func initSDExporter(projectID, service, version string, lg log.Logger) error {
 }
 
 // implements contrib.go.opencensus.io/exporter/stackdriver/monitoredresource.Interface
-type gaeInterface struct {
+type mrInterface struct {
+	typ    string
 	labels map[string]string
 }
 
-func (g gaeInterface) MonitoredResource() (string, map[string]string) {
-	return "gae_app", g.labels
+func (g mrInterface) MonitoredResource() (string, map[string]string) {
+	return g.typ, g.labels
 }

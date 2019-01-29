@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
@@ -87,12 +88,31 @@ func NewServer(svc Service) *Server {
 		errs  *errorreporting.Client
 		propr propagation.HTTPFormat
 	)
-	// if in App Engine, initiate an error reporter and the stackdriver exporters
-	if isGAE() {
-		projectID, serviceID, svcVersion := getGAEInfo()
+
+	projectID := googleProjectID()
+	if projectID != "" {
+		svcName, svcVersion := "default", "v1.0"
+		if isGAE() {
+			_, svcName, svcVersion = getGAEInfo()
+		}
+		if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
+			svcName, svcVersion = n, v
+		}
+
+		if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
+			err = initSDExporter(*opt)
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate error tracing exporter")
+			}
+
+			propr = &sdpropagation.HTTPFormat{}
+		}
+
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
-			ServiceName:    serviceID,
+			ServiceName:    svcName,
 			ServiceVersion: svcVersion,
+
 			OnError: func(err error) {
 				lg.Log("error", err,
 					"message", "error reporting client encountered an error")
@@ -102,23 +122,6 @@ func NewServer(svc Service) *Server {
 			lg.Log("error", err,
 				"message", "unable to initiate error reporting client")
 		}
-
-		err = initSDExporter(gaeSDExporterOptions(projectID, serviceID, svcVersion, lg))
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error tracing exporter")
-		}
-
-		propr = &sdpropagation.HTTPFormat{}
-	} else if isGKE() {
-		projectID := googleProjectID()
-		err = initSDExporter(gkeSDExporterOptions(projectID, lg))
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error tracing exporter")
-		}
-
-		propr = &sdpropagation.HTTPFormat{}
 	}
 
 	s := &Server{

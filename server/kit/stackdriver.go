@@ -10,11 +10,11 @@ import (
 	"go.opencensus.io/trace"
 )
 
-func gaeSDExporterOptions(projectID, service, version string, lg log.Logger) stackdriver.Options {
-	return stackdriver.Options{
+func sdExporterOptions(projectID, service, version string, lg log.Logger) *stackdriver.Options {
+	opt := stackdriver.Options{
 		ProjectID: projectID,
 		MonitoredResource: mrInterface{
-			typ: "gae_app",
+			typ: "global",
 			labels: map[string]string{
 				"project_id": projectID,
 			},
@@ -29,26 +29,22 @@ func gaeSDExporterOptions(projectID, service, version string, lg log.Logger) sta
 			"version": version,
 		},
 	}
+	if mr := monitoredresource.Autodetect(); mr != nil {
+		opt.MonitoredResource = mr
+	} else if isGAE() {
+		opt.MonitoredResource = mrInterface{
+			typ: "gae_app",
+			labels: map[string]string{
+				"project_id": projectID,
+			},
+		}
+	}
+
+	return nil
 }
 
 func googleProjectID() string {
 	return os.Getenv("GOOGLE_CLOUD_PROJECT")
-}
-
-func isGKE() bool {
-	return os.Getenv("KUBERNETES_SERVICE_HOST") != ""
-}
-
-func gkeSDExporterOptions(projectID string, lg log.Logger) stackdriver.Options {
-	return stackdriver.Options{
-		ProjectID:         projectID,
-		MonitoredResource: monitoredresource.Autodetect(),
-		OnError: func(err error) {
-			lg.Log("error", err,
-				"message", "tracing client encountered an error")
-		},
-		DefaultMonitoringLabels: &stackdriver.Labels{},
-	}
 }
 
 func initSDExporter(opt stackdriver.Options) error {

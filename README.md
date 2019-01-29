@@ -31,7 +31,7 @@ The `server/kit` package embodies Gizmo's goals to combine with go-kit.
 * In this package you'll find:
     * A more opinionated server with fewer choices.
     * go-kit used for serving HTTP/JSON & gRPC used for serving HTTP2/RPC
-    * Monitoring and metrics are automatically registered if running within App Engine.
+    * Monitoring and metrics are automatically registered if running within App Engine or Kubernetes Engine.
     * Logs go to stdout locally or directly to Stackdriver when in GCP.
     * Using Go's 1.8 graceful HTTP shutdown.
     * Services using this package are expected to deploy to GCP.

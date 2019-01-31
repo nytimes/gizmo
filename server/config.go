@@ -82,7 +82,7 @@ type Config struct {
 	MetricsNamespace string `envconfig:"METRICS_NAMESPACE"`
 	// MetricsSubsystem is used by prometheus.
 	MetricsSubsystem string `envconfig:"METRICS_SUBSYSTEM"`
-	//MetricsPath is where the prometheus endpoint will be registered.
+	// MetricsPath is where the prometheus endpoint will be registered.
 	MetricsPath string `envconfig:"METRICS_PATH"`
 }
 

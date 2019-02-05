@@ -30,7 +30,7 @@ func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, err
 		// running locally or in a non-GAE environment? use JSON
 		lg := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 		lg.Log("error", err,
-			"message", "unable to initialize stackdriver logger. Fallback to JSON logger.")
+			"message", "unable to initialize Stackdriver logger. falling back to stdout JSON logging.")
 		return lg, func() error { return nil }, nil
 	}
 	return lg, cl, err

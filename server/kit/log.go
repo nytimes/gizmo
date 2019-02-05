@@ -20,7 +20,7 @@ import (
 // When using the Stackdriver logger, any go-kit/log/levels will be translated to
 // Stackdriver severity levels.
 // The logID field is used when the server is deployed in a Stackdriver enabled environment.
-// If an empty string is provided, "gae_log" will be used in App Engine and `stdout` elsewhere.
+// If an empty string is provided, "gae_log" will be used in App Engine and "stdout" elsewhere.
 // For more information about to use of logID see the documentation here: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#FIELDS.log_name
 func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, error) {
 	projectID, serviceID, svcVersion := getGAEInfo()

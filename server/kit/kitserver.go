@@ -79,7 +79,7 @@ func NewServer(svc Service) *Server {
 
 	ctx := context.Background()
 
-	lg, logClose, err := NewLogger(ctx)
+	lg, logClose, err := NewLogger(ctx, "")
 	if err != nil {
 		stdlog.Fatalf("unable to start up logger: %s", err)
 	}

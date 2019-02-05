@@ -9,9 +9,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	metricscfg "github.com/NYTimes/gizmo/config/metrics"
-	"github.com/go-kit/kit/metrics"
-	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	netContext "golang.org/x/net/context"
@@ -35,10 +32,6 @@ type SimpleServer struct {
 
 	// tracks active requests
 	monitor *ActivityMonitor
-
-	// for collecting metrics
-	mets         provider.Provider
-	panicCounter metrics.Counter
 }
 
 // NewSimpleServer will init the mux, exit channel and
@@ -53,14 +46,11 @@ func NewSimpleServer(cfg *Config) *SimpleServer {
 		mx.SetNotFoundHandler(cfg.NotFoundHandler)
 	}
 
-	mets := newMetricsProvider(cfg)
 	return &SimpleServer{
-		mux:          mx,
-		cfg:          cfg,
-		exit:         make(chan chan error),
-		monitor:      NewActivityMonitor(),
-		mets:         mets,
-		panicCounter: mets.NewCounter("panic"),
+		mux:     mx,
+		cfg:     cfg,
+		exit:    make(chan chan error),
+		monitor: NewActivityMonitor(),
 	}
 }
 
@@ -85,9 +75,6 @@ var UnexpectedServerError = []byte("unexpected server error")
 func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if x := recover(); x != nil {
-			// register a panic'd request with our metrics
-			s.panicCounter.Add(1)
-
 			// log the panic for all the details later
 			LogWithFields(r).Errorf("simple server recovered from a panic\n%v: %v", x, string(debug.Stack()))
 
@@ -110,7 +97,13 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 			}
 		}
 	}
-	TimedAndCounted(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	registeredPath = strings.TrimPrefix(registeredPath, "/")
+	prometheus.InstrumentHandlerWithOpts(prometheus.SummaryOpts{
+		Subsystem:   "http",
+		ConstLabels: prometheus.Labels{"handler": registeredPath},
+		Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
+	}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Body != nil {
 			defer func() {
 				if err := r.Body.Close(); err != nil {
@@ -119,7 +112,7 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 			}()
 		}
 		s.svc.Middleware(s.mux).ServeHTTP(w, r)
-	}), registeredPath, r.Method, s.mets).ServeHTTP(w, r)
+	})).ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.
@@ -128,23 +121,11 @@ func (s *SimpleServer) Start() error {
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
 
-	// if expvar, register on our router
-
-	switch s.cfg.Metrics.Type {
-
-	case metricscfg.Expvar:
-		if s.cfg.Metrics.Path == "" {
-			s.cfg.Metrics.Path = "/debug/vars"
-		}
-		s.mux.HandleFunc("GET", s.cfg.Metrics.Path, expvarHandler)
-
-	case metricscfg.Prometheus:
-		if s.cfg.Metrics.Path == "" {
-			s.cfg.Metrics.Path = "/metrics"
-		}
-		s.mux.HandleFunc("GET", s.cfg.Metrics.Path,
-			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+	if s.cfg.MetricsPath == "" {
+		s.cfg.MetricsPath = "/metrics"
 	}
+	s.mux.HandleFunc("GET", s.cfg.MetricsPath,
+		prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {
@@ -189,9 +170,6 @@ func (s *SimpleServer) Start() error {
 		if err := healthHandler.Stop(); err != nil {
 			Log.Warn("health check Stop returned with error: ", err)
 		}
-
-		// flush any remaining metrics and close connections
-		s.mets.Stop()
 
 		// stop the listener
 		exit <- l.Close()

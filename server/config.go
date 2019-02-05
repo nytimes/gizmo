@@ -7,9 +7,7 @@ import (
 	"os"
 
 	"github.com/NYTimes/gizmo/config"
-	"github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/logrotate"
-	"github.com/go-kit/kit/metrics/provider"
 	"github.com/gorilla/handlers"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -80,21 +78,12 @@ type Config struct {
 	// Enable pprof Profiling. Off by default.
 	EnablePProf bool `envconfig:"ENABLE_PPROF"`
 
-	// Metrics encapsulates the configurations required for a Gizmo
-	// Server to emit metrics. If your application has additional metrics,
-	// you should provide a MetricsFactory instead.
-	Metrics metrics.Config
-	// MetricsProvider will override the default server metrics provider if set.
-	MetricsProvider provider.Provider
-
-	// GraphiteHost is DEPRECATED. Please use the
-	// Metrics config with "Type":"graphite" and this
-	// value in the "Addr" field.
-	GraphiteHost *string `envconfig:"GRAPHITE_HOST"`
-
-	// this flag is for internal use. mainly to tell the SimpleServer
-	// to act like it's on an App Engine Flexible VM.
-	appEngine bool
+	// MetricsNamespace is used by prometheus.
+	MetricsNamespace string `envconfig:"METRICS_NAMESPACE"`
+	// MetricsSubsystem is used by prometheus.
+	MetricsSubsystem string `envconfig:"METRICS_SUBSYSTEM"`
+	// MetricsPath is where the prometheus endpoint will be registered.
+	MetricsPath string `envconfig:"METRICS_PATH"`
 }
 
 // LoadConfigFromEnv will attempt to load a Server object
@@ -103,7 +92,6 @@ type Config struct {
 func LoadConfigFromEnv() *Config {
 	var server Config
 	envconfig.Process("", &server)
-	server.Metrics = metrics.LoadConfigFromEnv()
 	return &server
 }
 

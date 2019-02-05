@@ -9,12 +9,10 @@ import (
 	"syscall"
 
 	"github.com/NYTimes/gizmo/config"
-	cmetrics "github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/gizmo/examples/nyt"
 	"github.com/NYTimes/gizmo/pubsub"
 	"github.com/NYTimes/gizmo/pubsub/aws"
 	"github.com/NYTimes/logrotate"
-	"github.com/go-kit/kit/metrics/provider"
 	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 )
@@ -23,8 +21,6 @@ var (
 	Log = logrus.New()
 
 	sub pubsub.Subscriber
-
-	metrics provider.Provider
 
 	client nyt.Client
 
@@ -35,7 +31,6 @@ type Config struct {
 	MostPopularToken string
 	SemanticToken    string
 	Log              *string
-	Metrics          cmetrics.Config
 	SQS              aws.SQSConfig
 }
 
@@ -58,8 +53,6 @@ func Init() {
 	pubsub.Log = Log
 
 	var err error
-	cfg.Metrics.Prefix = metricsNamespace()
-	metrics = cfg.Metrics.NewProvider()
 	client = nyt.NewClient(cfg.MostPopularToken, cfg.SemanticToken)
 
 	sub, err = aws.NewSubscriber(cfg.SQS)
@@ -71,9 +64,6 @@ func Init() {
 func Run() (err error) {
 	stream := sub.Start()
 
-	totalMsgsConsumed := metrics.NewCounter("total-consumed")
-	errorCount := metrics.NewCounter("error-count")
-
 	go func() {
 		ch := make(chan os.Signal, 1)
 		signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
@@ -83,11 +73,9 @@ func Run() (err error) {
 
 	var article nyt.SemanticConceptArticle
 	for msg := range stream {
-		totalMsgsConsumed.Add(1)
 
 		if err = proto.Unmarshal(msg.Message(), &article); err != nil {
 			Log.Error("unable to unmarshal article from SQS: ", err)
-			errorCount.Add(1)
 			if err = msg.Done(); err != nil {
 				Log.Error("unable to delete message from SQS: ", err)
 			}

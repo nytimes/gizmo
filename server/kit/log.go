@@ -9,22 +9,26 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// NewLogger will inspect the environment and, if running in the Google App Engine
-// environment, it will return a new Stackdriver logger annotated with the current
-// server's project ID, service ID and version. If not in App Engine, a normal JSON
-// logger pointing to stdout will be returned.
+// NewLogger will inspect the environment and, if running in the Google App Engine,
+// Google Kubernetes Engine, Google Compute Engine or AWS EC2 environment,
+// it will return a new Stackdriver logger annotated with the current
+// server's project ID, service ID and version and other environment specific values.
+// If not in App Engine, GKE, GCE or AWS EC2 - a normal JSON logger pointing to stdout
+// will be returned.
 // This function can be used for services that need to log information outside the
 // context of an inbound request.
 // When using the Stackdriver logger, any go-kit/log/levels will be translated to
 // Stackdriver severity levels.
-func NewLogger(ctx context.Context) (log.Logger, func() error, error) {
-	// running locally or in a non-GAE environment? use JSON
-	if !isGAE() {
+// logID identifies, for Stackdriver, the resource name of the log to which this log entry belongs.
+func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, error) {
+	projectID, serviceID, svcVersion := getGAEInfo()
+	lg, cl, err := newStackdriverLogger(ctx, logID, projectID, serviceID, svcVersion)
+	// if Stackdriver logger was not able to find information about monitored resource it returns nil.
+	if lg == nil {
+		// running locally or in a non-GAE environment? use JSON
 		return log.NewJSONLogger(log.NewSyncWriter(os.Stdout)), func() error { return nil }, nil
 	}
-
-	projectID, serviceID, svcVersion := getGAEInfo()
-	return newAppEngineLogger(ctx, projectID, serviceID, svcVersion)
+	return lg, cl, err
 }
 
 // Logger will return a kit/log.Logger that has been injected into the context by the kit

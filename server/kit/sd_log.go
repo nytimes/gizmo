@@ -43,9 +43,6 @@ func newStackdriverLogger(ctx context.Context, logID, projectID, service, versio
 			"version_id": version,
 		},
 	}
-	if lid := os.Getenv("SD_LOG_ID"); lid != "" {
-		logID = lid
-	}
 	if isGAE() {
 		resource.Type = "gae_app"
 		logID = "app_logs"
@@ -56,7 +53,7 @@ func newStackdriverLogger(ctx context.Context, logID, projectID, service, versio
 		}
 		resource.Type = typ
 	} else {
-		return nil, nil, nil
+		return nil, nil, errors.New("unable to find monitored resource")
 	}
 
 	client, err := logging.NewClient(ctx, fmt.Sprintf("projects/%s", projectID))

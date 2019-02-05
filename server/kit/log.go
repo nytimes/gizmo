@@ -19,11 +19,9 @@ import (
 // context of an inbound request.
 // When using the Stackdriver logger, any go-kit/log/levels will be translated to
 // Stackdriver severity levels.
-// logID identifies, for Stackdriver, the resource name of the log to which this log entry belongs.
-// LogID is used to create logName field of LogEntry (https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry).
-// The purposes to have different logName are:
-//  - to be able to delete log records from Stackdriver.
-//  - filtering
+// The logID field is used when the server is deployed in a Stackdriver enabled environment.
+// If an empty string is provided, "gae_log" will be used in App Engine and `stdout` elsewhere.
+// For more information about to use of logID see the documentation here: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#FIELDS.log_name
 func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, error) {
 	projectID, serviceID, svcVersion := getGAEInfo()
 	lg, cl, err := newStackdriverLogger(ctx, logID, projectID, serviceID, svcVersion)

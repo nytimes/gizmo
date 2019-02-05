@@ -45,13 +45,18 @@ func newStackdriverLogger(ctx context.Context, logID, projectID, service, versio
 	}
 	if isGAE() {
 		resource.Type = "gae_app"
-		logID = "app_logs"
+		if logID == "" {
+			logID = "app_logs"
+		}
 	} else if mr := monitoredresource.Autodetect(); mr != nil {
 		typ, lbls := mr.MonitoredResource()
 		for f, v := range lbls {
 			resource.Labels[f] = v
 		}
 		resource.Type = typ
+		if logID == "" {
+			logID = "stdout"
+		}
 	} else {
 		return nil, nil, errors.New("unable to find monitored resource")
 	}

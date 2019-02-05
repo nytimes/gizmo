@@ -26,7 +26,12 @@ func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, err
 	// if Stackdriver logger was not able to find information about monitored resource it returns nil.
 	if lg == nil {
 		// running locally or in a non-GAE environment? use JSON
-		return log.NewJSONLogger(log.NewSyncWriter(os.Stdout)), func() error { return nil }, nil
+		lg := log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initialize stackdriver logger. Fallback to JSON logger.")
+		}
+		return lg, func() error { return nil }, nil
 	}
 	return lg, cl, err
 }

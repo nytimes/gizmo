@@ -27,6 +27,7 @@ type SimpleServer struct {
 
 	// mux for routing
 	mux Router
+	h   http.Handler
 
 	svc Service
 
@@ -99,20 +100,14 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 	}
 
 	registeredPath = strings.TrimPrefix(registeredPath, "/")
-	prometheus.InstrumentHandlerWithOpts(prometheus.SummaryOpts{
-		Subsystem:   "http",
-		ConstLabels: prometheus.Labels{"handler": registeredPath},
-		Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
-	}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Body != nil {
-			defer func() {
-				if err := r.Body.Close(); err != nil {
-					Log.Warn("unable to close request body: ", err)
-				}
-			}()
-		}
-		s.svc.Middleware(s.mux).ServeHTTP(w, r)
-	})).ServeHTTP(w, r)
+	prometheus.InstrumentHandlerWithOpts(
+		prometheus.SummaryOpts{
+			Subsystem:   "http",
+			ConstLabels: prometheus.Labels{"handler": registeredPath},
+			Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
+		},
+		s.h,
+	).ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.
@@ -195,6 +190,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 	// set registered to true because we called it
 	s.registered = true
 
+	s.h = svcI.Middleware(s.mux)
 	s.svc = svcI
 	prefix := svcI.Prefix()
 	// quick fix for backwards compatibility

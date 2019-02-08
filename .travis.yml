@@ -1,4 +1,7 @@
 language: go
+go: 
+ - "1.11.x"
+install: true
 
 before_install:
   # Decrypts a script that installs an authenticated cookie

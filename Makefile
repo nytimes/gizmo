@@ -1,7 +1,9 @@
 all: test
 
 build:
+	export GO111MODULE=on; \
 	go build ./...
+	export GO111MODULE=on; \
 	cd ./examples; \
 	go build ./...
 
@@ -19,14 +21,14 @@ vet:
 	go vet ./...
 
 test: lint vet
+	export GO111MODULE=on; \
 	go test -v ./...
+	export GO111MODULE=on; \
 	cd ./examples; \
 	go test -v ./...
 
-clean:
-	go clean -i ./...
-
 coverage:
+	export GO111MODULE=on; \
 	./coverage.sh --coveralls
 
 .PHONY: \

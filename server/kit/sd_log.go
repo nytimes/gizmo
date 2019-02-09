@@ -10,7 +10,7 @@ import (
 
 	"cloud.google.com/go/logging"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
-	"github.com/NYTimes/gizmo/gcputils"
+	"github.com/NYTimes/gizmo/gcputil"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -32,7 +32,7 @@ func newStackdriverLogger(ctx context.Context, logID, projectID, service, versio
 			"version_id": version,
 		},
 	}
-	if gcputils.IsGAE() {
+	if gcputil.IsGAE() {
 		resource.Type = "gae_app"
 		if logID == "" {
 			logID = "app_logs"

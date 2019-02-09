@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/NYTimes/gizmo/gcputils"
+	"github.com/NYTimes/gizmo/gcputil"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport/http"
 	"google.golang.org/grpc/metadata"
@@ -24,7 +24,7 @@ import (
 // If an empty string is provided, "gae_log" will be used in App Engine and "stdout" elsewhere.
 // For more information about to use of logID see the documentation here: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#FIELDS.log_name
 func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, error) {
-	projectID, serviceID, svcVersion := gcputils.GetGAEInfo()
+	projectID, serviceID, svcVersion := gcputil.GetGAEInfo()
 	lg, cl, err := newStackdriverLogger(ctx, logID, projectID, serviceID, svcVersion)
 	// if Stackdriver logger was not able to find information about monitored resource it returns nil.
 	if err != nil {

@@ -1,4 +1,4 @@
-package gcputils
+package gcputil
 
 import (
 	"os"

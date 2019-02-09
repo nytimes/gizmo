@@ -1,3 +1,7 @@
+// Package gcputil provides functions
+// that interact with various GCP platforms
+// such as getting GAE metadata and registering
+// stack driver monitoring
 package gcputil
 
 import (

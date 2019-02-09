@@ -13,6 +13,7 @@ import (
 
 	"cloud.google.com/go/errorreporting"
 	sdpropagation "contrib.go.opencensus.io/exporter/stackdriver/propagation"
+	"github.com/NYTimes/gizmo/gcputils"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -89,16 +90,20 @@ func NewServer(svc Service) *Server {
 		propr propagation.HTTPFormat
 	)
 
-	projectID := googleProjectID()
+	projectID := gcputils.GoogleProjectID()
 	var svcName, svcVersion string
-	if isGAE() {
-		_, svcName, svcVersion = getGAEInfo()
+	if gcputils.IsGAE() {
+		_, svcName, svcVersion = gcputils.GetGAEInfo()
 	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
 		svcName, svcVersion = n, v
 	}
 
-	if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
-		err = initSDExporter(*opt)
+	onErr := func(err error) {
+		lg.Log("error", err, "message", "tracing client encountered an error")
+	}
+
+	if opt := gcputils.SDExporterOptions(projectID, svcName, svcVersion, onErr); opt != nil {
+		err = gcputils.InitSDExporter(*opt)
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")

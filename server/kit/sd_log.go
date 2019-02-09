@@ -5,28 +5,17 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
 	"cloud.google.com/go/logging"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
+	"github.com/NYTimes/gizmo/gcputils"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 )
-
-// project, service, version
-func getGAEInfo() (string, string, string) {
-	return googleProjectID(),
-		os.Getenv("GAE_SERVICE"),
-		os.Getenv("GAE_VERSION")
-}
-
-func isGAE() bool {
-	return os.Getenv("GAE_DEPLOYMENT_ID") != ""
-}
 
 type sdLogger struct {
 	project string
@@ -43,7 +32,7 @@ func newStackdriverLogger(ctx context.Context, logID, projectID, service, versio
 			"version_id": version,
 		},
 	}
-	if isGAE() {
+	if gcputils.IsGAE() {
 		resource.Type = "gae_app"
 		if logID == "" {
 			logID = "app_logs"

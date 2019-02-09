@@ -16,7 +16,9 @@ import (
 // RegisterOpenCensus will register
 // the tracing and metrics through
 // the stack driver exporter, if exists in the underlying platform.
-func RegisterOpenCensus(projectID string, onErr func(error)) error {
+// If exporter is registered, it returns the exporter so you can call Flush
+// when the server terminates to ensure all metrics are uploaded.
+func RegisterOpenCensus(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
 	svcName, svcVersion := "", ""
 	if IsGAE() {
 		_, svcName, svcVersion = GetGAEInfo()
@@ -25,9 +27,9 @@ func RegisterOpenCensus(projectID string, onErr func(error)) error {
 	}
 	opts := SDExporterOptions(projectID, svcName, svcVersion, onErr)
 	if opts == nil {
-		return nil
+		return nil, nil
 	}
-	return InitSDExporter(*opts)
+	return initSDExporterV2(*opts)
 }
 
 // GoogleProjectID returns the GCP Project ID
@@ -90,6 +92,18 @@ func InitSDExporter(opts stackdriver.Options) error {
 	trace.RegisterExporter(exporter)
 	view.RegisterExporter(exporter)
 	return nil
+}
+
+// TODO(marwan): this is so that I don't break server/kit
+// see https://github.com/NYTimes/gizmo/issues/193
+func initSDExporterV2(opts stackdriver.Options) (*stackdriver.Exporter, error) {
+	exporter, err := stackdriver.NewExporter(opts)
+	if err != nil {
+		return nil, err
+	}
+	trace.RegisterExporter(exporter)
+	view.RegisterExporter(exporter)
+	return exporter, nil
 }
 
 // implements contrib.go.opencensus.io/exporter/stackdriver/monitoredresource.Interface

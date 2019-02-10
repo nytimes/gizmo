@@ -13,12 +13,11 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// RegisterOpenCensus will register
-// the tracing and metrics through
+// RegisterOpenCensus will register the tracing and metrics through
 // the stack driver exporter, if exists in the underlying platform.
-// If exporter is registered, it returns the exporter so you can call Flush
-// when the server terminates to ensure all metrics are uploaded.
-func RegisterOpenCensus(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
+// If exporter is registered, it returns the exporter's flush function so you can
+// ensure all metrics are uploaded. The flush function is safe to call.
+func RegisterOpenCensus(projectID string, onErr func(error)) (flush func(), err error) {
 	svcName, svcVersion := "", ""
 	if IsGAE() {
 		_, svcName, svcVersion = GetGAEInfo()
@@ -27,9 +26,13 @@ func RegisterOpenCensus(projectID string, onErr func(error)) (*stackdriver.Expor
 	}
 	opts := SDExporterOptions(projectID, svcName, svcVersion, onErr)
 	if opts == nil {
-		return nil, nil
+		return func() {}, nil
 	}
-	return initSDExporterV2(*opts)
+	exp, err := initSDExporterV2(*opts)
+	if err != nil {
+		return func() {}, nil
+	}
+	return exp.Flush, nil
 }
 
 // GoogleProjectID returns the GCP Project ID

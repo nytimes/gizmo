@@ -1,6 +1,6 @@
 // Package observe provides functions
-// that help with setting observability
-// in cloud provides, mainly GCP.
+// that help with setting tracing/metrics
+// in cloud providers, mainly GCP.
 package observe
 
 import (

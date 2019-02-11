@@ -28,11 +28,7 @@ func NewOpenCensusExporter(projectID string, onErr func(error)) (*stackdriver.Ex
 	if opts == nil {
 		return nil, nil
 	}
-	exp, err := stackdriver.NewExporter(*opts)
-	if err != nil {
-		return nil, err
-	}
-	return exp, nil
+	return stackdriver.NewExporter(*opts)
 }
 
 // GoogleProjectID returns the GCP Project ID

@@ -1,23 +1,23 @@
-// Package gcputil provides functions
-// that interact with various GCP platforms
-// such as getting GAE metadata and registering
-// stack driver monitoring
-package gcputil
+// Package observe provides functions
+// that help with setting observability
+// in cloud provides, mainly GCP.
+package observe
 
 import (
 	"os"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
+	"go.opencensus.io/exporter/prometheus"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
 
-// NewOpenCensusExporter will return the tracing and metrics through
+// NewStackDriverExporter will return the tracing and metrics through
 // the stack driver exporter, if exists in the underlying platform.
 // If exporter is registered, it returns the exporter so you can register
 // it and ensure to call Flush on termination.
-func NewOpenCensusExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
+func NewStackDriverExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
 	svcName, svcVersion := "", ""
 	if IsGAE() {
 		_, svcName, svcVersion = GetGAEInfo()
@@ -29,6 +29,11 @@ func NewOpenCensusExporter(projectID string, onErr func(error)) (*stackdriver.Ex
 		return nil, nil
 	}
 	return stackdriver.NewExporter(*opts)
+}
+
+// NewPrometheusExporter return a prometheus Exporter for OpenCensus.
+func NewPrometheusExporter(opts prometheus.Options) (*prometheus.Exporter, error) {
+	return NewPrometheusExporter(opts)
 }
 
 // GoogleProjectID returns the GCP Project ID
@@ -71,15 +76,20 @@ func SDExporterOptions(projectID, service, version string, onErr func(err error)
 	}
 
 	return &stackdriver.Options{
-		ProjectID:               projectID,
-		MonitoredResource:       mr,
-		OnError:                 onErr,
-		DefaultMonitoringLabels: &stackdriver.Labels{},
+		ProjectID:         projectID,
+		MonitoredResource: mr,
+		OnError:           onErr,
 		DefaultTraceAttributes: map[string]interface{}{
 			"service": service,
 			"version": version,
 		},
 	}
+}
+
+// IsGCPAccessible returns whether the running application
+// is inside GCP or has access to its products.
+func IsGCPAccessible() bool {
+	return monitoredresource.Autodetect() != nil || IsGAE()
 }
 
 // InitSDExporter will initialize the OpenCensus tracing/metrics exporter

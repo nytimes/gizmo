@@ -13,13 +13,15 @@ import (
 
 	"cloud.google.com/go/errorreporting"
 	sdpropagation "contrib.go.opencensus.io/exporter/stackdriver/propagation"
-	"github.com/NYTimes/gizmo/gcputil"
+	"github.com/NYTimes/gizmo/observe"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
 	"go.opencensus.io/trace/propagation"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -29,6 +31,7 @@ import (
 type Server struct {
 	logger   log.Logger
 	logClose func() error
+	ocFlush  func()
 
 	errs *errorreporting.Client
 
@@ -90,10 +93,10 @@ func NewServer(svc Service) *Server {
 		propr propagation.HTTPFormat
 	)
 
-	projectID := gcputil.GoogleProjectID()
+	projectID := observe.GoogleProjectID()
 	var svcName, svcVersion string
-	if gcputil.IsGAE() {
-		_, svcName, svcVersion = gcputil.GetGAEInfo()
+	if observe.IsGAE() {
+		_, svcName, svcVersion = observe.GetGAEInfo()
 	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
 		svcName, svcVersion = n, v
 	}
@@ -101,20 +104,22 @@ func NewServer(svc Service) *Server {
 	onErr := func(err error) {
 		lg.Log("error", err, "message", "tracing client encountered an error")
 	}
-
-	if opt := gcputil.SDExporterOptions(projectID, svcName, svcVersion, onErr); opt != nil {
-		err = gcputil.InitSDExporter(*opt)
+	ocFlush := func() {}
+	if observe.IsGCPAccessible() {
+		exp, err := observe.NewStackDriverExporter(projectID, onErr)
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")
 		}
+		ocFlush = exp.Flush
+		trace.RegisterExporter(exp)
+		view.RegisterExporter(exp)
 
 		propr = &sdpropagation.HTTPFormat{}
 
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
 			ServiceName:    svcName,
 			ServiceVersion: svcVersion,
-
 			OnError: func(err error) {
 				lg.Log("error", err,
 					"message", "error reporting client encountered an error")
@@ -132,6 +137,7 @@ func NewServer(svc Service) *Server {
 		exit:     make(chan chan error),
 		logger:   lg,
 		logClose: logClose,
+		ocFlush:  ocFlush,
 		errs:     errs,
 	}
 	s.svr = &http.Server{
@@ -340,6 +346,11 @@ func (s *Server) start() error {
 			// flush the logger after server shuts down
 			if s.logClose != nil {
 				s.logClose()
+			}
+
+			// flush the stack driver exporter
+			if s.ocFlush != nil {
+				s.ocFlush()
 			}
 
 			if s.errs != nil {

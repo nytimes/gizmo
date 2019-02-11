@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/julienschmidt/httprouter"
 )
 
 // Router is an interface to wrap different router implementations.
@@ -25,8 +24,6 @@ type RouterOption func(Router) Router
 func RouterSelect(name string) RouterOption {
 	return func(Router) Router {
 		switch name {
-		case "fast", "httprouter":
-			return &fastRouter{httprouter.New()}
 		case "gorilla":
 			return &gorillaRouter{mux.NewRouter()}
 		case "stdlib":
@@ -113,52 +110,6 @@ func (g *gorillaRouter) SetNotFoundHandler(h http.Handler) {
 // ServeHTTP will call Gorilla mux.Router.ServerHTTP directly.
 func (g *gorillaRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.mux.ServeHTTP(w, r)
-}
-
-// FastRouter is a Router implementation for `julienschmidt/httprouter`.
-type fastRouter struct {
-	mux *httprouter.Router
-}
-
-// Handle will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
-// to pass httprouter.Params into a Gorilla request context. The params will be available
-// via the `FastRouterVars` function.
-func (f *fastRouter) Handle(method, path string, h http.Handler) {
-	f.mux.Handle(method, path, httpToFastRoute(h))
-}
-
-// HandleFunc will call the `httprouter.METHOD` methods and use the HTTPToFastRoute
-// to pass httprouter.Params into a Gorilla request context. The params will be available
-// via the `FastRouterVars` function.
-func (f *fastRouter) HandleFunc(method, path string, h func(http.ResponseWriter, *http.Request)) {
-	f.Handle(method, path, http.HandlerFunc(h))
-}
-
-// SetNotFoundHandler will set httprouter.Router.NotFound.
-func (f *fastRouter) SetNotFoundHandler(h http.Handler) {
-	f.mux.NotFound = h
-}
-
-// ServeHTTP will call httprouter.ServerHTTP directly.
-func (f *fastRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	f.mux.ServeHTTP(w, r)
-}
-
-// httpToFastRoute will convert an http.Handler to a httprouter.Handle
-// by stuffing any route parameters into a Gorilla request context.
-// To access the request parameters within the endpoint,
-// use the `Vars` function.
-func httpToFastRoute(fh http.Handler) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-		if len(params) > 0 {
-			vars := map[string]string{}
-			for _, param := range params {
-				vars[param.Key] = param.Value
-			}
-			r = SetRouteVars(r, vars)
-		}
-		fh.ServeHTTP(w, r)
-	}
 }
 
 // Vars is a helper function for accessing route

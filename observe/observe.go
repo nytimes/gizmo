@@ -10,7 +10,6 @@ import (
 	traceapi "cloud.google.com/go/trace/apiv2"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
-	"go.opencensus.io/exporter/prometheus"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
@@ -26,11 +25,6 @@ func NewStackDriverExporter(projectID string, onErr func(error)) (*stackdriver.E
 		return nil, nil
 	}
 	return stackdriver.NewExporter(*opts)
-}
-
-// NewPrometheusExporter return a prometheus Exporter for OpenCensus.
-func NewPrometheusExporter(opts prometheus.Options) (*prometheus.Exporter, error) {
-	return prometheus.NewExporter(opts)
 }
 
 // GoogleProjectID returns the GCP Project ID

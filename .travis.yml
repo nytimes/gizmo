@@ -2,8 +2,10 @@ language: go
 go:
   - "1.x"
 env:
-  - GO111MODULE=on
+  global:
+    - GO111MODULE=on
 install:
   - go mod download
 script:
-  - make test
+  - go vet ./...
+  - go test -v ./...

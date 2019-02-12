@@ -7,5 +7,4 @@ env:
 install:
   - go mod download
 script:
-  - go vet ./...
-  - go test -v ./...
+  - make test

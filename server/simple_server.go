@@ -2,12 +2,10 @@ package server
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"runtime/debug"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,10 +24,7 @@ type SimpleServer struct {
 	exit chan chan error
 
 	// mux for routing
-	mux Router
-	h   http.Handler
-
-	svc Service
+	mux *mux.Router
 
 	// tracks active requests
 	monitor *ActivityMonitor
@@ -42,13 +37,8 @@ func NewSimpleServer(cfg *Config) *SimpleServer {
 	if cfg == nil {
 		cfg = &Config{}
 	}
-	mx := NewRouter(cfg)
-	if cfg.NotFoundHandler != nil {
-		mx.SetNotFoundHandler(cfg.NotFoundHandler)
-	}
 
 	return &SimpleServer{
-		mux:     mx,
 		cfg:     cfg,
 		exit:    make(chan chan error),
 		monitor: NewActivityMonitor(),
@@ -87,40 +77,18 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 		}
 	}()
 
-	// lookup metric name if we can
-	registeredPath := r.URL.Path
-	if muxr, ok := s.mux.(*GorillaRouter); ok {
-		registeredPath = "__404__"
-		var match mux.RouteMatch
-		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
-			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
-				registeredPath = tmpl
-			}
-		}
-	}
-
-	registeredPath = strings.TrimPrefix(registeredPath, "/")
-	prometheus.InstrumentHandlerWithOpts(
-		prometheus.SummaryOpts{
-			Subsystem:   "http",
-			ConstLabels: prometheus.Labels{"handler": registeredPath},
-			Objectives:  map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.95: 0.005, 0.99: 0.001},
-		},
-		s.h,
-	).ServeHTTP(w, r)
+	s.mux.ServeHTTP(w, r)
 }
 
 // Start will start the SimpleServer at it's configured address.
 // If they are configured, this will start health checks and access logging.
 func (s *SimpleServer) Start() error {
+	if !s.registered {
+		Log.Fatal("Server Must Be Registered First")
+	}
+
 	healthHandler := RegisterHealthHandler(s.cfg, s.monitor, s.mux)
 	s.cfg.HealthCheckPath = healthHandler.Path()
-
-	if s.cfg.MetricsPath == "" {
-		s.cfg.MetricsPath = "/metrics"
-	}
-	s.mux.HandleFunc("GET", s.cfg.MetricsPath,
-		prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {
@@ -181,85 +149,33 @@ func (s *SimpleServer) Stop() error {
 	return <-ch
 }
 
-// Register will accept and register SimpleServer, JSONService or MixedService implementations.
-func (s *SimpleServer) Register(svcI Service) error {
+// Register lets you by pass server.Service interface
+// and let the user register their own handlers
+func (s *SimpleServer) Register(r *mux.Router) error {
 	// check multiple register call error
 	if s.registered {
 		return ErrMultiRegister
 	}
 	// set registered to true because we called it
 	s.registered = true
+	s.mux = r
 
-	s.h = svcI.Middleware(s.mux)
-	s.svc = svcI
-	prefix := svcI.Prefix()
-	// quick fix for backwards compatibility
-	prefix = strings.TrimRight(prefix, "/")
+	if s.cfg.NotFoundHandler != nil {
+		s.mux.NotFoundHandler = s.cfg.NotFoundHandler
+	}
 
-	var (
-		js  JSONService
-		ss  SimpleService
-		cs  ContextService
-		mcs MixedContextService
+	RegisterProfiler(s.cfg, r)
+
+	if s.cfg.MetricsPath == "" {
+		s.cfg.MetricsPath = "/metrics"
+	}
+	r.HandleFunc(
+		s.cfg.MetricsPath,
+		prometheus.InstrumentHandler(
+			"prometheus",
+			prometheus.UninstrumentedHandler(),
+		),
 	)
-
-	switch svc := svcI.(type) {
-	case MixedService:
-		js = svc
-		ss = svc
-	case SimpleService:
-		ss = svc
-	case JSONService:
-		js = svc
-	case MixedContextService:
-		mcs = svc
-		cs = svc
-	case ContextService:
-		cs = svc
-	default:
-		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")
-	}
-
-	if ss != nil {
-		// register all simple endpoints with our wrapper
-		for path, epMethods := range ss.Endpoints() {
-			for method, ep := range epMethods {
-				s.mux.Handle(method, prefix+path, ep)
-			}
-		}
-	}
-
-	if js != nil {
-		// register all JSON endpoints with our wrapper
-		for path, epMethods := range js.JSONEndpoints() {
-			for method, ep := range epMethods {
-				s.mux.Handle(method, prefix+path, JSONToHTTP(js.JSONMiddleware(ep)))
-			}
-		}
-	}
-
-	if cs != nil {
-		// register all context endpoints with our wrapper
-		for path, epMethods := range cs.ContextEndpoints() {
-			for method, ep := range epMethods {
-				s.mux.Handle(method, prefix+path, ContextToHTTP(cs.ContextMiddleware(ep)))
-			}
-		}
-	}
-
-	if mcs != nil {
-		// register all context endpoints with our wrapper
-		for path, epMethods := range mcs.JSONEndpoints() {
-			for method, ep := range epMethods {
-				// set the function handle and register it to metrics
-				s.mux.Handle(method, prefix+path, ContextToHTTP(mcs.ContextMiddleware(
-					JSONContextToHTTP(mcs.JSONContextMiddleware(ep)),
-				)))
-			}
-		}
-	}
-
-	RegisterProfiler(s.cfg, s.mux)
 	return nil
 }
 

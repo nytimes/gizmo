@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/logrotate"
+	"github.com/gorilla/mux"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 )
@@ -21,7 +22,7 @@ var Version string
 
 // Server is the basic interface that defines what to expect from any server.
 type Server interface {
-	Register(Service) error
+	Register(*mux.Router) error
 	Start() error
 	Stop() error
 }
@@ -135,8 +136,8 @@ func Init(name string, scfg *Config) {
 }
 
 // Register will add a new Service to the DefaultServer.
-func Register(svc Service) error {
-	return server.Register(svc)
+func Register(r *mux.Router) error {
+	return server.Register(r)
 }
 
 // Run will start the DefaultServer and set it up to Stop()
@@ -193,26 +194,26 @@ func NewHealthCheckHandler(cfg *Config) (HealthCheckHandler, error) {
 
 // RegisterProfiler will add handlers for pprof endpoints if
 // the config has them enabled.
-func RegisterProfiler(cfg *Config, mx Router) {
+func RegisterProfiler(cfg *Config, mx *mux.Router) {
 	if !cfg.EnablePProf {
 		return
 	}
-	mx.HandleFunc("GET", "/debug/pprof/", pprof.Index)
-	mx.HandleFunc("GET", "/debug/pprof/cmdline", pprof.Cmdline)
-	mx.HandleFunc("GET", "/debug/pprof/profile", pprof.Profile)
-	mx.HandleFunc("GET", "/debug/pprof/symbol", pprof.Symbol)
-	mx.HandleFunc("GET", "/debug/pprof/trace", pprof.Trace)
+	mx.HandleFunc("/debug/pprof/", pprof.Index).Methods("GET")
+	mx.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline).Methods("GET")
+	mx.HandleFunc("/debug/pprof/profile", pprof.Profile).Methods("GET")
+	mx.HandleFunc("/debug/pprof/symbol", pprof.Symbol).Methods("GET")
+	mx.HandleFunc("/debug/pprof/trace", pprof.Trace).Methods("GET")
 
 	// Manually add support for paths linked to by index page at /debug/pprof/
-	mx.Handle("GET", "/debug/pprof/goroutine", pprof.Handler("goroutine"))
-	mx.Handle("GET", "/debug/pprof/heap", pprof.Handler("heap"))
-	mx.Handle("GET", "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-	mx.Handle("GET", "/debug/pprof/block", pprof.Handler("block"))
+	mx.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine")).Methods("GET")
+	mx.Handle("/debug/pprof/heap", pprof.Handler("heap")).Methods("GET")
+	mx.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate")).Methods("GET")
+	mx.Handle("/debug/pprof/block", pprof.Handler("block")).Methods("GET")
 }
 
 // RegisterHealthHandler will create a new HealthCheckHandler from the
 // given config and add a handler to the given router.
-func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx Router) HealthCheckHandler {
+func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx *mux.Router) HealthCheckHandler {
 	// register health check
 	hch, err := NewHealthCheckHandler(cfg)
 	if err != nil {
@@ -222,8 +223,7 @@ func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx Router) Hea
 	if err != nil {
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
-	mx.Handle("GET", hch.Path(), hch)
-	mx.Handle("HEAD", hch.Path(), hch)
+	mx.Handle(hch.Path(), hch).Methods("GET", "HEAD")
 	return hch
 }
 

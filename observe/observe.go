@@ -56,8 +56,8 @@ func GetGAEInfo() (projectID, service, version string) {
 
 // GetServiceInfo returns the GCP Project ID,
 // the service name and version (GAE or through
-// GAE_SERVICE/GAE_VERSION env vars). Note
-// that GAE_SERVICE/GAE_VERSION are not standard but
+// SERVICE_NAME/SERVICE_VERSION env vars). Note
+// that SERVICE_NAME/SERVICE_VERSION are not standard but
 // your application can pass them in as variables
 // to be included in your trace attributes
 func GetServiceInfo() (projectID, service, version string) {

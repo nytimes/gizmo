@@ -14,11 +14,11 @@ import (
 	"google.golang.org/api/option"
 )
 
-// NewStackDriverExporter will return the tracing and metrics through
+// NewStackdriverExporter will return the tracing and metrics through
 // the stack driver exporter, if exists in the underlying platform.
 // If exporter is registered, it returns the exporter so you can register
 // it and ensure to call Flush on termination.
-func NewStackDriverExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
+func NewStackdriverExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
 	_, svcName, svcVersion := GetServiceInfo()
 	opts := getSDOpts(projectID, svcName, svcVersion, onErr)
 	if opts == nil {

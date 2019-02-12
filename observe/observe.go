@@ -4,11 +4,15 @@
 package observe
 
 import (
+	"context"
 	"os"
 
+	traceapi "cloud.google.com/go/trace/apiv2"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
 	"go.opencensus.io/exporter/prometheus"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 )
 
 // NewStackDriverExporter will return the tracing and metrics through
@@ -67,24 +71,31 @@ func GetServiceInfo() (projectID, service, version string) {
 // to the OpenCensus exporter or other libraries.
 func getSDOpts(projectID, service, version string, onErr func(err error)) *stackdriver.Options {
 	var mr monitoredresource.Interface
+
+	// this is so that you can export views from your local server up to SD if you wish
+	creds, err := google.FindDefaultCredentials(context.Background(), traceapi.DefaultAuthScopes()...)
+	if err != nil {
+		return nil
+	}
+	canExport := IsGAE()
 	if m := monitoredresource.Autodetect(); m != nil {
 		mr = m
-	} else if IsGAE() {
-		mr = gaeInterface{
-			typ: "gae_app",
-			labels: map[string]string{
-				"project_id": projectID,
-			},
-		}
+		canExport = true
 	}
-	if mr == nil {
+	if !canExport {
 		return nil
 	}
 
 	return &stackdriver.Options{
 		ProjectID:         projectID,
 		MonitoredResource: mr,
-		OnError:           onErr,
+		MonitoringClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		TraceClientOptions: []option.ClientOption{
+			option.WithCredentials(creds),
+		},
+		OnError: onErr,
 		DefaultTraceAttributes: map[string]interface{}{
 			"service": service,
 			"version": version,
@@ -96,14 +107,4 @@ func getSDOpts(projectID, service, version string, onErr func(err error)) *stack
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
 	return monitoredresource.Autodetect() != nil || IsGAE()
-}
-
-// implements contrib.go.opencensus.io/exporter/stackdriver/monitoredresource.Interface
-type gaeInterface struct {
-	typ    string
-	labels map[string]string
-}
-
-func (g gaeInterface) MonitoredResource() (string, map[string]string) {
-	return g.typ, g.labels
 }

@@ -12,6 +12,7 @@ Since NYT uses Google Cloud, deploying this server to that environment provides 
   * Automatically catch any panics and send them to Stackdriver Error reporting
   * Automatically use Stackdriver logging and, if `kit.LogXXX` functions are used, logs will be trace enabled and will be combined with their parent access log in the Stackdriver logging console.
   * Automatically register Stackdriver exporters for Open Census trace and monitoring. Most Google Cloud clients (like [Cloud Spanner](https://godoc.org/cloud.google.com/go/spanner)) will detect this and emit the traces. Users can also add their own trace and monitoring spans via [the Open Census clients](https://godoc.org/go.opencensus.io/trace#example-StartSpan).
+  * Monitoring, traces and metrics are automatically registered if running within App Engine, Kubernetes Engine, Compute Engine or AWS EC2 Instances. To change the name and version for Error reporting and Traces use `SERVICE_NAME` and `SERVICE_VERSION` environment variables.
 
 
 For an example of how to build a server that utilizes this package, see the [Reading List example](https://github.com/NYTimes/gizmo/tree/master/examples/servers/reading-list#the-reading-list-example).

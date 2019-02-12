@@ -38,6 +38,13 @@ The `server/kit` package embodies Gizmo's goals to combine with go-kit.
     * Services using this package are expected to deploy to GCP.
 
 
+#### [`observe`](https://godoc.org/github.com/NYTimes/gizmo/observe)
+
+The `observe` package provides observability helpers for metrics and tracing through OpenCensus
+
+* `server/kit` (and soon SimpleServer) utilizes this packge to create a StackDriver exporter with sane defaults
+* `GoogleProjectID` and `IsGAE` can help you make decisions about the underlying platform
+
 #### [`auth`](https://godoc.org/github.com/NYTimes/gizmo/auth)
 
 The `auth` package provides primitives for verifying inbound authentication tokens:

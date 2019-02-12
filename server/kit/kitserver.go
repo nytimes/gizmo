@@ -8,17 +8,19 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
 	sdpropagation "contrib.go.opencensus.io/exporter/stackdriver/propagation"
+	"github.com/NYTimes/gizmo/observe"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/pkg/errors"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
 	"go.opencensus.io/trace/propagation"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -28,6 +30,7 @@ import (
 type Server struct {
 	logger   log.Logger
 	logClose func() error
+	ocFlush  func()
 
 	errs *errorreporting.Client
 
@@ -89,27 +92,26 @@ func NewServer(svc Service) *Server {
 		propr propagation.HTTPFormat
 	)
 
-	projectID := googleProjectID()
-	var svcName, svcVersion string
-	if isGAE() {
-		_, svcName, svcVersion = getGAEInfo()
-	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
-		svcName, svcVersion = n, v
+	projectID, svcName, svcVersion := observe.GetServiceInfo()
+	onErr := func(err error) {
+		lg.Log("error", err, "message", "exporter client encountered an error")
 	}
-
-	if opt := sdExporterOptions(projectID, svcName, svcVersion, lg); opt != nil {
-		err = initSDExporter(*opt)
+	ocFlush := func() {}
+	if observe.IsGCPEnabled() {
+		exp, err := observe.NewStackdriverExporter(projectID, onErr)
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")
 		}
+		ocFlush = exp.Flush
+		trace.RegisterExporter(exp)
+		view.RegisterExporter(exp)
 
 		propr = &sdpropagation.HTTPFormat{}
 
 		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
 			ServiceName:    svcName,
 			ServiceVersion: svcVersion,
-
 			OnError: func(err error) {
 				lg.Log("error", err,
 					"message", "error reporting client encountered an error")
@@ -127,6 +129,7 @@ func NewServer(svc Service) *Server {
 		exit:     make(chan chan error),
 		logger:   lg,
 		logClose: logClose,
+		ocFlush:  ocFlush,
 		errs:     errs,
 	}
 	s.svr = &http.Server{
@@ -335,6 +338,11 @@ func (s *Server) start() error {
 			// flush the logger after server shuts down
 			if s.logClose != nil {
 				s.logClose()
+			}
+
+			// flush the stack driver exporter
+			if s.ocFlush != nil {
+				s.ocFlush()
 			}
 
 			if s.errs != nil {

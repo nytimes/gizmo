@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
@@ -93,19 +92,12 @@ func NewServer(svc Service) *Server {
 		propr propagation.HTTPFormat
 	)
 
-	projectID := observe.GoogleProjectID()
-	var svcName, svcVersion string
-	if observe.IsGAE() {
-		_, svcName, svcVersion = observe.GetGAEInfo()
-	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
-		svcName, svcVersion = n, v
-	}
-
+	projectID, svcName, svcVersion := observe.GetServiceInfo()
 	onErr := func(err error) {
 		lg.Log("error", err, "message", "tracing client encountered an error")
 	}
 	ocFlush := func() {}
-	if observe.IsGCPAccessible() {
+	if observe.IsGCPEnabled() {
 		exp, err := observe.NewStackDriverExporter(projectID, onErr)
 		if err != nil {
 			lg.Log("error", err,

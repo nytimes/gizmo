@@ -9,8 +9,6 @@ import (
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
 	"go.opencensus.io/exporter/prometheus"
-	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
 )
 
 // NewStackDriverExporter will return the tracing and metrics through
@@ -18,13 +16,8 @@ import (
 // If exporter is registered, it returns the exporter so you can register
 // it and ensure to call Flush on termination.
 func NewStackDriverExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
-	svcName, svcVersion := "", ""
-	if IsGAE() {
-		_, svcName, svcVersion = GetGAEInfo()
-	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
-		svcName, svcVersion = n, v
-	}
-	opts := SDExporterOptions(projectID, svcName, svcVersion, onErr)
+	_, svcName, svcVersion := GetServiceInfo()
+	opts := getSDOpts(projectID, svcName, svcVersion, onErr)
 	if opts == nil {
 		return nil, nil
 	}
@@ -33,7 +26,7 @@ func NewStackDriverExporter(projectID string, onErr func(error)) (*stackdriver.E
 
 // NewPrometheusExporter return a prometheus Exporter for OpenCensus.
 func NewPrometheusExporter(opts prometheus.Options) (*prometheus.Exporter, error) {
-	return NewPrometheusExporter(opts)
+	return prometheus.NewExporter(opts)
 }
 
 // GoogleProjectID returns the GCP Project ID
@@ -57,9 +50,22 @@ func GetGAEInfo() (projectID, service, version string) {
 		os.Getenv("GAE_VERSION")
 }
 
-// SDExporterOptions returns Stack Driver Options that you can pass directly
+// GetServiceInfo returns the GCP Project ID,
+// the service name and version (gae or through
+// GAE_SERVICE/GAE_VERSION env vars)
+func GetServiceInfo() (projectID, service, version string) {
+	projectID = GoogleProjectID()
+	if IsGAE() {
+		_, service, version = GetGAEInfo()
+	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
+		service, version = n, v
+	}
+	return projectID, service, version
+}
+
+// getSDOpts returns Stack Driver Options that you can pass directly
 // to the OpenCensus exporter or other libraries.
-func SDExporterOptions(projectID, service, version string, onErr func(err error)) *stackdriver.Options {
+func getSDOpts(projectID, service, version string, onErr func(err error)) *stackdriver.Options {
 	var mr monitoredresource.Interface
 	if m := monitoredresource.Autodetect(); m != nil {
 		mr = m
@@ -86,21 +92,10 @@ func SDExporterOptions(projectID, service, version string, onErr func(err error)
 	}
 }
 
-// IsGCPAccessible returns whether the running application
+// IsGCPEnabled returns whether the running application
 // is inside GCP or has access to its products.
-func IsGCPAccessible() bool {
+func IsGCPEnabled() bool {
 	return monitoredresource.Autodetect() != nil || IsGAE()
-}
-
-// InitSDExporter will initialize the OpenCensus tracing/metrics exporter
-func InitSDExporter(opts stackdriver.Options) error {
-	exporter, err := stackdriver.NewExporter(opts)
-	if err != nil {
-		return err
-	}
-	trace.RegisterExporter(exporter)
-	view.RegisterExporter(exporter)
-	return nil
 }
 
 // implements contrib.go.opencensus.io/exporter/stackdriver/monitoredresource.Interface

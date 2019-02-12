@@ -98,7 +98,7 @@ func NewServer(svc Service) *Server {
 	}
 	ocFlush := func() {}
 	if observe.IsGCPEnabled() {
-		exp, err := observe.NewStackDriverExporter(projectID, onErr)
+		exp, err := observe.NewStackdriverExporter(projectID, onErr)
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error tracing exporter")

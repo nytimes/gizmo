@@ -5,56 +5,65 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
 	"cloud.google.com/go/logging"
+	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
+	"github.com/NYTimes/gizmo/observe"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 )
 
-// project, service, version
-func getGAEInfo() (string, string, string) {
-	return googleProjectID(),
-		os.Getenv("GAE_SERVICE"),
-		os.Getenv("GAE_VERSION")
-}
-
-func isGAE() bool {
-	return os.Getenv("GAE_DEPLOYMENT_ID") != ""
-}
-
-type gaeLogger struct {
+type sdLogger struct {
 	project string
 	monRes  *monitoredres.MonitoredResource
 	lc      *logging.Client
 	lgr     *logging.Logger
 }
 
-func newAppEngineLogger(ctx context.Context, projectID, service, version string) (log.Logger, func() error, error) {
+func newStackdriverLogger(ctx context.Context, logID, projectID, service, version string) (log.Logger, func() error, error) {
+	resource := &monitoredres.MonitoredResource{
+		Labels: map[string]string{
+			"module_id":  service,
+			"project_id": projectID,
+			"version_id": version,
+		},
+	}
+	if observe.IsGAE() {
+		resource.Type = "gae_app"
+		if logID == "" {
+			logID = "app_logs"
+		}
+	} else if mr := monitoredresource.Autodetect(); mr != nil {
+		typ, lbls := mr.MonitoredResource()
+		for f, v := range lbls {
+			resource.Labels[f] = v
+		}
+		resource.Type = typ
+		if logID == "" {
+			logID = "stdout"
+		}
+	} else {
+		return nil, nil, errors.New("unable to find monitored resource")
+	}
+
 	client, err := logging.NewClient(ctx, fmt.Sprintf("projects/%s", projectID))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to initiate stackdriver log client")
 	}
-	return gaeLogger{
+
+	return sdLogger{
 		lc:      client,
-		lgr:     client.Logger("app_logs"),
+		lgr:     client.Logger(logID),
 		project: projectID,
-		monRes: &monitoredres.MonitoredResource{
-			Labels: map[string]string{
-				"module_id":  service,
-				"project_id": projectID,
-				"version_id": version,
-			},
-			Type: "gae_app",
-		},
+		monRes:  resource,
 	}, client.Close, nil
 }
 
-func (l gaeLogger) Log(keyvals ...interface{}) error {
+func (l sdLogger) Log(keyvals ...interface{}) error {
 	kvs, lvl, traceContext := logKeyValsToMap(keyvals...)
 	var traceID string
 	if traceContext != "" {
@@ -87,7 +96,7 @@ func (l gaeLogger) Log(keyvals ...interface{}) error {
 	return nil
 }
 
-func (l gaeLogger) getTraceID(traceCtx string) string {
+func (l sdLogger) getTraceID(traceCtx string) string {
 	return "projects/" + l.project + "/traces/" + strings.Split(traceCtx, "/")[0]
 }
 

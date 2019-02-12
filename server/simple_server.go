@@ -264,7 +264,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 
 	if gs != nil {
 		s.mux = &GorillaRouter{gs.Gorilla()}
-		s.h = s.mux
+		s.h = svcI.Middleware(s.mux)
 	}
 
 	RegisterProfiler(s.cfg, s.mux)

@@ -58,13 +58,10 @@ func GetGAEInfo() (projectID, service, version string) {
 // the service name and version (gae or through
 // GAE_SERVICE/GAE_VERSION env vars)
 func GetServiceInfo() (projectID, service, version string) {
-	projectID = GoogleProjectID()
 	if IsGAE() {
-		_, service, version = GetGAEInfo()
-	} else if n, v := os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION"); n != "" {
-		service, version = n, v
+		return GetGAEInfo()
 	}
-	return projectID, service, version
+	return GoogleProjectID(), os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION")
 }
 
 // getSDOpts returns Stack Driver Options that you can pass directly

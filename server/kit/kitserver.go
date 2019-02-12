@@ -94,7 +94,7 @@ func NewServer(svc Service) *Server {
 
 	projectID, svcName, svcVersion := observe.GetServiceInfo()
 	onErr := func(err error) {
-		lg.Log("error", err, "message", "tracing client encountered an error")
+		lg.Log("error", err, "message", "exporter client encountered an error")
 	}
 	ocFlush := func() {}
 	if observe.IsGCPEnabled() {

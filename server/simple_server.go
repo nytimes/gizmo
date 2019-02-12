@@ -201,6 +201,7 @@ func (s *SimpleServer) Register(svcI Service) error {
 		ss  SimpleService
 		cs  ContextService
 		mcs MixedContextService
+		gs  GorillaService
 	)
 
 	switch svc := svcI.(type) {
@@ -216,6 +217,8 @@ func (s *SimpleServer) Register(svcI Service) error {
 		cs = svc
 	case ContextService:
 		cs = svc
+	case GorillaService:
+		gs = svc
 	default:
 		return errors.New("services for SimpleServers must implement the SimpleService, JSONService or MixedService interfaces")
 	}
@@ -257,6 +260,11 @@ func (s *SimpleServer) Register(svcI Service) error {
 				)))
 			}
 		}
+	}
+
+	if gs != nil {
+		s.mux = &GorillaRouter{gs.Gorilla()}
+		s.h = s.mux
 	}
 
 	RegisterProfiler(s.cfg, s.mux)

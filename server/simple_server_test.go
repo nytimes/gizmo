@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
 )
 
 type benchmarkContextService struct {
@@ -492,5 +494,37 @@ func TestNotFoundHandler(t *testing.T) {
 
 	if gotBody := string(gb); gotBody != "404 page not found\n" {
 		t.Errorf("expected response body to be \"\", got %q", gotBody)
+	}
+}
+
+type gorillaService struct {
+	mux *mux.Router
+}
+
+func (gs *gorillaService) Prefix() string {
+	return ""
+}
+
+func (gs *gorillaService) Middleware(h http.Handler) http.Handler {
+	return h
+}
+
+func (gs *gorillaService) Gorilla() *mux.Router {
+	return gs.mux
+}
+
+func TestGorillaService(t *testing.T) {
+	r := mux.NewRouter()
+	var called bool
+	r.HandleFunc("/svc", func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	})
+	ss := NewSimpleServer(nil)
+	ss.Register(&gorillaService{mux: r})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/svc", nil)
+	ss.ServeHTTP(w, req)
+	if !called {
+		t.Fatalf("Expected gorilla router to be called: %v", w.Result().Status)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"google.golang.org/grpc"
 )
 
@@ -104,4 +105,10 @@ func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, rw http.Respon
 // ContextHandler is an equivalent to http.Handler but with additional param.
 type ContextHandler interface {
 	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request)
+}
+
+// GorillaService lets you define a gorilla configured
+// Router as the main service for SimpleServer
+type GorillaService interface {
+	Gorilla() *mux.Router
 }

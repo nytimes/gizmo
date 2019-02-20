@@ -43,6 +43,8 @@ type Server struct {
 	svr  *http.Server
 	gsvr *grpc.Server
 
+	handler http.Handler
+
 	// exit chan for graceful shutdown
 	exit chan chan error
 }
@@ -172,11 +174,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.errs.Flush()
 		}
 	}()
-	s.svc.HTTPMiddleware(s.mux).ServeHTTP(w, r)
+	s.handler.ServeHTTP(w, r)
 }
 
 func (s *Server) register(svc Service) {
 	s.svc = svc
+	s.handler = s.svc.HTTPMiddleware(s.mux)
+
 	opts := []httptransport.ServerOption{
 		// populate context with helpful keys
 		httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {

@@ -1,6 +1,6 @@
 module github.com/NYTimes/gizmo/examples
 
-replace github.com/NYTimes/gizmo => ../../gizmo
+replace github.com/NYTimes/gizmo => ./..
 
 require (
 	cloud.google.com/go v0.36.0

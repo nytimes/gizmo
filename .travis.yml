@@ -7,7 +7,8 @@ install:
   - make deps
 script:
   - export GOCACHE=$GOPATH/pkg/cache
-  - make pretest coverage
+  - make pretest
+  - make coverage
 env:
   global:
     - GO111MODULE=on

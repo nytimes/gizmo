@@ -6,10 +6,8 @@ before_install:
   - export GOCACHE=$GOPATH/pkg/cache
   - go get github.com/mattn/goveralls@master
 install:
-  - echo $GOCACHE
   - make deps
 script:
-  - export GOCACHE=$GOPATH/pkg/cache
   - make pretest
   - make coverage
 env:

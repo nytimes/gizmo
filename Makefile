@@ -17,10 +17,10 @@ lint: deps
 
 pretest: lint
 
-test: testdeps pretest
+test: deps pretest
 	go test -vet all ./...
 
-coverage: testdeps
+coverage: deps
 	./coverage.sh --coveralls
 
 .PHONY: \

@@ -8,18 +8,8 @@ mode=set
 
 generate_cover_data() {
     rm -rf "$workdir"
-    mkdir "$workdir"
-
-    for pkg in "$@"; do
-        if [ $pkg == "github.com/NYTimes/gizmo/server" -o $pkg == "github.com/NYTimes/gizmo/server/kit" -o $pkg == "github.com/NYTimes/gizmo/config" -o $pkg == "github.com/NYTimes/gizmo/web" -o $pkg == "github.com/NYTimes/gizmo/pubsub" ]
-            then
-                f="$workdir/$(echo $pkg | tr / -)"
-                go test -covermode="$mode" -coverprofile="$f.cover" "$pkg"
-        fi
-    done
-
-    echo "mode: $mode" >"$profile"
-    grep -h -v "^mode:" "$workdir"/*.cover >>"$profile"
+    mkdir -p "$workdir"
+    go test -vet all -covermode="$mode" -coverprofile="$profile" "$@"
 }
 
 show_cover_report() {
@@ -30,7 +20,7 @@ push_to_coveralls() {
     goveralls -coverprofile="$profile"
 }
 
-generate_cover_data $(go list ./...)
+generate_cover_data ./...
 show_cover_report func
 case "$1" in
 "")

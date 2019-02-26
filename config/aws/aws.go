@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/elasticache"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/elasticache"
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -60,22 +59,22 @@ type (
 // the cache cluster and instantiate a memcache.Client
 // with the cache nodes returned from AWS.
 func (e *ElastiCache) MustClient() *memcache.Client {
-	var creds *credentials.Credentials
+	var config aws.Config
 	if e.AccessKey != "" {
-		creds = credentials.NewStaticCredentials(e.AccessKey, e.SecretKey, "")
+		config.Credentials = aws.NewStaticCredentialsProvider(e.AccessKey, e.SecretKey, "")
 	} else {
-		creds = credentials.NewEnvCredentials()
+		defaultConfig, err := external.LoadDefaultAWSConfig()
+		if err != nil {
+			log.Fatalf("unable to load AWS credentials: %v", err)
+		}
+		config = defaultConfig
 	}
 
-	ecclient := elasticache.New(session.New(&aws.Config{
-		Credentials: creds,
-		Region:      &e.Region,
-	}))
-
-	resp, err := ecclient.DescribeCacheClusters(&elasticache.DescribeCacheClustersInput{
+	ecclient := elasticache.New(config)
+	resp, err := ecclient.DescribeCacheClustersRequest(&elasticache.DescribeCacheClustersInput{
 		CacheClusterId:    &e.ClusterID,
 		ShowCacheNodeInfo: aws.Bool(true),
-	})
+	}).Send()
 	if err != nil {
 		log.Fatalf("unable to describe cache cluster: %s", err)
 	}

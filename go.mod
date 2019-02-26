@@ -9,6 +9,7 @@ require (
 	github.com/Shopify/sarama v1.20.1
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
 	github.com/aws/aws-sdk-go v1.17.3
+	github.com/aws/aws-sdk-go-v2 v0.7.0
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/census-instrumentation/opencensus-proto v0.1.0 // indirect
 	github.com/eapache/go-resiliency v1.1.0 // indirect

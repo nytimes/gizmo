@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/NYTimes/gizmo/pubsub"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/sns"
-	"github.com/aws/aws-sdk-go/service/sns/snsiface"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/external"
+	"github.com/aws/aws-sdk-go-v2/service/sns"
+	"github.com/aws/aws-sdk-go-v2/service/sns/snsiface"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sqs/sqsiface"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 )
@@ -37,32 +35,15 @@ func NewPublisher(cfg SNSConfig) (pubsub.Publisher, error) {
 		return p, errors.New("SNS topic name is required")
 	}
 	p.topic = cfg.Topic
-
 	if cfg.Region == "" {
 		return p, errors.New("SNS region is required")
 	}
 
-	sess, err := session.NewSession()
+	config, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return p, err
+		return nil, err
 	}
-
-	var creds *credentials.Credentials
-	if cfg.AccessKey != "" {
-		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
-	} else if cfg.RoleARN != "" {
-		var err error
-		creds, err = requestRoleCredentials(sess, cfg.RoleARN, cfg.MFASerialNumber)
-		if err != nil {
-			return p, err
-		}
-	}
-
-	p.sns = sns.New(sess, &aws.Config{
-		Credentials: creds,
-		Region:      &cfg.Region,
-		Endpoint:    cfg.EndpointURL,
-	})
+	p.sns = sns.New(config)
 	return p, nil
 }
 
@@ -86,7 +67,7 @@ func (p *publisher) PublishRaw(_ context.Context, key string, m []byte) error {
 		Message:  aws.String(base64.StdEncoding.EncodeToString(m)),
 	}
 
-	_, err := p.sns.Publish(msg)
+	_, err := p.sns.PublishRequest(msg).Send()
 	return err
 }
 
@@ -159,7 +140,7 @@ type (
 	}
 
 	deleteRequest struct {
-		entry   *sqs.DeleteMessageBatchRequestEntry
+		entry   sqs.DeleteMessageBatchRequestEntry
 		receipt chan error
 	}
 )
@@ -196,39 +177,21 @@ func NewSubscriber(cfg SQSConfig) (pubsub.Subscriber, error) {
 		return s, errors.New("sqs queue name or url is required")
 	}
 
-	sess, err := session.NewSession()
+	config, err := external.LoadDefaultAWSConfig()
 	if err != nil {
-		return s, err
+		return nil, err
 	}
 
-	var creds *credentials.Credentials
-	if cfg.AccessKey != "" {
-		creds = credentials.NewStaticCredentials(cfg.AccessKey, cfg.SecretKey, cfg.SessionToken)
-	} else if cfg.RoleARN != "" {
-		var err error
-		creds, err = requestRoleCredentials(sess, cfg.RoleARN, cfg.MFASerialNumber)
-		if err != nil {
-			return s, err
-		}
-	}
-
-	s.sqs = sqs.New(sess, &aws.Config{
-		Credentials: creds,
-		Region:      &cfg.Region,
-		Endpoint:    cfg.EndpointURL,
-	})
-
+	s.sqs = sqs.New(config)
 	if len(cfg.QueueURL) == 0 {
 		var urlResp *sqs.GetQueueUrlOutput
-		urlResp, err = s.sqs.GetQueueUrl(&sqs.GetQueueUrlInput{
+		urlResp, err = s.sqs.GetQueueUrlRequest(&sqs.GetQueueUrlInput{
 			QueueName:              &cfg.QueueName,
 			QueueOwnerAWSAccountId: &cfg.QueueOwnerAccountID,
-		})
-
+		}).Send()
 		if err != nil {
 			return s, err
 		}
-
 		s.queueURL = urlResp.QueueUrl
 	} else {
 		s.queueURL = &cfg.QueueURL
@@ -255,11 +218,11 @@ func (m *subscriberMessage) Message() []byte {
 // message. It will set the visibility timeout of the message to the given
 // duration.
 func (m *subscriberMessage) ExtendDoneDeadline(d time.Duration) error {
-	_, err := m.sub.sqs.ChangeMessageVisibility(&sqs.ChangeMessageVisibilityInput{
+	_, err := m.sub.sqs.ChangeMessageVisibilityRequest(&sqs.ChangeMessageVisibilityInput{
 		QueueUrl:          m.sub.queueURL,
 		ReceiptHandle:     m.message.ReceiptHandle,
 		VisibilityTimeout: aws.Int64(int64(d.Seconds())),
-	})
+	}).Send()
 	return err
 }
 
@@ -270,7 +233,7 @@ func (m *subscriberMessage) Done() error {
 	defer m.sub.decrementInFlight()
 	receipt := make(chan error)
 	m.sub.toDelete <- &deleteRequest{
-		entry: &sqs.DeleteMessageBatchRequestEntry{
+		entry: sqs.DeleteMessageBatchRequestEntry{
 			Id:            m.message.MessageId,
 			ReceiptHandle: m.message.ReceiptHandle,
 		},
@@ -300,11 +263,11 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 			default:
 				// get messages
 				pubsub.Log.Debugf("receiving messages")
-				resp, err = s.sqs.ReceiveMessage(&sqs.ReceiveMessageInput{
+				resp, err = s.sqs.ReceiveMessageRequest(&sqs.ReceiveMessageInput{
 					MaxNumberOfMessages: s.cfg.MaxMessages,
 					QueueUrl:            s.queueURL,
 					WaitTimeSeconds:     s.cfg.TimeoutSeconds,
-				})
+				}).Send()
 				if err != nil {
 					// we've encountered a major error
 					// this will set the error value and close the channel
@@ -325,9 +288,10 @@ func (s *subscriber) Start() <-chan pubsub.SubscriberMessage {
 
 				// for each message, pass to output
 				for _, msg := range resp.Messages {
+					msg := msg
 					output <- &subscriberMessage{
 						sub:     s,
-						message: msg,
+						message: &msg,
 					}
 					s.incrementInFlight()
 				}
@@ -343,7 +307,7 @@ func (s *subscriber) handleDeletes() {
 	}
 	var (
 		err           error
-		entriesBuffer []*sqs.DeleteMessageBatchRequestEntry
+		entriesBuffer []sqs.DeleteMessageBatchRequestEntry
 		delRequest    *deleteRequest
 	)
 	for delRequest = range s.toDelete {
@@ -356,9 +320,9 @@ func (s *subscriber) handleDeletes() {
 		// if buffer is full, send the request
 		if len(entriesBuffer) > *s.cfg.DeleteBufferSize {
 			batchInput.Entries = entriesBuffer
-			_, err = s.sqs.DeleteMessageBatch(batchInput)
+			_, err = s.sqs.DeleteMessageBatchRequest(batchInput).Send()
 			// cleaer buffer
-			entriesBuffer = []*sqs.DeleteMessageBatchRequestEntry{}
+			entriesBuffer = []sqs.DeleteMessageBatchRequestEntry{}
 		}
 
 		delRequest.receipt <- err
@@ -366,7 +330,7 @@ func (s *subscriber) handleDeletes() {
 	// clear any remainders before shutdown
 	if len(entriesBuffer) > 0 {
 		batchInput.Entries = entriesBuffer
-		_, err = s.sqs.DeleteMessageBatch(batchInput)
+		_, err = s.sqs.DeleteMessageBatchRequest(batchInput).Send()
 		delRequest.receipt <- err
 	}
 }
@@ -392,19 +356,4 @@ func (s *subscriber) Stop() error {
 // a user encounters a closed channel.
 func (s *subscriber) Err() error {
 	return s.sqsErr
-}
-
-// requestRoleCredentials return the credentials from AssumeRoleProvider to assume the role
-// referenced by the roleARN. If MFASerialNumber is specified, prompt for MFA token from stdin.
-func requestRoleCredentials(sess *session.Session, roleARN string, MFASerialNumber string) (*credentials.Credentials, error) {
-	if roleARN == "" {
-		return nil, errors.New("role ARN is required")
-	}
-
-	return stscreds.NewCredentials(sess, roleARN, func(provider *stscreds.AssumeRoleProvider) {
-		if MFASerialNumber != "" {
-			provider.SerialNumber = &MFASerialNumber
-			provider.TokenProvider = stscreds.StdinTokenProvider
-		}
-	}), nil
 }

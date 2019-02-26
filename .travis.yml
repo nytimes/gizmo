@@ -2,6 +2,9 @@ language: go
 cache:
   directories:
     - $GOPATH/pkg
+before_install:
+  - export GOCACHE=$GOPATH/pkg/cache
+  - go get github.com/mattn/goveralls@master
 install:
   - export GOCACHE=$GOPATH/pkg/cache
   - make deps

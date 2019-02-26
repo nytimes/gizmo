@@ -1,7 +1,12 @@
 language: go
+cache:
+  directories:
+    - $GOPATH/pkg
 install:
+  - export GOCACHE=$GOPATH/pkg/cache
   - make deps
 script:
+  - export GOCACHE=$GOPATH/pkg/cache
   - make pretest coverage
 env:
   global:

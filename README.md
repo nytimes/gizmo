@@ -14,6 +14,17 @@ This toolkit provides packages to put together server and pubsub daemons with th
 * Useful metrics for endpoints
 * Graceful shutdowns
 
+
+### Install
+Notice the capitalization!
+
+`go get github.com/NYTimes/gizmo/...`
+
+### Import Path Change Notice
+The New York Times recently changed the github organization from `NYTimes` to `nytimes`. This should not affect the installation as long as you use the proper casing `NYTimes` and not `nytimes` per installation instructions above. 
+
+However, the intention is to migrate the import paths to be consistent with how it's shown on GitHub. This will be a breaking change and we will introduce a major tag when we update the code. Therefore, the import path will go from `github.com/NYTimes/gizmo/server` to `github.com/nytimes/gizmo/v2/server`. This ensures that people will not have type-mismatches between import path changes.
+
 ### Packages
 
 #### [`server`](https://godoc.org/github.com/NYTimes/gizmo/server)

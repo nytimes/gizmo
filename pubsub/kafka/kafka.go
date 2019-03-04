@@ -1,4 +1,4 @@
-package kafka
+package kafka // import "github.com/NYTimes/gizmo/pubsub/kafka"
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package postgresql
+package postgresql // import "github.com/NYTimes/gizmo/config/postgresql"
 
 import (
 	"database/sql"

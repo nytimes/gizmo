@@ -1,4 +1,4 @@
-package config
+package config // import "github.com/NYTimes/gizmo/config"
 
 import (
 	"encoding/json"

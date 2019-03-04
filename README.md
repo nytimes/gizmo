@@ -14,6 +14,10 @@ This toolkit provides packages to put together server and pubsub daemons with th
 * Useful metrics for endpoints
 * Graceful shutdowns
 
+### Install
+Notice the capitalization!
+`go get github.com/NYTimes/gizmo/...`
+
 ### Packages
 
 #### [`server`](https://godoc.org/github.com/NYTimes/gizmo/server)

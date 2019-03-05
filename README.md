@@ -1,4 +1,4 @@
-# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/gizmo/gizmo?status.svg)](https://godoc.org/github.com/NYTimes/gizmo) [![Build Status](https://travis-ci.org/NYTimes/gizmo.svg?branch=master)](https://travis-ci.org/NYTimes/gizmo) [![Coverage Status](https://coveralls.io/repos/NYTimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/NYTimes/gizmo?branch=master)
+# Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/NYTimes/gizmo?status.svg)](https://godoc.org/github.com/NYTimes/gizmo) [![Build Status](https://travis-ci.org/nytimes/gizmo.svg?branch=master)](https://travis-ci.org/nytimes/gizmo) [![Coverage Status](https://coveralls.io/repos/nytimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/nytimes/gizmo?branch=master)
 
 <p align="center">
   <img src="http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png"/>
@@ -21,7 +21,7 @@ Notice the capitalization!
 `go get github.com/NYTimes/gizmo/...`
 
 ### Import Path Change Notice
-The New York Times recently changed the github organization from `NYTimes` to `nytimes`. This should not affect the installation as long as you use the proper casing `NYTimes` and not `nytimes` per installation instructions above. 
+The New York Times recently changed the github organization from `NYTimes` to `nytimes`. This should not affect the installation as long as you use the proper casing `NYTimes` and not `nytimes` per installation instructions above.
 
 However, the intention is to migrate the import paths to be consistent with how it's shown on GitHub. This will be a breaking change and we will introduce a major tag when we update the code. Therefore, the import path will go from `github.com/NYTimes/gizmo/server` to `github.com/nytimes/gizmo/v2/server`. This ensures that people will not have type-mismatches between import path changes.
 
@@ -78,7 +78,7 @@ The `config` package contains a handful of useful functions to load to configura
 There are also many structs for common configuration options and credentials of different Cloud Services and Databases.
 
 #### [`pubsub`](https://godoc.org/github.com/NYTimes/gizmo/pubsub)
- 
+
 The `pubsub` package contains two (`publisher` and `subscriber`) generic interfaces for publishing data to queues as well as subscribing and consuming data from those queues.
 
 There are 4 implementations of `pubsub` interfaces:

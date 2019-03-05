@@ -1,4 +1,4 @@
-package kit
+package kit // import "github.com/NYTimes/gizmo/server/kit"
 
 import (
 	"os"

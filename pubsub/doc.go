@@ -36,4 +36,4 @@ For pubsub via Kafka topics, you can use the `pubsub/kafka` package.
 
 For publishing via HTTP, you can use the `pubsub/http` package.
 */
-package pubsub
+package pubsub // import "github.com/NYTimes/gizmo/pubsub"

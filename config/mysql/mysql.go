@@ -1,4 +1,4 @@
-package mysql
+package mysql // import "github.com/NYTimes/gizmo/config/mysql"
 
 import (
 	"database/sql"
@@ -55,14 +55,18 @@ func (m *Config) DB() (*sql.DB, error) {
 
 // String will return the MySQL connection string.
 func (m *Config) String() string {
+	var port int
 	if m.Port == 0 {
-		m.Port = DefaultMySQLPort
+		port = DefaultMySQLPort
+	} else {
+		port = m.Port
 	}
 
+	var location string
 	if m.Location != "" {
-		m.Location = url.QueryEscape(m.Location)
+		location = url.QueryEscape(m.Location)
 	} else {
-		m.Location = url.QueryEscape(DefaultLocation)
+		location = url.QueryEscape(DefaultLocation)
 	}
 
 	args, _ := url.ParseQuery(m.AddtlDSNOptions)
@@ -80,9 +84,9 @@ func (m *Config) String() string {
 		m.User,
 		m.Pw,
 		m.Host,
-		m.Port,
+		port,
 		m.DBName,
-		m.Location,
+		location,
 		args.Encode(),
 	)
 }

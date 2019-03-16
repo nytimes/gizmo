@@ -1,4 +1,4 @@
-package gcp
+package gcp // import "github.com/NYTimes/gizmo/auth/gcp"
 
 import (
 	"context"

@@ -1,5 +1,3 @@
-// +build !go1.8
-
 package server
 
 import "net/http"
@@ -10,5 +8,6 @@ func httpServer(handler http.Handler) *http.Server {
 		MaxHeaderBytes: maxHeaderBytes,
 		ReadTimeout:    readTimeout,
 		WriteTimeout:   writeTimeout,
+		IdleTimeout:    idleTimeout,
 	}
 }

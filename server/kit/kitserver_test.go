@@ -18,7 +18,6 @@ import (
 
 	gserver "github.com/NYTimes/gizmo/server"
 	"github.com/NYTimes/gizmo/server/kit"
-	"github.com/NYTimes/gziphandler"
 )
 
 func TestKitServerHTTPMiddleware(t *testing.T) {
@@ -140,7 +139,7 @@ func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 }
 
 func (s *server) HTTPMiddleware(h http.Handler) http.Handler {
-	return gserver.CORSHandler(gziphandler.GzipHandler(h), "")
+	return gserver.CORSHandler(h, "")
 }
 
 func (s *server) HTTPOptions() []httptransport.ServerOption {

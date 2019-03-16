@@ -1,4 +1,4 @@
-package http
+package http // import "github.com/NYTimes/gizmo/pubsub/http"
 
 import (
 	"bytes"

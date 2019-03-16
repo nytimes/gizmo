@@ -1,4 +1,4 @@
-package postgresql
+package postgresql // import "github.com/NYTimes/gizmo/config/postgresql"
 
 import (
 	"database/sql"
@@ -39,23 +39,27 @@ func (p *Config) DB() (*sql.DB, error) {
 
 // String will return the Postgresql connection string
 func (p *Config) String() string {
+	var port int
 	if p.Port == 0 {
-		p.Port = DefaultPort
+		port = DefaultPort
+	} else {
+		port = p.Port
 	}
 
+	var SSLMode string
 	if p.SSLMode != "" {
-		p.SSLMode = url.QueryEscape(p.SSLMode)
+		SSLMode = url.QueryEscape(p.SSLMode)
 	} else {
-		p.SSLMode = url.QueryEscape(DefaultSSLMode)
+		SSLMode = url.QueryEscape(DefaultSSLMode)
 	}
 
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		p.User,
 		p.Pw,
 		p.Host,
-		p.Port,
+		port,
 		p.DBName,
-		p.SSLMode,
+		SSLMode,
 	)
 }
 

@@ -11,10 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NYTimes/gizmo/config/metrics"
 	"github.com/NYTimes/logrotate"
-	"github.com/go-kit/kit/metrics/provider"
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -239,32 +237,6 @@ func MetricsNamespace() string {
 	name = strings.Replace(name, "-", ".", 1)
 	// add the 'apps' prefix to keep things neat
 	return "apps." + name
-}
-
-func newMetricsProvider(cfg *Config) provider.Provider {
-	if cfg.MetricsProvider != nil {
-		return cfg.MetricsProvider
-	}
-	// deal with deprecated GRAPHITE_HOST value
-	if cfg.GraphiteHost != nil {
-		cfg.Metrics.Type = metrics.Graphite
-		cfg.Metrics.Addr = *cfg.GraphiteHost
-	}
-	// set default metrics prefix
-	// to MetricsNamespace
-	if len(cfg.Metrics.Prefix) == 0 {
-		cfg.Metrics.Prefix = MetricsNamespace() + "."
-	}
-	// set default metrics namespace
-	// to MetricsNamespace
-	if len(cfg.Metrics.Prefix) == 0 {
-		cfg.Metrics.Namespace = MetricsNamespace() + "."
-	}
-	p := cfg.MetricsProvider
-	if p == nil {
-		p = cfg.Metrics.NewProvider()
-	}
-	return p
 }
 
 // SetLogLevel will set the appropriate logrus log level

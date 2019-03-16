@@ -37,7 +37,7 @@ func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, err
 	return lg, cl, err
 }
 
-// Setlogger will set log.Logger to the context and will return context with logger.
+// Setlogger sets log.Logger to the context and returns new context with logger.
 func SetLogger(ctx context.Context, logger log.Logger) ctx.Context {
 	return context.WithValue(logKey, logger)
 }

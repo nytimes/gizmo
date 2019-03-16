@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"runtime/debug"
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
@@ -154,7 +155,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				err = e
 			}
 
-			s.logger.Log("error", err, "message", "the server encountered a panic")
+			s.logger.Log("error", err, "message", "the server encountered a panic", "stacktrace", string(debug.Stack()))
 
 			w.WriteHeader(http.StatusInternalServerError)
 			_, werr := w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
@@ -191,7 +192,7 @@ func (s *Server) register(svc Service) {
 		}),
 		// inject the server logger into every request context
 		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
-			return context.WithValue(ctx, logKey, AddLogKeyVals(ctx, s.logger))
+			return SetLogger(ctx, AddLogKeyVals(ctx, s.logger))
 		}),
 	}
 	opts = append(opts, svc.HTTPOptions()...)

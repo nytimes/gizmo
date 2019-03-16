@@ -37,6 +37,11 @@ func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, err
 	return lg, cl, err
 }
 
+// Setlogger will set log.Logger to the context and will return context with logger.
+func SetLogger(ctx context.Context, logger log.Logger) ctx.Context {
+	return context.WithValue(logKey, logger)
+}
+
 // Logger will return a kit/log.Logger that has been injected into the context by the kit
 // server. This logger has had request headers and metadata added as key values.
 // This function will only work within the scope of a request initiated by the server.

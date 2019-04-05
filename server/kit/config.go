@@ -1,7 +1,9 @@
 package kit
 
 import (
+	"os"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -53,7 +55,12 @@ func loadConfig() Config {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 	if cfg.HTTPPort == 0 {
-		cfg.HTTPPort = 8080
+		var err error
+		// fall back to PORT for GAE
+		cfg.HTTPPort, err = strconv.Atoi(os.Getenv("PORT"))
+		if err != nil {
+			cfg.HTTPPort = 8080
+		}
 	}
 	if cfg.RPCPort == 0 {
 		cfg.RPCPort = 8081

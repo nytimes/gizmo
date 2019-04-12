@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strings"
 	"time"
 
@@ -57,12 +58,23 @@ func (c Verifier) VerifyInboundKitContext(ctx context.Context) (bool, error) {
 		return false, errors.New("auth header did not exist")
 	}
 
-	auths := strings.Split(authHdr, " ")
-	if len(auths) != 2 {
-		return false, errors.New("auth header invalid format")
+	token, err := parseHeader(authHdr)
+	if err != nil {
+		return false, err
 	}
 
-	return c.Verify(ctx, auths[1])
+	return c.Verify(ctx, token)
+}
+
+// VerifyRequest will pull the token from the "Authorization" header of the inbound
+// request then decode and verify it.
+func (c Verifier) VerifyRequest(r *http.Request) (bool, error) {
+	token, err := parseHeader(r.Header.Get("Authorization"))
+	if err != nil {
+		return false, err
+	}
+
+	return c.Verify(r.Context(), token)
 }
 
 // Verify will accept an opaque JWT token, decode it and verify it.
@@ -128,4 +140,12 @@ func decodeToken(token string) (*jws.Header, []byte, error) {
 		return nil, nil, err
 	}
 	return &h, dcs, nil
+}
+
+func parseHeader(hdr string) (string, error) {
+	auths := strings.Split(hdr, " ")
+	if len(auths) != 2 {
+		return "", errors.New("auth header invalid format")
+	}
+	return auths[1], nil
 }

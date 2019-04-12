@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -17,6 +19,108 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2/jws"
 )
+
+func TestVerifyRequest(t *testing.T) {
+	tests := []struct {
+		name string
+
+		givenBadToken   bool
+		givenBadRequest bool
+
+		wantVerified bool
+		wantErr      bool
+	}{
+		{
+			name: "normal route, success",
+
+			wantVerified: true,
+		},
+		{
+			name: "bad token",
+
+			givenBadToken: true,
+
+			wantErr: true,
+		},
+		{
+			name: "bad request",
+
+			givenBadRequest: true,
+
+			wantErr: true,
+		},
+	}
+
+	prv, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		t.Fatalf("unable to generate private key: %s", err)
+	}
+
+	keyID := "the-key"
+	testTime := time.Date(2018, 10, 29, 12, 0, 0, 0, time.UTC)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			timeNow = func() time.Time { return testTime }
+
+			token, err := encode(
+				&jws.Header{Algorithm: "RS256", Typ: "JWT", KeyID: keyID},
+				testClaims{
+					ClaimSet: jws.ClaimSet{
+						Iss: "example.com",
+						Iat: testTime.Add(-5 * time.Second).Unix(),
+						Exp: testTime.Add(5 * time.Second).Unix(),
+						Aud: "example.com",
+					},
+				}, prv)
+			if err != nil {
+				t.Fatalf("unable to encode token: %s", err)
+			}
+
+			decoderFunc := func(_ context.Context, b []byte) (ClaimSetter, error) {
+				var c testClaims
+				err := json.Unmarshal(b, &c)
+				return c, err
+			}
+
+			verifyFunc := func(_ context.Context, c interface{}) bool {
+				return true
+			}
+
+			ks := testKeySource{
+				keys: PublicKeySet{
+					Expiry: timeNow().Add(time.Hour),
+					Keys: map[string]*rsa.PublicKey{
+						keyID: &prv.PublicKey,
+					},
+				},
+			}
+
+			vrfy := NewVerifier(ks, decoderFunc, verifyFunc)
+
+			r := httptest.NewRequest(http.MethodGet, "/test", nil)
+
+			token = "Bearer " + token
+			if test.givenBadToken {
+				token = "ASDFLKANSDFLKJ"
+			}
+
+			if !test.givenBadRequest {
+				r.Header.Add("Authorization", token)
+			}
+
+			verified, err := vrfy.VerifyRequest(r)
+			if (err != nil) != test.wantErr {
+				t.Errorf("unexpected error? %t, got %s", test.wantErr, err)
+			}
+
+			if verified != test.wantVerified {
+				t.Errorf("wanted verified? %t, got %t", test.wantVerified, verified)
+			}
+		})
+	}
+
+}
 
 func TestVerifyInboundKit(t *testing.T) {
 	tests := []struct {

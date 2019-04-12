@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/errorreporting"
+	"cloud.google.com/go/profiler"
 	sdpropagation "contrib.go.opencensus.io/exporter/stackdriver/propagation"
 	"github.com/NYTimes/gizmo/observe"
 	"github.com/go-kit/kit/log"
@@ -123,6 +124,16 @@ func NewServer(svc Service) *Server {
 		if err != nil {
 			lg.Log("error", err,
 				"message", "unable to initiate error reporting client")
+		}
+
+		err = profiler.Start(profiler.Config{
+			ProjectID:      projectID,
+			Service:        svcName,
+			ServiceVersion: svcVersion,
+		})
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate profiling client")
 		}
 	}
 

@@ -1,9 +1,5 @@
 language: go
-cache:
-  directories:
-    - $GOPATH/pkg
 before_install:
-  - export GOCACHE=$GOPATH/pkg/cache
   - go get github.com/mattn/goveralls@master
 install:
   - make deps
@@ -13,5 +9,6 @@ script:
 env:
   global:
     - GO111MODULE=on
+    - GOPROXY=https://proxy.golang.org
 go:
   - 1.x

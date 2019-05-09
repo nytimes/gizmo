@@ -33,6 +33,10 @@ type Config struct {
 	// The string should be formatted like a time.Duration string.
 	IdleTimeout time.Duration `envconfig:"GIZMO_IDLE_TIMEOUT"`
 
+	// TCPKeepAliveTimeout can be used to override the default tcp timeout of 180s.
+	// The string should be formatted like a time.Duration string.
+	TCPKeepAliveTimeout time.Duration `envconfig:"GIZMO_TCP_KEEP_ALIVE_TIMEOUT"`
+
 	// ShutdownTimeout can be used to override the default http server shutdown timeout
 	// of 5m.
 	ShutdownTimeout time.Duration `envconfig:"GIZMO_SHUTDOWN_TIMEOUT"`
@@ -76,6 +80,9 @@ func loadConfig() Config {
 	}
 	if cfg.WriteTimeout.Nanoseconds() == 0 {
 		cfg.WriteTimeout = 10 * time.Second
+	}
+	if cfg.TCPKeepAliveTimeout.Nanoseconds() == 0 {
+		cfg.TCPKeepAliveTimeout = 3 * time.Minute
 	}
 	if cfg.GOMAXPROCS > 0 {
 		runtime.GOMAXPROCS(cfg.GOMAXPROCS)

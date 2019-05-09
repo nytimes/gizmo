@@ -10,6 +10,7 @@ import (
 	"net/http/pprof"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/errorreporting"
 	"cloud.google.com/go/profiler"
@@ -307,7 +308,16 @@ func basicDecoder(_ context.Context, r *http.Request) (interface{}, error) {
 
 func (s *Server) start() error {
 	go func() {
-		err := s.svr.ListenAndServe()
+		ln, err := net.Listen("tcp", s.svr.Addr)
+		defer ln.Close()
+		if err != nil {
+			s.logger.Log(
+				"error", err,
+				"message", "HTTP server error - initiating shutting down")
+			s.stop()
+			return
+		}
+		err = s.svr.Serve(tcpKeepAliveListener{ln.(*net.TCPListener), s.cfg.TCPKeepAliveTimeout})
 		if err != nil && err != http.ErrServerClosed {
 			s.logger.Log(
 				"error", err,
@@ -398,4 +408,19 @@ func registerPprof(cfg Config, mx Router) {
 	mx.Handle(http.MethodGet, "/debug/pprof/heap", pprof.Handler("heap"))
 	mx.Handle(http.MethodGet, "/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 	mx.Handle(http.MethodGet, "/debug/pprof/block", pprof.Handler("block"))
+}
+
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+	Timeout time.Duration
+}
+
+func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return nil, err
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(ln.Timeout)
+	return tc, nil
 }

@@ -230,3 +230,158 @@ func GetPartitions(brokerHosts []string, topic string) (partitions []int32, err 
 	}()
 	return cnsmr.Partitions(topic)
 }
+
+type (
+	// consumerGroupSubscriber uses the Sarama consumer groups implementation.
+	// The Kafka consumer group feature enables applications to parallelize
+	// topic consumption by dynamically assigning topic partitions to one or
+	// more consumers that belong to the same group. This implementation uses
+	// Kafka to store offsets.
+	consumerGroupSubscriber struct {
+		cnsmr sarama.ConsumerGroup
+		commitBroadcastHandler
+		kerr  error
+		stop  chan bool
+		topic string
+	}
+
+	// commitBroadcastHandler is invoked immediately after offset commit.
+	commitBroadcastHandler func(*sarama.ConsumerMessage)
+
+	// consumerGroupMessage is an SubscriberMessage implementation
+	// that commits offsets to Kafka and then invokes the
+	// commitBroadcastHandler.
+	consumerGroupMessage struct {
+		commitBroadcastHandler
+		message *sarama.ConsumerMessage
+		session sarama.ConsumerGroupSession
+	}
+
+	// consumerGroupHandler handles messages received in a consumer group
+	// session.
+	consumerGroupHandler struct {
+		commitBroadcastHandler
+		output chan pubsub.SubscriberMessage
+		stop   chan bool
+	}
+)
+
+// NewConsumerGroupSubscriber initializes a Kafka consumer that uses consumer groups.
+func NewConsumerGroupSubscriber(cfg *Config, groupID string, cbh commitBroadcastHandler) (pubsub.Subscriber, error) {
+	var err error
+	s := &consumerGroupSubscriber{
+		commitBroadcastHandler: cbh,
+		stop:                   make(chan bool, 1),
+	}
+
+	if len(cfg.BrokerHosts) == 0 {
+		return s, errors.New("at least 1 broker host is required")
+	}
+
+	if len(cfg.Topic) == 0 {
+		return s, errors.New("topic name is required")
+	}
+	s.topic = cfg.Topic
+
+	sconfig := cfg.Config
+	if sconfig == nil {
+		sconfig = sarama.NewConfig()
+	}
+	// we always want to see errors, no matter what
+	sconfig.Consumer.Return.Errors = true
+	s.cnsmr, err = sarama.NewConsumerGroup(cfg.BrokerHosts, groupID, sconfig)
+	return s, err
+}
+
+// Message returns the message payload.
+func (cgm *consumerGroupMessage) Message() []byte {
+	return cgm.message.Value
+}
+
+// ExtendDoneDeadline takes no action.
+func (cgm *consumerGroupMessage) ExtendDoneDeadline(time.Duration) error {
+	return nil
+}
+
+// Done commits message offset then invokes commit broadcast handler.
+func (cgm *consumerGroupMessage) Done() error {
+	cgm.session.MarkMessage(cgm.message, "")
+	if cgm.commitBroadcastHandler != nil {
+		cgm.commitBroadcastHandler(cgm.message)
+	}
+	return nil
+}
+
+// Start joins a consumer group session with a handler that streams messages to
+// the subscriber message channel. Consumer group errors can be retrieved
+// through the Err() function.
+func (cgs *consumerGroupSubscriber) Start() <-chan pubsub.SubscriberMessage {
+	output := make(chan pubsub.SubscriberMessage)
+
+	cgh := &consumerGroupHandler{
+		commitBroadcastHandler: cgs.commitBroadcastHandler,
+		output:                 output,
+		stop:                   cgs.stop,
+	}
+
+	ctx := context.Background()
+	go func() {
+		for {
+			topic := []string{cgs.topic}
+			if err := cgs.cnsmr.Consume(ctx, topic, cgh); err == sarama.ErrClosedConsumerGroup {
+				return
+			} else if err != nil {
+				cgs.kerr = err
+			}
+		}
+	}()
+
+	return output
+}
+
+// Stop halts consumer group session and blocks until consumer group handler
+// completes.
+func (cgs *consumerGroupSubscriber) Stop() error {
+	close(cgs.stop)
+	return cgs.cnsmr.Close()
+}
+
+// Err contains any errors raised by a consumer group session.
+func (cgs *consumerGroupSubscriber) Err() error {
+	return cgs.kerr
+}
+
+// Setup takes no action (required for ConsumerGroupHandler interface).
+func (cgh *consumerGroupHandler) Setup(session sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+// Cleanup takes no action (required for ConsumerGroupHandler interface).
+func (cgh *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error {
+	return nil
+}
+
+// ConsumeClaim feeds messages from consumer group session to subscriber
+// channel.
+func (cgh *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+
+Loop:
+	for {
+		select {
+		case msg := <-claim.Messages():
+			if msg == nil {
+				// channel is closed
+				break Loop
+			}
+			cgh.output <- &consumerGroupMessage{
+				commitBroadcastHandler: cgh.commitBroadcastHandler,
+				message:                msg,
+				session:                session,
+			}
+		case <-cgh.stop:
+			break Loop
+		}
+	}
+
+	return nil
+}

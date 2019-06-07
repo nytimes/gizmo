@@ -5,12 +5,13 @@ package observe // import "github.com/NYTimes/gizmo/observe"
 
 import (
 	"context"
-	"errors"
 	"os"
 
+	"cloud.google.com/go/profiler"
 	traceapi "cloud.google.com/go/trace/apiv2"
 	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
+	"github.com/pkg/errors"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 	"golang.org/x/oauth2/google"
@@ -21,17 +22,14 @@ import (
 // metrics in environments that pass the tests in the IsGCPEnabled function. Tracing and
 // metrics are enabled via OpenCensus exporters. See the OpenCensus documentation for
 // instructions for registering additional spans and metrics.
-func RegisterAndObserveGCP() error {
+func RegisterAndObserveGCP(onError func(error)) error {
 	if !IsGCPEnabled() {
 		return errors.New("environment is not GCP enabled, no observe tools will be run")
 	}
 
 	projectID, svcName, svcVersion := GetServiceInfo()
-	onErr := func(err error) {
-		lg.Log("error", err, "message", "exporter client encountered an error")
-	}
 
-	exp, err := NewStackdriverExporter(projectID, onErr)
+	exp, err := NewStackdriverExporter(projectID, onError)
 	if err != nil {
 		return errors.Wrap(err, "unable to initiate error tracing exporter")
 	}

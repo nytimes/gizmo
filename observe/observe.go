@@ -19,9 +19,10 @@ import (
 )
 
 // RegisterAndObserveGCP will initiate and register Stackdriver profiling and tracing and
-// metrics in environments that pass the tests in the IsGCPEnabled function. Tracing and
-// metrics are enabled via OpenCensus exporters. See the OpenCensus documentation for
-// instructions for registering additional spans and metrics.
+// metrics in environments that pass the tests in the IsGCPEnabled function. All
+// exporters will be registered using the information returned by the GetServiceInfo
+// function. Tracing and metrics are enabled via OpenCensus exporters. See the OpenCensus
+// documentation for instructions for registering additional spans and metrics.
 func RegisterAndObserveGCP(onError func(error)) error {
 	if !IsGCPEnabled() {
 		return errors.New("environment is not GCP enabled, no observe tools will be run")

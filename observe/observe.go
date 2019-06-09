@@ -131,5 +131,5 @@ func getSDOpts(projectID, service, version string, onErr func(err error)) *stack
 // IsGCPEnabled returns whether the running application
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
-	return monitoredresource.Autodetect() != nil || IsGAE()
+	return IsGAE() || monitoredresource.Autodetect() != nil
 }

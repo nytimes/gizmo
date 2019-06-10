@@ -101,7 +101,7 @@ func NewServer(svc Service) *Server {
 		lg.Log("error", err, "message", "exporter client encountered an error")
 	}
 	ocFlush := func() {}
-	if observe.IsGCPEnabled() {
+	if !observe.SkipObserve() && observe.IsGCPEnabled() {
 		exp, err := observe.NewStackdriverExporter(projectID, onErr)
 		if err != nil {
 			lg.Log("error", err,

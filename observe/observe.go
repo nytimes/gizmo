@@ -24,6 +24,9 @@ import (
 // function. Tracing and metrics are enabled via OpenCensus exporters. See the OpenCensus
 // documentation for instructions for registering additional spans and metrics.
 func RegisterAndObserveGCP(onError func(error)) error {
+	if SkipObserve() {
+		return nil
+	}
 	if !IsGCPEnabled() {
 		return errors.New("environment is not GCP enabled, no observe tools will be run")
 	}
@@ -132,4 +135,11 @@ func getSDOpts(projectID, service, version string, onErr func(err error)) *stack
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
 	return IsGAE() || monitoredresource.Autodetect() != nil
+}
+
+// SkipObserve checks if the GIZMO_SKIP_OBSERVE environment variable has been populated.
+// This may be used along with local development to cut down on long startup times caused
+// by the 'monitoredresource.Autodetect()' call in IsGCPEnabled().
+func SkipObserve() bool {
+	return os.Getenv("GIZMO_SKIP_OBSERVE") != ""
 }

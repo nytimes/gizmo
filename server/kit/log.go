@@ -28,15 +28,22 @@ import (
 // stdout if set.
 func NewLogger(ctx context.Context, logID string) (log.Logger, func() error, error) {
 	if observe.SkipObserve() {
-		return log.NewJSONLogger(log.NewSyncWriter(os.Stdout)), func() error { return nil }, nil
+		return newJSONLogger(), func() error { return nil }, nil
 	}
 	projectID, serviceID, svcVersion := observe.GetServiceInfo()
 
 	lg, cl, err := newStackdriverLogger(ctx, logID, projectID, serviceID, svcVersion)
 	if err != nil {
-		return nil, nil, err
+		lg := newJSONLogger()
+		lg.Log("error", err,
+			"message", "unable to initialize Stackdriver logger. falling back to stdout JSON logging.")
+		return lg, func() error { return nil }, nil
 	}
 	return lg, cl, err
+}
+
+func newJSONLogger() log.Logger {
+	return log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 }
 
 // SetLogger sets log.Logger to the context and returns new context with logger.

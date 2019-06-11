@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
 
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2/jws"
 )
 
@@ -21,6 +21,11 @@ type Verifier struct {
 
 	skewAllowance int64
 }
+
+// ErrBadCreds will always be wrapped when a user's
+// credentials are unexpected. This is so that we can
+// distinguish between a client error and a server error
+var ErrBadCreds = errors.New("bad credentials")
 
 var defaultSkewAllowance = time.Minute * 5
 
@@ -81,7 +86,7 @@ func (c Verifier) VerifyRequest(r *http.Request) (bool, error) {
 func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 	hdr, rawPayload, err := decodeToken(token)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(ErrBadCreds, err.Error())
 	}
 
 	keys, err := c.ks.Get(ctx)
@@ -96,7 +101,7 @@ func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 
 	err = jws.Verify(token, key)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(ErrBadCreds, err.Error())
 	}
 
 	// use claims decoder func
@@ -113,7 +118,7 @@ func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 	}
 
 	if nowUnix > (claims.Exp + c.skewAllowance) {
-		return false, errors.New("invalid expiration time")
+		return false, errors.Wrap(ErrBadCreds, "invalid expiration time")
 	}
 
 	return c.vf(ctx, clmstr), nil

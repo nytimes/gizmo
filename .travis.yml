@@ -9,6 +9,6 @@ script:
 env:
   global:
     - GO111MODULE=on
-    - GOPROXY=https://proxy.golang.org
+    - GOPROXY=https://gocenter.io
 go:
   - 1.x

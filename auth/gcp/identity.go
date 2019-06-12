@@ -144,7 +144,10 @@ func (s IdentityClaimSet) BaseClaims() *jws.ClaimSet {
 func IdentityClaimsDecoderFunc(_ context.Context, b []byte) (auth.ClaimSetter, error) {
 	var cs IdentityClaimSet
 	err := json.Unmarshal(b, &cs)
-	return cs, err
+	if err != nil {
+		return cs, errors.Wrap(auth.ErrBadCreds, err.Error())
+	}
+	return cs, nil
 }
 
 // IdentityVerifyFunc auth.VerifyFunc wrapper around the IdentityClaimSet.

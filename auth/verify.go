@@ -24,7 +24,7 @@ type Verifier struct {
 
 // ErrBadCreds will always be wrapped when a user's
 // credentials are unexpected. This is so that we can
-// distinguish between a client error and a server error
+// distinguish between a client error from a server error
 var ErrBadCreds = errors.New("bad credentials")
 
 var defaultSkewAllowance = time.Minute * 5

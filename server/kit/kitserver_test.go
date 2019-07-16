@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/pkg/errors"
 	ocontext "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -49,6 +50,22 @@ func TestKitServerHTTPMiddleware(t *testing.T) {
 	if gotOrig := resp.Header.Get("Access-Control-Allow-Origin"); gotOrig != "nytimes.com" {
 		t.Errorf("expected response \"Access-Control-Allow-Origin\" header to be to be \"nytimes.com\", got %q",
 			gotOrig)
+	}
+}
+
+func TestKitServerHTTPError(t *testing.T) {
+	svr := kit.NewServer(&server{})
+
+	r := httptest.NewRequest(http.MethodGet, "http://localhost:8080/svc/error", nil)
+	w := httptest.NewRecorder()
+
+	// hit the server, expect error
+	svr.ServeHTTP(w, r)
+
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("expected status code of 500, got %d", resp.StatusCode)
 	}
 }
 
@@ -134,7 +151,13 @@ type server struct{}
 func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 	return endpoint.Endpoint(func(ctx context.Context, r interface{}) (interface{}, error) {
 		kit.LogMsg(ctx, "kit middleware!")
-		return e(ctx, r)
+		kit.LogDebug(ctx, "debug: kit middleware!")
+		res, err := e(ctx, r)
+		if err != nil {
+			kit.LogWarning(ctx, "error found in middleware")
+			kit.LogErrorMsg(ctx, err, "the actual error")
+		}
+		return res, err
 	})
 }
 
@@ -156,6 +179,11 @@ func (s *server) HTTPEndpoints() map[string]map[string]kit.HTTPEndpoint {
 			"GET": {
 				Endpoint: s.getCatByName,
 				Decoder:  catNameDecoder,
+			},
+		},
+		"/svc/error": {
+			"GET": {
+				Endpoint: s.error,
 			},
 		},
 	}
@@ -196,4 +224,8 @@ var testCat = &Cat{Breed: "American Shorthair", Name: "Ziggy", Age: 12}
 func (s *server) getCatByName(ctx context.Context, _ interface{}) (interface{}, error) {
 	kit.Logger(ctx).Log("message", "getting ziggy")
 	return testCat, nil
+}
+
+func (s *server) error(ctx context.Context, _ interface{}) (interface{}, error) {
+	return nil, errors.New("doh!")
 }

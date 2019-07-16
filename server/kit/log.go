@@ -6,6 +6,7 @@ import (
 
 	"github.com/NYTimes/gizmo/observe"
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/go-kit/kit/transport/http"
 	"google.golang.org/grpc/metadata"
 )
@@ -99,11 +100,11 @@ func AddLogKeyVals(ctx context.Context, l log.Logger) log.Logger {
 // LogMsg will log the given message to the server logger
 // with the key "message" along with all the common request headers or gRPC metadata.
 func LogMsg(ctx context.Context, message string) error {
-	return Logger(ctx).Log("message", message)
+	return level.Info(Logger(ctx)).Log("message", message)
 }
 
 // LogErrorMsg will log the given error under the key "error", the given message under
 // the key "message" along with all the common request headers or gRPC metadata.
 func LogErrorMsg(ctx context.Context, err error, message string) error {
-	return Logger(ctx).Log("error", err, "message", message)
+	return level.Error(Logger(ctx)).Log("error", err, "message", message)
 }

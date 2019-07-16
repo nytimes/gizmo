@@ -12,10 +12,22 @@ import (
 // HTTPEndpoint encapsulates everything required to build
 // an endpoint hosted on a kit server.
 type HTTPEndpoint struct {
+	// Endpoint contains the transport-agnostic business logic of the HTTP endpoint. This
+	// field is required.
 	Endpoint endpoint.Endpoint
-	Decoder  httptransport.DecodeRequestFunc
-	Encoder  httptransport.EncodeResponseFunc
-	Options  []httptransport.ServerOption
+	// Decoder will default to simply pass along the *http.Request if not set.
+	Decoder httptransport.DecodeRequestFunc
+	// Encoder will default to httptransport.EncodeJSONResponse if not set.
+	Encoder httptransport.EncodeResponseFunc
+	// Options may be optionally included to be included in this endpoints call stack
+	// along with the rest of the options and middlewares declared in the service.
+	Options []httptransport.ServerOption
+	// Priority is an optional value that can be used to declare the order in which the
+	// endpoints get registered with the service's router starting at 1 and ascending in
+	// numerical order.
+	// If the value is <=0 the order in which the endpoint is registered is not
+	// guaranteed.
+	Priority int
 }
 
 // Service is the interface of mixed HTTP/gRPC that can be registered and

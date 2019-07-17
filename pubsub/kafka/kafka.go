@@ -2,6 +2,7 @@ package kafka // import "github.com/NYTimes/gizmo/pubsub/kafka"
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -238,11 +239,12 @@ type (
 	// more consumers that belong to the same group. This implementation uses
 	// Kafka to store offsets.
 	consumerGroupSubscriber struct {
-		cnsmr sarama.ConsumerGroup
+		cancel context.CancelFunc
+		cnsmr  sarama.ConsumerGroup
 		commitBroadcastHandler
-		kerr  error
-		stop  chan bool
-		topic string
+		context context.Context
+		kerr    error
+		topic   string
 	}
 
 	// commitBroadcastHandler is invoked immediately after offset commit.
@@ -261,27 +263,28 @@ type (
 	// session.
 	consumerGroupHandler struct {
 		commitBroadcastHandler
-		output chan pubsub.SubscriberMessage
-		stop   chan bool
+		context context.Context
+		output  chan pubsub.SubscriberMessage
 	}
 )
 
 // NewConsumerGroupSubscriber initializes a Kafka consumer that uses consumer groups.
 func NewConsumerGroupSubscriber(cfg *Config, groupID string, cbh commitBroadcastHandler) (pubsub.Subscriber, error) {
-	var err error
-	s := &consumerGroupSubscriber{
-		commitBroadcastHandler: cbh,
-		stop:                   make(chan bool, 1),
-	}
-
 	if len(cfg.BrokerHosts) == 0 {
-		return s, errors.New("at least 1 broker host is required")
+		return nil, errors.New("at least 1 broker host is required")
+	}
+	if len(cfg.Topic) == 0 {
+		return nil, errors.New("topic name is required")
 	}
 
-	if len(cfg.Topic) == 0 {
-		return s, errors.New("topic name is required")
+	ctx, cancel := context.WithCancel(context.Background())
+
+	s := &consumerGroupSubscriber{
+		cancel:                 cancel,
+		commitBroadcastHandler: cbh,
+		context:                ctx,
+		topic:                  cfg.Topic,
 	}
-	s.topic = cfg.Topic
 
 	sconfig := cfg.Config
 	if sconfig == nil {
@@ -289,7 +292,18 @@ func NewConsumerGroupSubscriber(cfg *Config, groupID string, cbh commitBroadcast
 	}
 	// we always want to see errors, no matter what
 	sconfig.Consumer.Return.Errors = true
+
+	var err error
 	s.cnsmr, err = sarama.NewConsumerGroup(cfg.BrokerHosts, groupID, sconfig)
+
+	go func() {
+		for err := range s.cnsmr.Errors() {
+			if err == nil {
+				return
+			}
+			fmt.Printf("Error from channel: %s\n", err)
+		}
+	}()
 	return s, err
 }
 
@@ -320,18 +334,23 @@ func (cgs *consumerGroupSubscriber) Start() <-chan pubsub.SubscriberMessage {
 
 	cgh := &consumerGroupHandler{
 		commitBroadcastHandler: cgs.commitBroadcastHandler,
+		context:                cgs.context,
 		output:                 output,
-		stop:                   cgs.stop,
 	}
 
 	ctx := context.Background()
 	go func() {
 		for {
 			topic := []string{cgs.topic}
-			if err := cgs.cnsmr.Consume(ctx, topic, cgh); err == sarama.ErrClosedConsumerGroup {
+			if err := cgs.cnsmr.Consume(ctx, topic, cgh); err != nil {
+				if err != sarama.ErrClosedConsumerGroup {
+					fmt.Printf("Erro from Consumer function: %s", err)
+					cgs.kerr = err
+				}
+			}
+			if ctx.Err() != nil {
+				fmt.Println("Exiting because of context")
 				return
-			} else if err != nil {
-				cgs.kerr = err
 			}
 		}
 	}()
@@ -342,11 +361,11 @@ func (cgs *consumerGroupSubscriber) Start() <-chan pubsub.SubscriberMessage {
 // Stop halts consumer group session and blocks until consumer group handler
 // completes.
 func (cgs *consumerGroupSubscriber) Stop() error {
-	close(cgs.stop)
+	cgs.cancel()
 	return cgs.cnsmr.Close()
 }
 
-// Err contains any errors raised by a consumer group session.
+// Err contains the last error raised by a consumer group session.
 func (cgs *consumerGroupSubscriber) Err() error {
 	return cgs.kerr
 }
@@ -365,21 +384,11 @@ func (cgh *consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error {
 // channel.
 func (cgh *consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 
-Loop:
-	for {
-		select {
-		case msg := <-claim.Messages():
-			if msg == nil {
-				// channel is closed
-				break Loop
-			}
-			cgh.output <- &consumerGroupMessage{
-				commitBroadcastHandler: cgh.commitBroadcastHandler,
-				message:                msg,
-				session:                session,
-			}
-		case <-cgh.stop:
-			break Loop
+	for msg := range claim.Messages() {
+		cgh.output <- &consumerGroupMessage{
+			commitBroadcastHandler: cgh.commitBroadcastHandler,
+			message:                msg,
+			session:                session,
 		}
 	}
 

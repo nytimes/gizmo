@@ -24,6 +24,8 @@ type Config struct {
 	CustomHealthCheckHandler http.Handler
 
 	// RouterType is used by the server to init the proper Router implementation.
+	// The current available types are 'gorilla' to use the Gorilla tool kit mux and
+	// 'stdlib' to use the http package's ServeMux.
 	// If empty, this will default to 'gorilla'.
 	RouterType string `envconfig:"GIZMO_ROUTER_TYPE"`
 

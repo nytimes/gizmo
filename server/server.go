@@ -223,7 +223,11 @@ func RegisterHealthHandler(cfg *Config, monitor *ActivityMonitor, mx Router) Hea
 		Log.Fatal("unable to start the HealthCheckHandler: ", err)
 	}
 	mx.Handle("GET", hch.Path(), hch)
-	mx.Handle("HEAD", hch.Path(), hch)
+	// the stdlib's http.ServeMux will panic if the same route is registered twice.
+	// if we see that router type, we shouldnt use it.
+	if _, isStdlib := mx.(*stdlibRouter); !isStdlib {
+		mx.Handle("HEAD", hch.Path(), hch)
+	}
 	return hch
 }
 

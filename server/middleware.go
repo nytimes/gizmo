@@ -48,19 +48,27 @@ func JSONToHTTP(ep JSONEndpoint) http.Handler {
 // before adding any CORS header. If an empty string is provided, any Origin
 // header found will be placed into the CORS header. If no Origin header is
 // found, no headers will be added.
-func CORSHandler(f http.Handler, originSuffix string) http.Handler {
+func CORSHandler(f http.Handler, suffixes ...string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin != "" &&
-			(originSuffix == "" || strings.HasSuffix(origin, originSuffix)) {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-requested-by, *")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 
-			if r.Method == http.MethodOptions {
-				w.WriteHeader(http.StatusOK)
-				return
+		if origin != "" {
+			var matches bool
+			for _, originSuffix := range suffixes {
+				if originSuffix == "" || strings.HasSuffix(origin, originSuffix) {
+					matches = true
+				}
+			}
+			if matches {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				w.Header().Set("Access-Control-Allow-Credentials", "true")
+				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, x-requested-by, *")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
+
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 			}
 		}
 		f.ServeHTTP(w, r)

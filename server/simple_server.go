@@ -89,16 +89,20 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 
 	// lookup metric name if we can
 	registeredPath := r.URL.Path
-	if muxr, ok := s.mux.(*GorillaRouter); ok {
-		registeredPath = "__404__"
-		var match mux.RouteMatch
-		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
-			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
-				registeredPath = tmpl
-			}
-		}
+	muxr, ok := s.mux.(*GorillaRouter)
+	if !ok {
+		// if we cant look up the metric name, dont bother. it'll use too much memory.
+		s.h.ServeHTTP(w, r)
+		return
 	}
 
+	registeredPath = "__404__"
+	var match mux.RouteMatch
+	if muxr.mux.Match(r, &match) && match.MatchErr == nil {
+		if tmpl, err := match.Route.GetPathTemplate(); err == nil {
+			registeredPath = tmpl
+		}
+	}
 	registeredPath = strings.TrimPrefix(registeredPath, "/")
 	prometheus.InstrumentHandlerWithOpts(
 		prometheus.SummaryOpts{

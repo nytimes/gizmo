@@ -123,8 +123,12 @@ func (s *SimpleServer) Start() error {
 	if s.cfg.MetricsPath == "" {
 		s.cfg.MetricsPath = "/metrics"
 	}
-	s.mux.HandleFunc("GET", s.cfg.MetricsPath,
-		prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+	// only add the instrument handler if the proper router is enabled
+	_, ok := s.mux.(*GorillaRouter)
+	if ok {
+		s.mux.HandleFunc("GET", s.cfg.MetricsPath,
+			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+	}
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {

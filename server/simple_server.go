@@ -89,16 +89,20 @@ func (s *SimpleServer) safelyExecuteRequest(w http.ResponseWriter, r *http.Reque
 
 	// lookup metric name if we can
 	registeredPath := r.URL.Path
-	if muxr, ok := s.mux.(*GorillaRouter); ok {
-		registeredPath = "__404__"
-		var match mux.RouteMatch
-		if muxr.mux.Match(r, &match) && match.MatchErr == nil {
-			if tmpl, err := match.Route.GetPathTemplate(); err == nil {
-				registeredPath = tmpl
-			}
-		}
+	muxr, ok := s.mux.(*GorillaRouter)
+	if !ok {
+		// if we cant look up the metric name, dont bother. it'll use too much memory.
+		s.h.ServeHTTP(w, r)
+		return
 	}
 
+	registeredPath = "__404__"
+	var match mux.RouteMatch
+	if muxr.mux.Match(r, &match) && match.MatchErr == nil {
+		if tmpl, err := match.Route.GetPathTemplate(); err == nil {
+			registeredPath = tmpl
+		}
+	}
 	registeredPath = strings.TrimPrefix(registeredPath, "/")
 	prometheus.InstrumentHandlerWithOpts(
 		prometheus.SummaryOpts{
@@ -119,8 +123,12 @@ func (s *SimpleServer) Start() error {
 	if s.cfg.MetricsPath == "" {
 		s.cfg.MetricsPath = "/metrics"
 	}
-	s.mux.HandleFunc("GET", s.cfg.MetricsPath,
-		prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+	// only add the instrument handler if the proper router is enabled
+	_, ok := s.mux.(*GorillaRouter)
+	if ok {
+		s.mux.HandleFunc("GET", s.cfg.MetricsPath,
+			prometheus.InstrumentHandler("prometheus", prometheus.UninstrumentedHandler()))
+	}
 
 	wrappedHandler, err := NewAccessLogMiddleware(s.cfg.HTTPAccessLog, s)
 	if err != nil {

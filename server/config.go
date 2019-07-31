@@ -27,6 +27,8 @@ type Config struct {
 	// The current available types are 'gorilla' to use the Gorilla tool kit mux and
 	// 'stdlib' to use the http package's ServeMux.
 	// If empty, this will default to 'gorilla'.
+	// NOTE: If 'stdlib' is used, Prometheus monitoring will be disabled for performance
+	// reasons.
 	RouterType string `envconfig:"GIZMO_ROUTER_TYPE"`
 
 	// JSONContentType can be used to override the default JSONContentType.

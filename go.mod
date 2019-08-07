@@ -5,12 +5,12 @@ go 1.12
 require (
 	cloud.google.com/go v0.38.0
 	contrib.go.opencensus.io/exporter/ocagent v0.6.0 // indirect
-	contrib.go.opencensus.io/exporter/stackdriver v0.9.1
+	contrib.go.opencensus.io/exporter/stackdriver v0.12.2
 	github.com/DataDog/zstd v1.3.5 // indirect
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.20.1
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
-	github.com/aws/aws-sdk-go v1.15.31
+	github.com/aws/aws-sdk-go v1.19.18
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/eapache/go-resiliency v1.1.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect

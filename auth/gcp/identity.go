@@ -94,14 +94,14 @@ func NewIdentityTokenSource(cfg IdentityConfig) (oauth2.TokenSource, error) {
 		"https://www.googleapis.com/auth/userinfo.email")
 	// lets use the local private key instead of the metadata server
 	if err == nil && creds.JSON != nil {
-		cfg, err := google.JWTConfigFromJSON(creds.JSON)
+		jcfg, err := google.JWTConfigFromJSON(creds.JSON)
 		if err == nil {
 			return nil, errors.Wrap(err, "unable to init JWT config from GCP creds")
 		}
-		cfg.PrivateClaims = map[string]interface{}{
+		jcfg.PrivateClaims = map[string]interface{}{
 			"target_audience": cfg.Audience}
-		cfg.UseIDToken = true
-		return cfg.TokenSource(ctx), nil
+		jcfg.UseIDToken = true
+		return jcfg.TokenSource(ctx), nil
 	}
 
 	if cfg.Client == nil {

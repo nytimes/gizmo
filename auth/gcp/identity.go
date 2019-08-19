@@ -10,6 +10,7 @@ import (
 	"github.com/NYTimes/gizmo/auth"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jws"
 )
 
@@ -77,10 +78,32 @@ func (s idKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 	return auth.NewPublicKeySetFromURL(s.cfg.Client, s.cfg.CertURL, time.Hour*2)
 }
 
-// NewIdentityTokenSource will use the GCP metadata services to generate GCP Identity
-// tokens. More information on asserting GCP identities can be found here:
+// NewIdentityTokenSource will look for Google default credentials and, if the JSON key
+// is included, they will be used to locally generate GCP Identity tokens. If the default
+// credentials do not include a JSON key (or they do not exist) the GCP metadata services
+// will be used to generate GCP Identity tokens. More information on asserting GCP
+// identities can be found here:
 // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
 func NewIdentityTokenSource(cfg IdentityConfig) (oauth2.TokenSource, error) {
+	ctx := context.Background()
+
+	// check for default credentials, use them if we have them.
+	// this is helpful if running outside of GCP or some non-default credentials are
+	// provided
+	creds, err := google.FindDefaultCredentials(ctx,
+		"https://www.googleapis.com/auth/userinfo.email")
+	// lets use the local private key instead of the metadata server
+	if err == nil && creds.JSON != nil {
+		cfg, err := google.JWTConfigFromJSON(creds.JSON)
+		if err == nil {
+			return nil, errors.Wrap(err, "unable to init JWT config from GCP creds")
+		}
+		cfg.PrivateClaims = map[string]interface{}{
+			"target_audience": cfg.Audience}
+		cfg.UseIDToken = true
+		return cfg.TokenSource(ctx), nil
+	}
+
 	if cfg.Client == nil {
 		cfg.Client = &http.Client{
 			Timeout: 5 * time.Second,

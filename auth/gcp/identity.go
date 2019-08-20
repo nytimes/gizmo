@@ -95,7 +95,7 @@ func NewIdentityTokenSource(cfg IdentityConfig) (oauth2.TokenSource, error) {
 	// lets use the local private key instead of the metadata server
 	if err == nil && creds.JSON != nil {
 		jcfg, err := google.JWTConfigFromJSON(creds.JSON)
-		if err == nil {
+		if err != nil {
 			return nil, errors.Wrap(err, "unable to init JWT config from GCP creds")
 		}
 		jcfg.PrivateClaims = map[string]interface{}{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -18,6 +19,10 @@ import (
 // JWTs.
 type IdentityConfig struct {
 	Audience string `envconfig:"ID_AUDIENCE"`
+
+	// Credentials is a path to a GCP JSON credentials file. If provided, the token
+	// source will use these credentials to sign tokens instead of the metadata server.
+	Credentials string `envconfig:"ID_CREDENTIALS_PATH"`
 
 	CertURL string `envconfig:"ID_CERT_URL"` // optional override for public key source
 
@@ -78,23 +83,21 @@ func (s idKeySource) Get(ctx context.Context) (auth.PublicKeySet, error) {
 	return auth.NewPublicKeySetFromURL(s.cfg.Client, s.cfg.CertURL, time.Hour*2)
 }
 
-// NewIdentityTokenSource will look for Google default credentials and, if the JSON key
-// is included, they will be used to locally generate GCP Identity tokens. If the default
-// credentials do not include a JSON key (or they do not exist) the GCP metadata services
-// will be used to generate GCP Identity tokens. More information on asserting GCP
-// identities can be found here:
+// NewIdentityTokenSource will generate GCP Identity tokens. If credentials are provided
+// in the IdentityConfig, tokens will be generated using them. Otherwise, the GCP
+// metadata services will be used to generate GCP Identity tokens. More information on
+// asserting GCP identities can be found here:
 // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
 func NewIdentityTokenSource(cfg IdentityConfig) (oauth2.TokenSource, error) {
 	ctx := context.Background()
 
-	// check for default credentials, use them if we have them.
-	// this is helpful if running outside of GCP or some non-default credentials are
-	// provided
-	creds, err := google.FindDefaultCredentials(ctx,
-		"https://www.googleapis.com/auth/userinfo.email")
 	// lets use the local private key instead of the metadata server
-	if err == nil && creds.JSON != nil {
-		jcfg, err := google.JWTConfigFromJSON(creds.JSON)
+	if cfg.Credentials != "" {
+		dat, err := ioutil.ReadFile(cfg.Credentials)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to read credentials file")
+		}
+		jcfg, err := google.JWTConfigFromJSON(dat)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to init JWT config from GCP creds")
 		}

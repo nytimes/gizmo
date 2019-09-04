@@ -8,7 +8,7 @@ require (
 	github.com/NYTimes/gziphandler v1.1.0
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/NYTimes/sqliface v0.0.0-20180310195202-f8e6c8b78d37
-	github.com/go-kit/kit v0.8.0
+	github.com/go-kit/kit v0.9.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/protobuf v1.3.2
 	github.com/gorilla/context v1.1.1

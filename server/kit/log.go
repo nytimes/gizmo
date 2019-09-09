@@ -126,7 +126,7 @@ func LogDebug(ctx context.Context, message string) error {
 // Arguments are handlered in the manner of fmt.Printf.
 // This message will have a "debug" log level associated with it.
 func LogDebugf(ctx context.Context, format string, v ...interface{}) error {
-	return level.Debug(Logger(ctx)).Log("message", fmt.Sprintf(message, v...))
+	return level.Debug(Logger(ctx)).Log("message", fmt.Sprintf(format, v...))
 }
 
 // LogWarning will log the given message to the server logger
@@ -142,7 +142,7 @@ func LogWarning(ctx context.Context, message string) error {
 // Arguments are handlered in the manner of fmt.Printf.
 // This message will have a "warn" log level associated with it.
 func LogWarningf(ctx context.Context, format string, v ...interface{}) error {
-	return level.Warn(Logger(ctx)).Log("message", fmt.Sprintf(message, v...))
+	return level.Warn(Logger(ctx)).Log("message", fmt.Sprintf(format, v...))
 }
 
 // LogErrorMsg will log the given error under the key "error", the given message under
@@ -158,5 +158,5 @@ func LogErrorMsg(ctx context.Context, err error, message string) error {
 // Arguments are handlered in the manner of fmt.Printf.
 // This message will have a "warn" log level associated with it.
 func LogErrorf(ctx context.Context, format string, v ...interface{}) error {
-	return level.Error(Logger(ctx)).Log("message", fmt.Sprintf(message, v...))
+	return level.Error(Logger(ctx)).Log("message", fmt.Sprintf(format, v...))
 }

@@ -155,7 +155,10 @@ func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 		res, err := e(ctx, r)
 		if err != nil {
 			kit.LogWarning(ctx, "error found in middleware")
+			kit.LogWarningf(ctx, "error found in middleware: %v", err)
 			kit.LogErrorMsg(ctx, err, "the actual error")
+			kit.LogErrorf(ctx, "the actual error: %v", err)
+			kit.LogDebugf(ctx, "debug: error in middleware: %v", err)
 		}
 		return res, err
 	})
@@ -223,6 +226,7 @@ var testCat = &Cat{Breed: "American Shorthair", Name: "Ziggy", Age: 12}
 // shared business layer
 func (s *server) getCatByName(ctx context.Context, _ interface{}) (interface{}, error) {
 	kit.Logger(ctx).Log("message", "getting ziggy")
+	kit.Logf(ctx, "responding with ziggy: %#v", testCat)
 	return testCat, nil
 }
 

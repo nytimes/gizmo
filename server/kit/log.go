@@ -2,6 +2,7 @@ package kit
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/NYTimes/gizmo/observe"
@@ -104,11 +105,28 @@ func LogMsg(ctx context.Context, message string) error {
 	return level.Info(Logger(ctx)).Log("message", message)
 }
 
+// Logf will format the given string with the arguments then log to the server logger
+// with the key "message" along with all the common request headers or gRPC metadata.
+// Arguments are handlered in the manner of fmt.Printf.
+// This message will have an "info" log level associated with it.
+func Logf(ctx context.Context, format string, v ...interface{}) error {
+	return LogMsg(ctx, fmt.Sprintf(format, v...))
+}
+
 // LogDebug will log the given message to the server logger
 // with the key "message" along with all the common request headers or gRPC metadata.
 // This message will have a "debug" log level associated with it.
 func LogDebug(ctx context.Context, message string) error {
 	return level.Debug(Logger(ctx)).Log("message", message)
+}
+
+// LogDebugf will format the given string with the arguments then log to the server
+// logger with the key "message" along with all the common request headers or gRPC
+// metadata.
+// Arguments are handlered in the manner of fmt.Printf.
+// This message will have a "debug" log level associated with it.
+func LogDebugf(ctx context.Context, format string, v ...interface{}) error {
+	return LogDebug(ctx, fmt.Sprintf(format, v...))
 }
 
 // LogWarning will log the given message to the server logger
@@ -118,9 +136,27 @@ func LogWarning(ctx context.Context, message string) error {
 	return level.Warn(Logger(ctx)).Log("message", message)
 }
 
+// LogWarningf will the format given string with the arguments then log to the server
+// logger with the key "message" along with all the common request headers or gRPC
+// metadata.
+// Arguments are handlered in the manner of fmt.Printf.
+// This message will have a "warn" log level associated with it.
+func LogWarningf(ctx context.Context, format string, v ...interface{}) error {
+	return LogWarning(ctx, fmt.Sprintf(format, v...))
+}
+
 // LogErrorMsg will log the given error under the key "error", the given message under
 // the key "message" along with all the common request headers or gRPC metadata.
 // This message will have an "error" log level associated with it.
 func LogErrorMsg(ctx context.Context, err error, message string) error {
 	return level.Error(Logger(ctx)).Log("error", err, "message", message)
+}
+
+// LogErrorf will format the given string with the arguments then log to the server
+// logger with the key "message" along with all the common request headers or gRPC
+// metadata.
+// Arguments are handlered in the manner of fmt.Printf.
+// This message will have a "warn" log level associated with it.
+func LogErrorf(ctx context.Context, format string, v ...interface{}) error {
+	return level.Error(Logger(ctx)).Log("message", fmt.Sprintf(format, v...))
 }

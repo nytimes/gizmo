@@ -148,7 +148,7 @@ func NewServer(svc Service) *Server {
 	}
 	s.svr = &http.Server{
 		Handler:        &ochttp.Handler{Handler: s, Propagation: propr},
-		Addr:           fmt.Sprintf(":%d", cfg.HTTPPort),
+		Addr:           fmt.Sprintf("%s:%d", cfg.HTTPAddr, cfg.HTTPPort),
 		MaxHeaderBytes: cfg.MaxHeaderBytes,
 		ReadTimeout:    cfg.ReadTimeout,
 		WriteTimeout:   cfg.WriteTimeout,

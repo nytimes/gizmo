@@ -137,7 +137,7 @@ func (s *SimpleServer) Start() error {
 
 	srv := httpServer(wrappedHandler)
 
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.HTTPPort))
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.HTTPAddr, s.cfg.HTTPPort))
 	if err != nil {
 		return err
 	}

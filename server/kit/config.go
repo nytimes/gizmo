@@ -40,6 +40,9 @@ type Config struct {
 	// GOMAXPROCS can be used to override the default GOMAXPROCS.
 	GOMAXPROCS int `envconfig:"GIZMO_GOMAXPROCS"`
 
+	// HTTPAddr is the address the server implementation will bind to.
+	// The default is "" (bind to all interfaces)
+	HTTPAddr string `envconfig:"HTTP_ADDR"`
 	// HTTPPort is the port the server implementation will serve HTTP over.
 	// The default is 8080
 	HTTPPort int `envconfig:"HTTP_PORT"`

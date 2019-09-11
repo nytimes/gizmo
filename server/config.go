@@ -56,6 +56,8 @@ type Config struct {
 	// no access logging will be done.
 	RPCAccessLog *string `envconfig:"RPC_ACCESS_LOG"`
 
+	// HTTPAddr is the address the server implementation will bind to.
+	HTTPAddr string `envconfig:"HTTP_ADDR"`
 	// HTTPPort is the port the server implementation will serve HTTP over.
 	HTTPPort int `envconfig:"HTTP_PORT"`
 	// RPCPort is the port the server implementation will serve RPC over.

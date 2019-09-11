@@ -5,8 +5,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/sirupsen/logrus"
 	"github.com/golang/protobuf/proto"
+	"github.com/sirupsen/logrus"
 )
 
 // Log is the structured logger used throughout the package.

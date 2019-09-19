@@ -155,6 +155,8 @@ func parseHeader(hdr string) (string, error) {
 	return auths[1], nil
 }
 
+// GetAuthorizationToken will pull the Authorization header from the given request and
+// attempt to retrieve the token within it.
 func GetAuthorizationToken(r *http.Request) (string, error) {
 	return parseHeader(r.Header.Get("Authorization"))
 }

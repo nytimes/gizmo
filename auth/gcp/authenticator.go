@@ -40,8 +40,6 @@ type (
 		keyName  string
 		keys     *kms.KeyManagementClient
 		verifier *auth.Verifier
-
-		log log.Logger
 	}
 
 	// AuthenticatorConfig encapsulates the needs of the Authenticator.
@@ -175,7 +173,7 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 		////////////
 		verified, err := c.verifier.VerifyRequest(r)
 		if err != nil {
-			c.log.Log("message", "id verify request failure", "error", err)
+			c.cfg.Logger.Log("message", "id verify request failure", "error", err)
 		}
 
 		switch verified {
@@ -183,7 +181,7 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 			// grab the token from the header to later inject claims into the context
 			token, err = auth.GetAuthorizationToken(r)
 			if err != nil {
-				c.log.Log("message", "unable to get auth token", "error", err)
+				c.cfg.Logger.Log("message", "unable to get auth token", "error", err)
 			}
 
 		case false:
@@ -199,7 +197,7 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 
 			verified, err = c.verifier.Verify(r.Context(), ck.Value)
 			if err != nil {
-				c.log.Log("message", "id verify cookie failure", "error", err)
+				c.cfg.Logger.Log("message", "id verify cookie failure", "error", err)
 				c.redirect(w, r)
 				return
 			}

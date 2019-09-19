@@ -26,19 +26,20 @@ type (
 	// login redirects, OAuth callbacks, dropping the HTTP cookie and adding the JWS
 	// claims information to the request context. User information and the JWS token can
 	// be retrieved from the context via GetInfo function.
-	// The user state in the login flow is encrypted using Google KMS. Ensure the service
-	// account being used has permissions to encrypt and decrypt.
+	// The Authenticator can also be used for checking service-to-service authentication
+	// via an Authorization header containing a Google Identity JWS, which can be
+	// generated using this package's IdentityTokenSource.
+	// The user state in the web login flow is encrypted using Google KMS. Ensure the
+	// service account being used has permissions to encrypt and decrypt.
 	Authenticator struct {
-		cfg          Config
+		cfg          AuthenticatorConfig
 		secureCookie bool
 		cookieDomain string
 		callbackPath string
 
-		keyName    string
-		keys       *kms.KeyManagementClient
-		idVerifier *auth.Verifier
-
-		iamVerifier *auth.Verifier
+		keyName  string
+		keys     *kms.KeyManagementClient
+		verifier *auth.Verifier
 
 		log log.Logger
 	}
@@ -83,16 +84,6 @@ type (
 		// of "@example.com".
 		IDVerifyFunc func(context.Context, IdentityClaimSet) bool
 
-		// IAMConfig will be used to alternately verify a Google IAM JWS when it is
-		// inbound in the HTTP header. This can be helpful if your service also has
-		// inbound requests from Google PubSub push-style subscriptions or clients unable
-		// to generate an Identity JWS.
-		IAMConfig *IAMConfig
-		// IAMVerifyFunc allows developers to add their own verification on the IAM user
-		// claims. For example, one could enable access for anyone with an email domain
-		// of "@example.com". This is required if IAMConfig is supplied.
-		IAMVerifyFunc func(context.Context, IAMClaimSet) bool
-
 		// Logger will be used to log any errors encountered during the auth flow.
 		Logger log.Logger
 	}
@@ -100,16 +91,10 @@ type (
 
 // NewAuthenticator will instantiate a new Authenticator, which can be used for verifying
 // a number of authentication styles within the Google Cloud Platform ecosystem.
-func NewAuthenticator(ctx context.Context, cfg Config) (Authenticator, error) {
+func NewAuthenticator(ctx context.Context, cfg AuthenticatorConfig) (Authenticator, error) {
 	ks, err := NewIdentityPublicKeySource(ctx, cfg.IDConfig)
 	if err != nil {
 		return Authenticator{}, errors.Wrap(err, "unable to init key source")
-	}
-	var iamVerifier *auth.Verifier
-	if cfg.IAMConfig != nil {
-		iamKS, err := NewIAMPublicKeySource(ctx, *cfg.IAMConfig)
-		iamVerifier := auth.NewVerifier(iamKS, IAMClaimsDecoderFunc,
-			IAMVerifyFunc(cfg.IAMVerifyFunc))
 	}
 	u, err := url.Parse(cfg.AuthConfig.RedirectURL)
 	if err != nil {
@@ -131,9 +116,8 @@ func NewAuthenticator(ctx context.Context, cfg Config) (Authenticator, error) {
 		cookieDomain: strings.Split(u.Host, ":")[0],
 		secureCookie: u.Scheme == "https",
 		callbackPath: u.Path,
-		idVerifier: auth.NewVerifier(ks, IdentityClaimsDecoderFunc,
+		verifier: auth.NewVerifier(ks, IdentityClaimsDecoderFunc,
 			IdentityVerifyFunc(cfg.IDVerifyFunc)),
-		iamVerifier: iamVerifier,
 	}, nil
 }
 
@@ -147,6 +131,12 @@ func (c Authenticator) LogOut(w http.ResponseWriter) {
 		MaxAge:  -1,
 		Expires: time.Unix(0, 0),
 	})
+}
+
+func forbidden(w http.ResponseWriter) {
+	// stop here here to prevent redirect chaos.
+	code := http.StatusForbidden
+	http.Error(w, http.StatusText(code), code)
 }
 
 // Middleware will handle login redirects, OAuth callbacks, header exceptions, custom
@@ -172,42 +162,53 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 		// ***all other endpoints must have a cookie or a header***
 		var (
 			err      error
+			token    string
 			verified bool
 		)
 
+		////////////
 		// check for an ID Authorization header
-		verified, err = c.idVerifier.VerifyRequest(r)
+		// this is for service-to-service auth/authz
+		////////////
+		verified, err = c.verifier.VerifyRequest(r)
 		if err != nil {
-			c.lg.Log("message", "id verify request failure", "error", err)
+			c.log.Log("message", "id verify request failure", "error", err)
 		}
 
-		if !verified {
-			// check for an IAM Authorization header
-			verified, err = c.iamVerifier.VerifyRequest(r)
+		switch verified {
+		case true:
+			// grab the token from the header to later inject claims into the context
+			token, err = auth.GetAuthorizationToken(r)
 			if err != nil {
-				c.lg.Log("message", "iam verify request failure", "error", err)
+				c.log.Log("message", "unable to get auth token", "error", err)
 			}
-		}
 
-		if !verified {
-			// check for an ID cookie dropped by the web auth flow
+		case false:
+			////////////
+			// check for an ID HTTP Cookie
+			// this is for web-based auth from a user + browser
+			////////////
 			ck, err := r.Cookie(c.cfg.CookieName)
-			if err == nil && ck != nil {
-				verified, err = c.idVerifier.Verify(r.Context(), ck.Value)
-				if err != nil {
-					c.lg.Log("message", "id verify cookie failure", "error", err)
-				}
+			if err != nil {
+				c.redirect(w, r)
+				return
 			}
+
+			verified, err = c.verifier.Verify(r.Context(), ck.Value)
+			if err != nil {
+				c.log.Log("message", "id verify cookie failure", "error", err)
+				c.redirect(w, r)
+				return
+			}
+
+			if !verified {
+				forbidden(w)
+				return
+			}
+			token = ck.Value
 		}
 
-		if !verified || err != nil {
-			// stop the redirect loop here to prevent redirect chaos.
-			code := http.StatusForbidden
-			http.Error(w, http.StatusText(code), code)
-			return
-		}
-
-		claims, err := decodeClaims(ck.Value)
+		claims, err := decodeClaims(token)
 		if err != nil {
 			c.redirect(w, r)
 			return
@@ -257,15 +258,13 @@ func (c Authenticator) callbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// they have authenticated, see if we can authorize them
 	// via the given verifyFunc
-	verified, err := c.idVerifier.Verify(r.Context(), id)
+	verified, err := c.verifier.Verify(r.Context(), id)
 	if err != nil {
 		c.redirect(w, r)
 		return
 	}
 	if !verified {
-		// stop here here to prevent redirect chaos.
-		code := http.StatusForbidden
-		http.Error(w, http.StatusText(code), code)
+		forbidden(w)
 		return
 	}
 

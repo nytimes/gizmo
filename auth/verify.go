@@ -74,7 +74,7 @@ func (c Verifier) VerifyInboundKitContext(ctx context.Context) (bool, error) {
 // VerifyRequest will pull the token from the "Authorization" header of the inbound
 // request then decode and verify it.
 func (c Verifier) VerifyRequest(r *http.Request) (bool, error) {
-	token, err := parseHeader(r.Header.Get("Authorization"))
+	token, err := GetAuthorizationToken(r)
 	if err != nil {
 		return false, err
 	}
@@ -153,4 +153,8 @@ func parseHeader(hdr string) (string, error) {
 		return "", errors.New("auth header invalid format")
 	}
 	return auths[1], nil
+}
+
+func GetAuthorizationToken(r *http.Request) (string, error) {
+	return parseHeader(r.Header.Get("Authorization"))
 }

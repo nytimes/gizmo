@@ -167,17 +167,13 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 		}
 
 		// ***all other endpoints must have a cookie or a header***
-		var (
-			err      error
-			token    string
-			verified bool
-		)
 
+		var token string
 		////////////
 		// check for an ID Authorization header
 		// this is for service-to-service auth/authz
 		////////////
-		verified, err = c.verifier.VerifyRequest(r)
+		verified, err := c.verifier.VerifyRequest(r)
 		if err != nil {
 			c.log.Log("message", "id verify request failure", "error", err)
 		}

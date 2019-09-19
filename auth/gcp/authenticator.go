@@ -46,10 +46,6 @@ type (
 
 	// AuthenticatorConfig encapsulates the needs of the Authenticator.
 	AuthenticatorConfig struct {
-		// HTTPClient will be used for making all outbound requests. If not supplied,
-		// http.DefaultClient will be used.
-		HTTPClient *http.Client
-
 		// CookieName will be used for the local HTTP cookie name.
 		CookieName string
 

@@ -159,6 +159,15 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 			}
 		}
 
+		// if a custom exception func has been configured, passing its inspection
+		// will bypass Identity auth.
+		if c.cfg.CustomExceptionsFunc != nil {
+			if c.cfg.CustomExceptionsFunc(r.Context(), r) {
+				h.ServeHTTP(w, r)
+				return
+			}
+		}
+
 		// ***all other endpoints must have a cookie or a header***
 		var (
 			err      error

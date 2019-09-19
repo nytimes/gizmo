@@ -123,7 +123,9 @@ func (c Authenticator) LogOut(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:    c.cfg.CookieName,
 		Domain:  c.cookieDomain,
+		Secure:  c.secureCookie,
 		Value:   "",
+		Path:    "/",
 		MaxAge:  -1,
 		Expires: time.Unix(0, 0),
 	})

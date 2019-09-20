@@ -228,32 +228,32 @@ func (c Authenticator) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// verify state
 	uri, ok := c.verifyState(ctx, q.Get("state"))
 	if !ok {
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 
 	code := q.Get("code")
 	if strings.TrimSpace(code) == "" {
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 
 	token, err := c.cfg.AuthConfig.Exchange(ctx, code)
 	if err != nil {
 		c.cfg.Logger.Log("error", err, "message", "unable to exchange code")
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 	idI := token.Extra("id_token")
 	if idI == nil {
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 	id, ok := idI.(string)
 	if !ok {
 		c.cfg.Logger.Log("message", "id_token was not a string",
 			"error", "unexpectected type: "+fmt.Sprintf("%T", idI))
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 
@@ -261,7 +261,7 @@ func (c Authenticator) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// via the given verifyFunc
 	verified, err := c.verifier.Verify(r.Context(), id)
 	if err != nil {
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 	if !verified {
@@ -273,7 +273,7 @@ func (c Authenticator) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	claims, err := decodeClaims(id)
 	if err != nil {
 		c.cfg.Logger.Log("error", err, "message", "unable to decode token")
-		c.redirect(w, r)
+		forbidden(w)
 		return
 	}
 

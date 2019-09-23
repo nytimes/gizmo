@@ -165,7 +165,11 @@ func (s *server) Middleware(e endpoint.Endpoint) endpoint.Endpoint {
 }
 
 func (s *server) HTTPMiddleware(h http.Handler) http.Handler {
-	return gserver.CORSHandler(h, "")
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		kit.LogDebug(r.Context(), "logging in the HTTP middleware!")
+		gserver.CORSHandler(h, "").ServeHTTP(w, r)
+	})
 }
 
 func (s *server) HTTPOptions() []httptransport.ServerOption {

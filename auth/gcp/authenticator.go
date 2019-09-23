@@ -166,47 +166,41 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 
 		// ***all other endpoints must have a cookie or a header***
 
-		var token string
 		////////////
 		// check for an ID Authorization header
 		// this is for service-to-service auth/authz
 		////////////
-		verified, err := c.verifier.VerifyRequest(r)
+		token, err := auth.GetAuthorizationToken(r)
 		if err != nil {
-			c.cfg.Logger.Log("message", "id verify request failure", "error", err)
+			c.cfg.Logger.Log("message", "unable to get header, falling back to cookie",
+				"error", err)
 		}
 
-		switch verified {
-		case true:
-			// grab the token from the header to later inject claims into the context
-			token, err = auth.GetAuthorizationToken(r)
-			if err != nil {
-				c.cfg.Logger.Log("message", "unable to get auth token", "error", err)
-			}
-
-		case false:
-			////////////
-			// check for an ID HTTP Cookie
-			// this is for web-based auth from a user + browser
-			////////////
+		////////////
+		// check for an ID HTTP Cookie
+		// this is for web-based auth from a user + browser
+		////////////
+		if token == "" {
 			ck, err := r.Cookie(c.cfg.CookieName)
 			if err != nil {
-				c.redirect(w, r)
-				return
-			}
-
-			verified, err = c.verifier.Verify(r.Context(), ck.Value)
-			if err != nil {
-				c.cfg.Logger.Log("message", "id verify cookie failure", "error", err)
-				c.redirect(w, r)
-				return
-			}
-
-			if !verified {
-				forbidden(w)
-				return
+				c.cfg.Logger.Log("message", "unable to get cookie, redirecting",
+					"error", err)
 			}
 			token = ck.Value
+		}
+
+		verified, err := c.verifier.Verify(r.Context(), token)
+		if err != nil {
+			c.cfg.Logger.Log("message", "id verify cookie failure, redirecting",
+				"error", err)
+			c.redirect(w, r)
+			return
+		}
+
+		// token existed but was invalid, forbid these requests
+		if !verified {
+			forbidden(w)
+			return
 		}
 
 		claims, err := decodeClaims(token)

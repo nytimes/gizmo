@@ -254,11 +254,7 @@ func (c Authenticator) callbackHandler(w http.ResponseWriter, r *http.Request) {
 	// they have authenticated, see if we can authorize them
 	// via the given verifyFunc
 	verified, err := c.verifier.Verify(r.Context(), id)
-	if err != nil {
-		forbidden(w)
-		return
-	}
-	if !verified {
+	if err != nil || !verified {
 		forbidden(w)
 		return
 	}

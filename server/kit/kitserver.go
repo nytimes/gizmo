@@ -186,33 +186,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			s.errs.Flush()
 		}
 	}()
-	s.handler.ServeHTTP(w, r)
+
+	// populate context with helpful keys
+	ctx := httptransport.PopulateRequestContext(r.Context(), r)
+
+	// add google trace header to use in tracing and logging
+	ctx = context.WithValue(ctx, ContextKeyCloudTraceContext,
+		r.Header.Get("X-Cloud-Trace-Context"))
+
+	// add a request scoped logger to the context
+	ctx = SetLogger(ctx, AddLogKeyVals(ctx, s.logger))
+
+	s.handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
 func (s *Server) register(svc Service) {
 	s.svc = svc
 	s.handler = s.svc.HTTPMiddleware(s.mux)
 
-	opts := []httptransport.ServerOption{
-		// populate context with helpful keys
-		httptransport.ServerBefore(func(ctx context.Context, r *http.Request) context.Context {
-			ctx = httptransport.PopulateRequestContext(ctx, r)
-			// add google trace header to use in tracing and logging
-			return context.WithValue(ctx, ContextKeyCloudTraceContext,
-				r.Header.Get("X-Cloud-Trace-Context"))
-		}),
-		// inject the server logger into every request context
-		httptransport.ServerBefore(func(ctx context.Context, _ *http.Request) context.Context {
-			return SetLogger(ctx, AddLogKeyVals(ctx, s.logger))
-		}),
-	}
-	opts = append(opts, svc.HTTPOptions()...)
-
 	const warmupPath = "/_ah/warmup"
 	var (
 		healthzFound bool
 		warmupFound  bool
 	)
+
+	opts := svc.HTTPOptions()
+
 	// register all endpoints with our wrappers & default decoders/encoders
 	for path, epMethods := range svc.HTTPEndpoints() {
 		for method, ep := range epMethods {

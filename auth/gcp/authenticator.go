@@ -189,6 +189,11 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 			token = ck.Value
 		}
 
+		if token == "" {
+			c.redirect(w, r)
+			return
+		}
+
 		verified, err := c.verifier.Verify(r.Context(), token)
 		if err != nil {
 			c.cfg.Logger.Log("message", "id verify cookie failure, redirecting",

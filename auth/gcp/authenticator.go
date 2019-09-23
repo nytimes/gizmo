@@ -336,7 +336,6 @@ func newNonce() (*[24]byte, error) {
 }
 
 func (c Authenticator) redirect(w http.ResponseWriter, r *http.Request) {
-	state := "/" // can't be empty
 	uri := r.URL.EscapedPath()
 	if r.URL.RawQuery != "" {
 		uri += "?" + r.URL.RawQuery
@@ -373,7 +372,7 @@ func (c Authenticator) redirect(w http.ResponseWriter, r *http.Request) {
 			stateData = encRes.Ciphertext
 		}
 	}
-	state = base64.StdEncoding.EncodeToString(stateData)
+	state := base64.StdEncoding.EncodeToString(stateData)
 
 	http.Redirect(w, r, c.cfg.AuthConfig.AuthCodeURL(state),
 		http.StatusTemporaryRedirect)

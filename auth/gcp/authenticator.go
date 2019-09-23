@@ -185,8 +185,9 @@ func (c Authenticator) Middleware(h http.Handler) http.Handler {
 			if err != nil {
 				c.cfg.Logger.Log("message", "unable to get cookie, redirecting",
 					"error", err)
+			} else {
+				token = ck.Value
 			}
-			token = ck.Value
 		}
 
 		if token == "" {
@@ -318,7 +319,7 @@ func (c Authenticator) verifyState(ctx context.Context, state string) (string, b
 }
 
 func (s stateData) verifiedURI() (string, bool) {
-	return s.URI, time.Now().Before(s.Expiry)
+	return s.URI, timeNow().Before(s.Expiry)
 }
 
 type stateData struct {
@@ -353,7 +354,7 @@ func (c Authenticator) redirect(w http.ResponseWriter, r *http.Request) {
 	}
 	const stateExpiryMins = 10
 	stateData, err := json.Marshal(stateData{
-		Expiry: time.Now().Add(stateExpiryMins * time.Minute),
+		Expiry: timeNow().Add(stateExpiryMins * time.Minute),
 		URI:    uri,
 		Nonce:  nonce,
 	})

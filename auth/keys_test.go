@@ -16,7 +16,7 @@ import (
 func TestResuseKeySource(t *testing.T) {
 	testTime := time.Date(2018, 10, 29, 12, 0, 0, 0, time.UTC)
 
-	timeNow = func() time.Time { return testTime }
+	TimeNow = func() time.Time { return testTime }
 
 	firstKeys, err := NewPublicKeySetFromJSON([]byte(testGoogleCerts), 1*time.Second)
 	if err != nil {
@@ -47,7 +47,7 @@ func TestResuseKeySource(t *testing.T) {
 	}
 
 	// move time forward, expire the first keys
-	timeNow = func() time.Time { return testTime.Add(1500 * time.Millisecond) }
+	TimeNow = func() time.Time { return testTime.Add(1500 * time.Millisecond) }
 
 	gotKeys, err = reuser.Get(context.Background())
 	if err != nil {
@@ -153,7 +153,7 @@ func TestKeySetFromURL(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		timeNow = func() time.Time { return testTime }
+		TimeNow = func() time.Time { return testTime }
 
 		t.Run(test.name, func(t *testing.T) {
 			srvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

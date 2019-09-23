@@ -8,13 +8,106 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NYTimes/gizmo/auth"
 	"github.com/go-kit/kit/log"
 	"golang.org/x/oauth2"
 )
 
+func TestAuthCallback(t *testing.T) {
+	timeNow = func() time.Time { return time.Date(2019, 9, 23, 21, 0, 0, 0, time.UTC) }
+	auth.TimeNow = timeNow
+	keyServer, authServer := setupAuthenticatorTest(t)
+	defer keyServer.Close()
+	defer authServer.Close()
+
+	auth, err := NewAuthenticator(context.Background(), AuthenticatorConfig{
+		CookieName: "example-cookie",
+		IDConfig: IdentityConfig{
+			Audience: "http://example.com",
+			CertURL:  keyServer.URL,
+		},
+		IDVerifyFunc: func(_ context.Context, cs IdentityClaimSet) bool {
+			if cs.Aud != "http://example.com" {
+				return false
+			}
+			return strings.HasPrefix(cs.Email, "auth-example@")
+		},
+		AuthConfig: &oauth2.Config{
+			RedirectURL: "http://localhost/oauthcallback",
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  authServer.URL,
+				TokenURL: authServer.URL,
+			},
+		},
+		Logger:      log.NewJSONLogger(os.Stdout),
+		UnsafeState: true,
+	})
+	if err != nil {
+		t.Fatalf("unable to init authenticator: %s", err)
+	}
+
+	var passedAuth bool
+	handler := auth.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		passedAuth = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// make a call to out callback endpoint that has no state info
+	r := httptest.NewRequest(http.MethodGet, "/randoendpoint", nil)
+
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if passedAuth {
+		t.Fatal("request passed the auth layer despite having no known token")
+	}
+
+	got := w.Result()
+	if got.StatusCode != http.StatusTemporaryRedirect {
+		t.Fatalf("expected to be get a 307 but got a status of %d instead",
+			got.StatusCode)
+	}
+
+	// try to get the callback to play nice with an added state
+	r = httptest.NewRequest(http.MethodGet,
+		"/oauthcallback?state=eyJFeHBpcnkiOiIyMDE5LTA5LTIzVDE3OjUwOjQxLjYxOTc4Ny0wNDowMCIsIlVSSSI6Ii9yYW5kb2VuZHBvaW50IiwiTm9uY2UiOlsxNzUsOTIsMjUzLDQxLDg5LDIzMSwxNTAsMjQyLDk4LDY0LDY4LDE4NSwyMzMsMTM2LDcyLDIwOCwwLDIxLDIzLDg0LDEyMywxMzUsMTM5LDk2XX0=&code=XYZ",
+		nil)
+
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+
+	if passedAuth {
+		t.Fatal("request passed the auth layer despite having no known token")
+	}
+
+	got = w.Result()
+
+	if got.StatusCode != http.StatusTemporaryRedirect {
+		t.Fatalf("expected to be get a 200 OK but got a status of %d instead",
+			got.StatusCode)
+	}
+
+	gotCookie := got.Header.Get("Set-Cookie")
+	if gotCookie == "" {
+		t.Fatal("expected cookie to have been dropped but got none")
+	}
+	cookieVals := strings.Split(strings.Split(gotCookie, "; ")[0], "=")
+	if len(cookieVals) != 2 {
+		t.Fatalf("cookie has unexpected format: %q", gotCookie)
+	}
+	if cookieVals[1] != testAuthToken {
+		t.Fatalf("expected testAuthToken (%q), got %q", testAuthToken, cookieVals[1])
+	}
+}
+
 func TestAuthenticatorTokenReject(t *testing.T) {
+	timeNow = func() time.Time {
+		return time.Date(2019, 9, 23, 22, 0, 0, 0, time.UTC)
+	}
+	auth.TimeNow = timeNow
+
 	keyServer, authServer := setupAuthenticatorTest(t)
 	defer keyServer.Close()
 	defer authServer.Close()
@@ -65,6 +158,11 @@ func TestAuthenticatorTokenReject(t *testing.T) {
 }
 
 func TestAuthenticatorTokenSuccess(t *testing.T) {
+	timeNow = func() time.Time {
+		return time.Date(2019, 9, 23, 22, 0, 0, 0, time.UTC)
+	}
+	auth.TimeNow = timeNow
+
 	keyServer, authServer := setupAuthenticatorTest(t)
 	defer keyServer.Close()
 	defer authServer.Close()
@@ -138,6 +236,11 @@ func TestAuthenticatorTokenSuccess(t *testing.T) {
 const testAuthToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjBiMGJmMTg2NzQzNDcxYTFlZGNhYzMwNjBkMTI1NmY5ZTQwNTBiYTgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhdWQiOiJodHRwOi8vZXhhbXBsZS5jb20iLCJhenAiOiJhdXRoLWV4YW1wbGVAbnl0LWdvbGFuZy1kZXYuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzdWIiOiIxMDMzNTk3OTYyODUxOTI5NzE4NzQiLCJlbWFpbCI6ImF1dGgtZXhhbXBsZUBueXQtZ29sYW5nLWRldi5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJpYXQiOjE1NjkyNzIxNjgsImV4cCI6MTU2OTI3NTc2OH0.YCnNzU8mw_bdHmpmAWjcRc8NKs2A2ugz2XenN3opyEddKl9UxnMx-Y7k3Hd5jIhIZbBLp5_nwUojiWSoWXIYrIG-63MNINUCyoZykxwWMXhQTvTChPk69j0ex0wvwfuR044GrH1SRohYZET5JnlfrBroHjSOK0OqHjpePBp84ezK7EXwnKTgvqTB_lTp5__Xmwguw1DkLKVH9lpnU9RalAdjQZL0_tsK3MWSrVrL8byqP7MyOF6t5Xv-Xrb90feZIuJITPDtNoLvxL-ZXN5B-oGVyBlDK3w6mwTjLV4YQCa5lZKy3SrVHgAa4ucFkZFw0kzCJEnRY_YLkGh7c9eh2w"
 
 func TestAuthCustomExceptions(t *testing.T) {
+	timeNow = func() time.Time {
+		return time.Date(2019, 9, 23, 0, 0, 0, 0, time.UTC)
+	}
+	auth.TimeNow = timeNow
+
 	keyServer, authServer := setupAuthenticatorTest(t)
 	defer keyServer.Close()
 	defer authServer.Close()
@@ -201,6 +304,11 @@ func TestAuthCustomExceptions(t *testing.T) {
 }
 
 func TestAuthHeaderExceptions(t *testing.T) {
+	timeNow = func() time.Time {
+		return time.Date(2019, 9, 23, 0, 0, 0, 0, time.UTC)
+	}
+	auth.TimeNow = timeNow
+
 	keyServer, authServer := setupAuthenticatorTest(t)
 	defer keyServer.Close()
 	defer authServer.Close()
@@ -278,7 +386,14 @@ func setupAuthenticatorTest(t *testing.T) (*httptest.Server, *httptest.Server) {
 		})
 	}))
 	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode("OK")
+		w.Header().Add("Content-Type", "application/json")
+		w.Write([]byte(`{
+		  "access_token": "nah",
+		  "expires_in": 3600,
+		  "scope": "https://www.googleapis.com/auth/userinfo.email",
+		  "token_type": "Bearer",
+		  "id_token": "` + testAuthToken + `"
+		}`))
 	}))
 	return keyServer, authServer
 }

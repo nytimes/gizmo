@@ -111,7 +111,7 @@ func (c Verifier) Verify(ctx context.Context, token string) (bool, error) {
 	}
 
 	claims := clmstr.BaseClaims()
-	nowUnix := timeNow().Unix()
+	nowUnix := TimeNow().Unix()
 
 	if nowUnix < (claims.Iat - c.skewAllowance) {
 		return false, errors.New("invalid issue time")

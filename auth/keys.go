@@ -55,7 +55,7 @@ type PublicKeySet struct {
 // Expired will return true if the current key set is expire according to its Expiry
 // field.
 func (ks PublicKeySet) Expired() bool {
-	return timeNow().After(ks.Expiry)
+	return TimeNow().After(ks.Expiry)
 }
 
 // GetKey will look for the given key ID in the key set and return it, if it exists.
@@ -135,7 +135,7 @@ func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, e
 	}
 
 	ks = PublicKeySet{
-		Expiry: timeNow().Add(ttl),
+		Expiry: TimeNow().Add(ttl),
 		Keys:   map[string]*rsa.PublicKey{},
 	}
 
@@ -160,4 +160,6 @@ func NewPublicKeySetFromJSON(payload []byte, ttl time.Duration) (PublicKeySet, e
 	return ks, nil
 }
 
-var timeNow = func() time.Time { return time.Now() }
+// TimeNow is used internally to determine the current time. It has been abstracted to
+// this global function as a mechanism to help with testing.
+var TimeNow = func() time.Time { return time.Now() }

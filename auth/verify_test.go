@@ -61,7 +61,7 @@ func TestVerifyRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			timeNow = func() time.Time { return testTime }
+			TimeNow = func() time.Time { return testTime }
 
 			token, err := encode(
 				&jws.Header{Algorithm: "RS256", Typ: "JWT", KeyID: keyID},
@@ -89,7 +89,7 @@ func TestVerifyRequest(t *testing.T) {
 
 			ks := testKeySource{
 				keys: PublicKeySet{
-					Expiry: timeNow().Add(time.Hour),
+					Expiry: TimeNow().Add(time.Hour),
 					Keys: map[string]*rsa.PublicKey{
 						keyID: &prv.PublicKey,
 					},
@@ -163,7 +163,7 @@ func TestVerifyInboundKit(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			timeNow = func() time.Time { return testTime }
+			TimeNow = func() time.Time { return testTime }
 
 			token, err := encode(
 				&jws.Header{Algorithm: "RS256", Typ: "JWT", KeyID: keyID},
@@ -191,7 +191,7 @@ func TestVerifyInboundKit(t *testing.T) {
 
 			ks := testKeySource{
 				keys: PublicKeySet{
-					Expiry: timeNow().Add(time.Hour),
+					Expiry: TimeNow().Add(time.Hour),
 					Keys: map[string]*rsa.PublicKey{
 						keyID: &prv.PublicKey,
 					},
@@ -337,7 +337,7 @@ func TestVerify(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			timeNow = func() time.Time { return testTime }
+			TimeNow = func() time.Time { return testTime }
 
 			token, err := encode(
 				&jws.Header{Algorithm: "RS256", Typ: "JWT", KeyID: keyID},
@@ -370,7 +370,7 @@ func TestVerify(t *testing.T) {
 
 			ks := testKeySource{
 				keys: PublicKeySet{
-					Expiry: timeNow().Add(time.Hour),
+					Expiry: TimeNow().Add(time.Hour),
 					Keys: map[string]*rsa.PublicKey{
 						kid: &prv.PublicKey,
 					},

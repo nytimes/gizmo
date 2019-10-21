@@ -82,6 +82,20 @@ func GetGAEInfo() (projectID, service, version string) {
 		os.Getenv("GAE_VERSION")
 }
 
+func IsRun() bool {
+	return os.Getenv("K_SERVICE") != "" &&
+		os.Getenv("K_REVISION") != "" &&
+		os.Getenv("K_CONFIGURATION") != ""
+}
+
+// GetGAEInfo returns the GCP Project ID,
+// the service, and the version of the application.
+func GetRunInfo() (projectID, service, version string) {
+	return GoogleProjectID(),
+		os.Getenv("K_SERVICE"),
+		os.Getenv("K_REVISION")
+}
+
 // GetServiceInfo returns the GCP Project ID,
 // the service name and version (GAE or through
 // SERVICE_NAME/SERVICE_VERSION env vars). Note
@@ -91,6 +105,9 @@ func GetGAEInfo() (projectID, service, version string) {
 func GetServiceInfo() (projectID, service, version string) {
 	if IsGAE() {
 		return GetGAEInfo()
+	}
+	if IsRun() {
+		return GetRunInfo()
 	}
 	return GoogleProjectID(), os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION")
 }

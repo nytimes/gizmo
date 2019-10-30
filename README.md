@@ -54,7 +54,7 @@ The `server/kit` package embodies Gizmo's goals to combine with go-kit.
 The `observe` package provides observability helpers for metrics and tracing through OpenCensus
 
 * `server/kit` (and soon SimpleServer) utilizes this package to create a StackDriver exporter with sane defaults
-* `GoogleProjectID`, `IsGAE`, and `IsRun` can help you make decisions about the underlying platform
+* `GoogleProjectID`, `IsGAE`, and `IsCloudRun` can help you make decisions about the underlying platform
 
 #### [`auth`](https://godoc.org/github.com/NYTimes/gizmo/auth)
 

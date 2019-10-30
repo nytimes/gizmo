@@ -80,13 +80,15 @@ func GetGAEInfo() (service, version string) {
 	return os.Getenv("GAE_SERVICE"), os.Getenv("GAE_VERSION")
 }
 
-func IsRun() bool {
+// IsCloudRun tells you whether your program is running
+// within the Cloud Run platform.
+func IsCloudRun() bool {
 	return os.Getenv("K_CONFIGURATION") != ""
 }
 
-// GetRunInfo returns the service and the version of the
-// GAE application.
-func GetRunInfo() (service, version, config string) {
+// GetCloudRunInfo returns the service and the version of the
+// Cloud Run application.
+func GetCloudRunInfo() (service, version, config string) {
 	return os.Getenv("K_SERVICE"), os.Getenv("K_REVISION"), os.Getenv("K_CONFIGURATION")
 }
 
@@ -100,8 +102,8 @@ func GetServiceInfo() (projectID, service, version string) {
 	switch {
 	case IsGAE():
 		service, version = GetGAEInfo()
-	case IsRun():
-		service, version, _ = GetRunInfo()
+	case IsCloudRun():
+		service, version, _ = GetCloudRunInfo()
 	default:
 		service, version = os.Getenv("SERVICE_NAME"), os.Getenv("SERVICE_VERSION")
 	}
@@ -118,7 +120,7 @@ func getSDOpts(projectID, service, version string, onErr func(err error)) *stack
 	if err != nil {
 		return nil
 	}
-	canExport := IsGAE() || IsRun()
+	canExport := IsGAE() || IsCloudRun()
 	if m := monitoredresource.Autodetect(); m != nil {
 		mr = m
 		canExport = true
@@ -147,7 +149,7 @@ func getSDOpts(projectID, service, version string, onErr func(err error)) *stack
 // IsGCPEnabled returns whether the running application
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
-	return IsGAE() || IsRun() || monitoredresource.Autodetect() != nil
+	return IsGAE() || IsCloudRun() || monitoredresource.Autodetect() != nil
 }
 
 // SkipObserve checks if the GIZMO_SKIP_OBSERVE environment variable has been populated.

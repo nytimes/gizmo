@@ -79,11 +79,17 @@ func (p *publisher) Publish(ctx context.Context, key string, m proto.Message) er
 
 // PublishRaw will emit the byte array to the SNS topic.
 // The key will be used as the SNS message subject.
-func (p *publisher) PublishRaw(_ context.Context, key string, m []byte) error {
+// If key "SNSMessageAttributes" of type map[string]*sns.MessageAttributeValue
+// will be present in the context, provided MessageAttributes will be set for a reqeust
+func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
 		Subject:  &key,
 		Message:  aws.String(base64.StdEncoding.EncodeToString(m)),
+	}
+
+	if v, ok := ctx.Value("SNSMessageAttributes").(map[string]*sns.MessageAttributeValue); ok {
+		msg.MessageAttributes = v
 	}
 
 	_, err := p.sns.Publish(msg)

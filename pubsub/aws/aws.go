@@ -19,6 +19,15 @@ import (
 	"golang.org/x/net/context"
 )
 
+// The key type is unexported to prevent collisions with context keys defined in
+// other packages.
+type key int
+
+// msgAttrsKey is the context key for the SNS Message Attributes.  Its value of zero is
+// arbitrary. If this package defined other context keys, they would have
+// different integer values.
+const msgAttrsKey key = 0
+
 // publisher will accept AWS credentials and an SNS topic name
 // and it will emit any publish events to it.
 type publisher struct {
@@ -79,8 +88,7 @@ func (p *publisher) Publish(ctx context.Context, key string, m proto.Message) er
 
 // PublishRaw will emit the byte array to the SNS topic.
 // The key will be used as the SNS message subject.
-// If key "SNSMessageAttributes" of type map[string]*sns.MessageAttributeValue
-// will be present in the context, provided MessageAttributes will be set for a reqeust
+// You can use func WithMessageAttributes to set SNS message attributes for the message
 func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error {
 	msg := &sns.PublishInput{
 		TopicArn: &p.topic,
@@ -88,12 +96,18 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 		Message:  aws.String(base64.StdEncoding.EncodeToString(m)),
 	}
 
-	if v, ok := ctx.Value("SNSMessageAttributes").(map[string]*sns.MessageAttributeValue); ok {
+	if v, ok := ctx.Value(msgAttrsKey).(map[string]*sns.MessageAttributeValue); ok {
 		msg.MessageAttributes = v
 	}
 
 	_, err := p.sns.Publish(msg)
 	return err
+}
+
+// WithMessaggeAttributes used to add SNS Message Attributes to the context
+// for further usage in publishing messages to sns with provided attributes
+func WithMessaggeAttributes(ctx context.Context, msgAttrs map[string]*sns.MessageAttributeValue) context.Context {
+	return context.WithValue(ctx, msgAttrsKey, msgAttrs)
 }
 
 var (

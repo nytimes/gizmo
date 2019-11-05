@@ -104,9 +104,9 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 	return err
 }
 
-// WithMessaggeAttributes used to add SNS Message Attributes to the context
+// WithMessageAttributes used to add SNS Message Attributes to the context
 // for further usage in publishing messages to sns with provided attributes
-func WithMessaggeAttributes(ctx context.Context, msgAttrs map[string]*sns.MessageAttributeValue) context.Context {
+func WithMessageAttributes(ctx context.Context, msgAttrs map[string]*sns.MessageAttributeValue) context.Context {
 	return context.WithValue(ctx, msgAttrsKey, msgAttrs)
 }
 

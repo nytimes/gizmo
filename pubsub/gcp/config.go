@@ -1,6 +1,9 @@
 package gcp
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"github.com/kelseyhightower/envconfig"
+	gpubsub "cloud.google.com/go/pubsub"
+)
 
 // Config holds common credentials and config values for
 // working with GCP PubSub.
@@ -9,8 +12,10 @@ type Config struct {
 
 	// For publishing
 	Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
+	PublishSettings gpubsub.PublishSettings
+
 	// For subscribing
-	Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
+    Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
 }
 
 // LoadConfigFromEnv will attempt to load a PubSub config

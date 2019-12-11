@@ -1,6 +1,9 @@
 package gcp
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	gpubsub "cloud.google.com/go/pubsub"
+	"github.com/kelseyhightower/envconfig"
+)
 
 // Config holds common credentials and config values for
 // working with GCP PubSub.
@@ -9,6 +12,15 @@ type Config struct {
 
 	// For publishing
 	Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
+
+	// Batch settings for GCP publisher
+	// See: https://godoc.org/cloud.google.com/go/pubsub#PublishSettings
+	// Notes:
+	// This config will not allow you to set zero values for PublishSettings.
+	// Applications using these settings should account for the DelayThreshold
+	// interval when shutting down gracefully to avoid lost messages.
+	PublishSettings gpubsub.PublishSettings
+
 	// For subscribing
 	Subscription string `envconfig:"GCP_PUBSUB_SUBSCRIPTION"`
 }

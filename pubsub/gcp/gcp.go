@@ -91,12 +91,6 @@ func (s *Subscriber) Stop() error {
 	return nil
 }
 
-// SetReceiveSettings sets the ReceivedSettings on the google pubsub Subscription.
-// Should be called before Start().
-func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
-	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
-}
-
 // SubMessage pubsub implementation of pubsub.SubscriberMessage.
 type SubMessage struct {
 	msg        message
@@ -142,9 +136,26 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if err != nil {
 		return nil, err
 	}
-
+	t := c.Topic(cfg.Topic)
+	// Update PublishSettings from cfg.PublishSettings
+	// but never set thresholds to 0.
+	if cfg.PublishSettings.DelayThreshold > 0*time.Millisecond {
+		t.PublishSettings.DelayThreshold = cfg.PublishSettings.DelayThreshold
+	}
+	if cfg.PublishSettings.CountThreshold > 0 {
+		t.PublishSettings.CountThreshold = cfg.PublishSettings.CountThreshold
+	}
+	if cfg.PublishSettings.ByteThreshold > 0 {
+		t.PublishSettings.ByteThreshold = cfg.PublishSettings.ByteThreshold
+	}
+	if cfg.PublishSettings.NumGoroutines > 0 {
+		t.PublishSettings.NumGoroutines = cfg.PublishSettings.NumGoroutines
+	}
+	if cfg.PublishSettings.Timeout > 0*time.Millisecond {
+		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
+	}
 	return &publisher{
-		topic: c.Topic(cfg.Topic),
+		topic: t,
 	}, nil
 }
 
@@ -163,7 +174,18 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 		Data:       m,
 		Attributes: map[string]string{"key": key},
 	})
-	_, err := res.Get(ctx)
+	var err error
+	if p.topic.PublishSettings.DelayThreshold <= 1*time.Millisecond {
+		_, err = res.Get(ctx)
+	} else {
+		// if the DelayThreshold > 1 — the default — we use a goroutine
+		// otherwise we'll block here until that time interval passes
+		go func(res *gpubsub.PublishResult, ctx context.Context, m []byte) {
+			if _, err := res.Get(ctx); err != nil {
+				pubsub.Log.Error("Error sending message to pubsub: ", string(m), err)
+			}
+		}(res, context.Background(), m)
+	}
 	return err
 }
 

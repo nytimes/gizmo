@@ -200,6 +200,14 @@ func (p *publisher) PublishMultiRaw(ctx context.Context, keys []string, messages
 	return nil
 }
 
+// SetPublishSettings sets the PublishSettings on the google pubsub publisher.
+func (p publisher) SetPublishSettings(settings gpubsub.PublishSettings) error {
+	p.topic.PublishSettings = settings
+	return nil
+}
+
+
+
 // interfaces and types to make this more testable
 type (
 	subscription interface {

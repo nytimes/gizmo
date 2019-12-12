@@ -138,9 +138,8 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 		return nil, err
 	}
 	t :=  c.Topic(cfg.Topic)
-	
 	// Update PublishSettings from cfg.PublishSettings 
-	// Never set thresholds lower that the defaults
+	// Never set thresholds lower than the defaults
 	if cfg.PublishSettings.DelayThreshold > t.PublishSettings.DelayThreshold {
 		t.PublishSettings.DelayThreshold = cfg.PublishSettings.DelayThreshold
 	}
@@ -156,7 +155,6 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if cfg.PublishSettings.Timeout > t.PublishSettings.Timeout  {
 		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
 	}	
-	fmt.Printf("%+v\n", t.PublishSettings)
 	return &publisher{t}, nil
 }
 

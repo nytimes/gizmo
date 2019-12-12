@@ -3,7 +3,6 @@ package gcp // import "github.com/NYTimes/gizmo/pubsub/gcp"
 import (
 	"errors"
 	"sync"
-	"fmt"
 	"time"
 
 	gpubsub "cloud.google.com/go/pubsub"

@@ -12,6 +12,11 @@ type Config struct {
 
 	// For publishing
 	Topic string `envconfig:"GCP_PUBSUB_TOPIC"`
+	
+	// Batch settings for GCP publisher		   
+	// See: https://godoc.org/cloud.google.com/go/pubsub#PublishSettings
+	// Note: this config will not allow you to go lower than the 
+	// default PublishSettings values
 	PublishSettings gpubsub.PublishSettings
 
 	// For subscribing

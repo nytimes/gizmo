@@ -91,12 +91,6 @@ func (s *Subscriber) Stop() error {
 	return nil
 }
 
-// SetReceiveSettings sets the ReceivedSettings on the google pubsub Subscription.
-// Should be called before Start().
-func (s *Subscriber) SetReceiveSettings(settings gpubsub.ReceiveSettings) {
-	s.sub.(subscriptionImpl).Sub.ReceiveSettings = settings
-}
-
 // SubMessage pubsub implementation of pubsub.SubscriberMessage.
 type SubMessage struct {
 	msg        message
@@ -142,10 +136,25 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if err != nil {
 		return nil, err
 	}
-
-	return &publisher{
-		topic: c.Topic(cfg.Topic),
-	}, nil
+	t :=  c.Topic(cfg.Topic)
+	// Update PublishSettings from cfg.PublishSettings 
+	// Never set thresholds lower than the defaults
+	if cfg.PublishSettings.DelayThreshold > t.PublishSettings.DelayThreshold {
+		t.PublishSettings.DelayThreshold = cfg.PublishSettings.DelayThreshold
+	}
+	if cfg.PublishSettings.CountThreshold > t.PublishSettings.CountThreshold  {
+		t.PublishSettings.CountThreshold = cfg.PublishSettings.CountThreshold
+	}
+	if cfg.PublishSettings.ByteThreshold > t.PublishSettings.ByteThreshold  {
+		t.PublishSettings.ByteThreshold = cfg.PublishSettings.ByteThreshold
+	}
+	if cfg.PublishSettings.NumGoroutines > t.PublishSettings.NumGoroutines  {
+		t.PublishSettings.NumGoroutines = cfg.PublishSettings.NumGoroutines
+	}
+	if cfg.PublishSettings.Timeout > t.PublishSettings.Timeout  {
+		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
+	}	
+	return &publisher{t}, nil
 }
 
 // Publish will marshal the proto message and publish it to GCP pubsub.
@@ -200,6 +209,7 @@ func (p *publisher) PublishMultiRaw(ctx context.Context, keys []string, messages
 	return nil
 }
 
+
 // interfaces and types to make this more testable
 type (
 	subscription interface {
@@ -218,6 +228,8 @@ type (
 	subscriptionImpl struct {
 		Sub *gpubsub.Subscription
 	}
+	
+  
 )
 
 func (m messageImpl) ID() string {

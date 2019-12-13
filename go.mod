@@ -1,4 +1,4 @@
-module github.com/edgulczynski/gizmo
+module github.com/NYTimes/gizmo
 
 go 1.12
 

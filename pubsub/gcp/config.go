@@ -15,8 +15,10 @@ type Config struct {
 
 	// Batch settings for GCP publisher
 	// See: https://godoc.org/cloud.google.com/go/pubsub#PublishSettings
-	// Note: this config will not allow you to set values lower than the
-	// default PublishSettings values
+	// Notes: 
+	// This config will not allow you to set zero values for PublishSettings.
+	// Applications using these settings should account for the DelayThreshold
+	// interval when shutting down gracefully to avoid lost messages.  
 	PublishSettings gpubsub.PublishSettings
 
 	// For subscribing

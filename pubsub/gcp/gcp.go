@@ -182,7 +182,7 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 		go func(res *gpubsub.PublishResult, ctx context.Context, m []byte) {
 			_, err := res.Get(ctx)
 			if err != nil {
-				log.Print("Error sending message to pubsub: ", string(m), err)
+				pubsub.Log.Error("Error sending message to pubsub: ", string(m), err)
 			}
 		}(res, context.Background(), m)
 	}

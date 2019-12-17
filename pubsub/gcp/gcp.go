@@ -4,7 +4,6 @@ import (
 	"errors"
 	"sync"
 	"time"
-	"log"
 
 	gpubsub "cloud.google.com/go/pubsub"
 	"github.com/NYTimes/gizmo/pubsub"
@@ -155,7 +154,9 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if cfg.PublishSettings.Timeout > 0 * time.Millisecond {
 		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
 	}
-	return &publisher{t}, nil
+	return &publisher{
+	    topic:t,
+	    }, nil
 }
 
 // Publish will marshal the proto message and publish it to GCP pubsub.

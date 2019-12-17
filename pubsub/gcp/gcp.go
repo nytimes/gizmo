@@ -138,8 +138,8 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	}
 	t := c.Topic(cfg.Topic)
 	// Update PublishSettings from cfg.PublishSettings
-	// but never set thresholds to 0. 
-	if cfg.PublishSettings.DelayThreshold > 0 * time.Millisecond {
+	// but never set thresholds to 0.
+	if cfg.PublishSettings.DelayThreshold > 0*time.Millisecond {
 		t.PublishSettings.DelayThreshold = cfg.PublishSettings.DelayThreshold
 	}
 	if cfg.PublishSettings.CountThreshold > 0 {
@@ -151,12 +151,12 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if cfg.PublishSettings.NumGoroutines > 0 {
 		t.PublishSettings.NumGoroutines = cfg.PublishSettings.NumGoroutines
 	}
-	if cfg.PublishSettings.Timeout > 0 * time.Millisecond {
+	if cfg.PublishSettings.Timeout > 0*time.Millisecond {
 		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
 	}
 	return &publisher{
-	    topic:t,
-	    }, nil
+		topic: t,
+	}, nil
 }
 
 // Publish will marshal the proto message and publish it to GCP pubsub.
@@ -175,7 +175,7 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 		Attributes: map[string]string{"key": key},
 	})
 	var err error
-	if p.topic.PublishSettings.DelayThreshold <= 1 * time.Millisecond {
+	if p.topic.PublishSettings.DelayThreshold <= 1*time.Millisecond {
 		_, err = res.Get(ctx)
 	} else {
 		// if the DelayThreshold > 1 — the default — we use a goroutine

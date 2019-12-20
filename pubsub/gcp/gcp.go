@@ -142,9 +142,26 @@ func NewPublisher(ctx context.Context, cfg Config, opts ...option.ClientOption) 
 	if err != nil {
 		return nil, err
 	}
-
+	t := c.Topic(cfg.Topic)
+	// Update PublishSettings from cfg.PublishSettings
+	// but never set thresholds to 0.
+	if cfg.PublishSettings.DelayThreshold > 0 {
+		t.PublishSettings.DelayThreshold = cfg.PublishSettings.DelayThreshold
+	}
+	if cfg.PublishSettings.CountThreshold > 0 {
+		t.PublishSettings.CountThreshold = cfg.PublishSettings.CountThreshold
+	}
+	if cfg.PublishSettings.ByteThreshold > 0 {
+		t.PublishSettings.ByteThreshold = cfg.PublishSettings.ByteThreshold
+	}
+	if cfg.PublishSettings.NumGoroutines > 0 {
+		t.PublishSettings.NumGoroutines = cfg.PublishSettings.NumGoroutines
+	}
+	if cfg.PublishSettings.Timeout > 0 {
+		t.PublishSettings.Timeout = cfg.PublishSettings.Timeout
+	}
 	return &publisher{
-		topic: c.Topic(cfg.Topic),
+		topic: t,
 	}, nil
 }
 

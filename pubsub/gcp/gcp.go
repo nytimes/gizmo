@@ -174,7 +174,18 @@ func (p *publisher) PublishRaw(ctx context.Context, key string, m []byte) error 
 		Data:       m,
 		Attributes: map[string]string{"key": key},
 	})
-	_, err := res.Get(ctx)
+	var err error
+	if p.topic.PublishSettings.DelayThreshold <= 1*time.Millisecond {
+		_, err = res.Get(ctx)
+	} else {
+		// if the DelayThreshold > 1 — the default — we use a goroutine
+		// otherwise we'll block here until that time interval passes
+		go func(res *gpubsub.PublishResult, ctx context.Context, m []byte) {
+			if _, err := res.Get(ctx); err != nil {
+				pubsub.Log.Error("Error sending message to pubsub: ", string(m), err)
+			}
+		}(res, context.Background(), m)
+	}
 	return err
 }
 

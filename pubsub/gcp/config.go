@@ -17,8 +17,8 @@ type Config struct {
 	// See: https://godoc.org/cloud.google.com/go/pubsub#PublishSettings
 	// Notes:
 	// This config will not allow you to set zero values for PublishSettings.
-	// Applications using these settings should be aware that Publish requests 
-	// will block until the lowest of the thresholds in PublishSettings is met. 
+	// Applications using these settings should account for the DelayThreshold
+	// interval when shutting down gracefully to avoid lost messages.
 	PublishSettings gpubsub.PublishSettings
 
 	// For subscribing

@@ -3,7 +3,7 @@ module github.com/NYTimes/gizmo
 go 1.12
 
 require (
-	cloud.google.com/go v0.38.0
+	cloud.google.com/go v0.54.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.2
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.1

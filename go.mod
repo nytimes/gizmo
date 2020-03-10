@@ -28,6 +28,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	google.golang.org/api v0.7.0
 	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
-	google.golang.org/grpc v1.22.0
+	google.golang.org/grpc v1.27.1
 	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 )

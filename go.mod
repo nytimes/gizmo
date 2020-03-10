@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.38.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.2
 	github.com/NYTimes/logrotate v1.0.0
-	github.com/Shopify/sarama v1.23.1
+	github.com/Shopify/sarama v1.26.1
 	github.com/aws/aws-sdk-go v1.19.18
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0

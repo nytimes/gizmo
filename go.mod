@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.54.0
 	cloud.google.com/go/logging v1.0.0
 	cloud.google.com/go/pubsub v1.2.0
-	contrib.go.opencensus.io/exporter/stackdriver v0.12.2
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.0
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.1
 	github.com/aws/aws-sdk-go v1.29.21

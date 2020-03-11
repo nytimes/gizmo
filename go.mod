@@ -12,8 +12,6 @@ require (
 	github.com/aws/aws-sdk-go v1.29.21
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/context v1.1.1
@@ -31,5 +29,4 @@ require (
 	google.golang.org/api v0.20.0
 	google.golang.org/genproto v0.0.0-20200305110556-506484158171
 	google.golang.org/grpc v1.28.0
-	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
 )

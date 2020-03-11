@@ -4,16 +4,16 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.54.0
+	cloud.google.com/go/logging v1.0.0
+	cloud.google.com/go/pubsub v1.2.0
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.2
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.1
 	github.com/aws/aws-sdk-go v1.19.18
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/protobuf v1.3.4
-	github.com/google/go-cmp v0.3.0
+	github.com/google/go-cmp v0.4.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -23,11 +23,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.4
 	github.com/sirupsen/logrus v1.4.2
-	go.opencensus.io v0.22.0
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	google.golang.org/api v0.7.0
-	google.golang.org/genproto v0.0.0-20190716160619-c506a9f90610
-	google.golang.org/grpc v1.28.0
-	gopkg.in/jcmturner/goidentity.v3 v3.0.0 // indirect
+	go.opencensus.io v0.22.3
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	google.golang.org/api v0.20.0
+	google.golang.org/genproto v0.0.0-20200305110556-506484158171
+	google.golang.org/grpc v1.27.1
 )

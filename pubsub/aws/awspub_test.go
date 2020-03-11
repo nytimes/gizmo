@@ -382,3 +382,33 @@ func (t *TestSNSAPI) Unsubscribe(*sns.UnsubscribeInput) (*sns.UnsubscribeOutput,
 func (t *TestSNSAPI) UnsubscribeWithContext(aws.Context, *sns.UnsubscribeInput, ...request.Option) (*sns.UnsubscribeOutput, error) {
 	return nil, errNotImpl
 }
+
+func (t *TestSNSAPI) ListTagsForResource(*sns.ListTagsForResourceInput) (*sns.ListTagsForResourceOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) ListTagsForResourceRequest(*sns.ListTagsForResourceInput) (*request.Request, *sns.ListTagsForResourceOutput) {
+	return nil, nil
+}
+func (t *TestSNSAPI) ListTagsForResourceWithContext(aws.Context, *sns.ListTagsForResourceInput, ...request.Option) (*sns.ListTagsForResourceOutput, error) {
+	return nil, errNotImpl
+}
+
+func (t *TestSNSAPI) TagResource(*sns.TagResourceInput) (*sns.TagResourceOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) TagResourceRequest(*sns.TagResourceInput) (*request.Request, *sns.TagResourceOutput) {
+	return nil, nil
+}
+func (t *TestSNSAPI) TagResourceWithContext(aws.Context, *sns.TagResourceInput, ...request.Option) (*sns.TagResourceOutput, error) {
+	return nil, errNotImpl
+}
+
+func (t *TestSNSAPI) UntagResource(*sns.UntagResourceInput) (*sns.UntagResourceOutput, error) {
+	return nil, errNotImpl
+}
+func (t *TestSNSAPI) UntagResourceRequest(*sns.UntagResourceInput) (*request.Request, *sns.UntagResourceOutput) {
+	return nil, nil
+}
+func (t *TestSNSAPI) UntagResourceWithContext(aws.Context, *sns.UntagResourceInput, ...request.Option) (*sns.UntagResourceOutput, error) {
+	return nil, errNotImpl
+}

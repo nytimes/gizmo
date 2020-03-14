@@ -15,10 +15,7 @@ steps:
       GO111MODULE: on
       GOPROXY: https://proxy.golang.org
     commands:
-      - make deps
-      - make pretest
-      - 'go get github.com/mattn/goveralls@master'
-      - make coverage
+      - make test
     when:
       event:
         - pull_request

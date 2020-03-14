@@ -1,0 +1,26 @@
+kind: pipeline
+name: default
+type: docker
+
+workspace:
+  base: /go
+  path: src/github.com/nytimes/gizmo
+
+
+steps:
+  - name: tests
+    image: "golang:1.14"
+    pull: always
+    environment:
+      GO111MODULE: on
+      GOPROXY: https://proxy.golang.org
+    commands:
+      - make deps
+      - make pretest
+#      - 'go get github.com/mattn/goveralls@master'
+#      - make coverage
+    when:
+      event:
+        - pull_request
+        - push
+

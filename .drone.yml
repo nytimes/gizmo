@@ -17,8 +17,8 @@ steps:
     commands:
       - make deps
       - make pretest
-#      - 'go get github.com/mattn/goveralls@master'
-#      - make coverage
+      - 'go get github.com/mattn/goveralls@master'
+      - make coverage
     when:
       event:
         - pull_request

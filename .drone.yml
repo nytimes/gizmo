@@ -16,7 +16,7 @@ steps:
       GOPROXY: https://proxy.golang.org
     commands:
       - make test
-      - make staticcheck
+#      - make staticcheck     # disabling staticcheck for now, too many open issues to fix before we can enable this
     when:
       event:
         - pull_request

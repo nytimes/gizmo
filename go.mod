@@ -7,6 +7,9 @@ require (
 	cloud.google.com/go/logging v1.0.0
 	cloud.google.com/go/pubsub v1.3.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.1
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.0
+	github.com/DataDog/datadog-go v3.4.1+incompatible // indirect
+	github.com/DataDog/opencensus-go-exporter-datadog v0.0.0-20191210083620-6965a1cfed68
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.1
 	github.com/aws/aws-sdk-go v1.30.2
@@ -20,13 +23,16 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
+	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.4
 	github.com/sirupsen/logrus v1.5.0
+	github.com/tinylib/msgp v1.1.2 // indirect
 	go.opencensus.io v0.22.3
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.20.0
-	google.golang.org/genproto v0.0.0-20200305110556-506484158171
+	google.golang.org/genproto v0.0.0-20200312145019-da6875a35672
 	google.golang.org/grpc v1.28.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect
 )

@@ -4,18 +4,13 @@
 package observe // import "github.com/NYTimes/gizmo/observe"
 
 import (
-	"context"
 	"os"
 
 	"cloud.google.com/go/profiler"
-	traceapi "cloud.google.com/go/trace/apiv2"
-	"contrib.go.opencensus.io/exporter/stackdriver"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
 	"github.com/pkg/errors"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
 )
 
 // RegisterAndObserveGCP will initiate and register Stackdriver profiling and tracing and
@@ -46,19 +41,6 @@ func RegisterAndObserveGCP(onError func(error)) error {
 		ServiceVersion: svcVersion,
 	})
 	return errors.Wrap(err, "unable to initiate profiling client")
-}
-
-// NewStackdriverExporter will return the tracing and metrics through
-// the stack driver exporter, if exists in the underlying platform.
-// If exporter is registered, it returns the exporter so you can register
-// it and ensure to call Flush on termination.
-func NewStackdriverExporter(projectID string, onErr func(error)) (*stackdriver.Exporter, error) {
-	_, svcName, svcVersion := GetServiceInfo()
-	opts := getSDOpts(projectID, svcName, svcVersion, onErr)
-	if opts == nil {
-		return nil, nil
-	}
-	return stackdriver.NewExporter(*opts)
 }
 
 // GoogleProjectID returns the GCP Project ID
@@ -110,46 +92,17 @@ func GetServiceInfo() (projectID, service, version string) {
 	return GoogleProjectID(), service, version
 }
 
-// getSDOpts returns Stack Driver Options that you can pass directly
-// to the OpenCensus exporter or other libraries.
-func getSDOpts(projectID, service, version string, onErr func(err error)) *stackdriver.Options {
-	var mr monitoredresource.Interface
-
-	// this is so that you can export views from your local server up to SD if you wish
-	creds, err := google.FindDefaultCredentials(context.Background(), traceapi.DefaultAuthScopes()...)
-	if err != nil {
-		return nil
-	}
-	canExport := IsGAE() || IsCloudRun()
-	if m := monitoredresource.Autodetect(); m != nil {
-		mr = m
-		canExport = true
-	}
-	if !canExport {
-		return nil
-	}
-
-	return &stackdriver.Options{
-		ProjectID:         projectID,
-		MonitoredResource: mr,
-		MonitoringClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-		TraceClientOptions: []option.ClientOption{
-			option.WithCredentials(creds),
-		},
-		OnError: onErr,
-		DefaultTraceAttributes: map[string]interface{}{
-			"service": service,
-			"version": version,
-		},
-	}
-}
-
 // IsGCPEnabled returns whether the running application
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
 	return IsGAE() || IsCloudRun() || monitoredresource.Autodetect() != nil
+}
+
+// IsDatadogEnabled checks if exporitng metrics and traces to Datadog should enabled (by
+// setting DATADOG_ENABLED environemnt variable) and if the Datadog's agent address is
+// provided (by DATADOG_ADDR environsmnt variable)
+func IsDatadogEnabled() bool {
+	return os.Getenv("DATADOG_ENABLED") != "" && getDatadogAddr() != ""
 }
 
 // SkipObserve checks if the GIZMO_SKIP_OBSERVE environment variable has been populated.

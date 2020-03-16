@@ -107,7 +107,7 @@ func NewServer(svc Service) *Server {
 			exp, err := observe.NewStackdriverExporter(projectID, onErr)
 			if err != nil {
 				lg.Log("error", err,
-					"message", "unable to initiate Stackdriver opentracing exporter")
+					"message", "unable to initiate Stackdriver opencensus exporter")
 			}
 			ocFlush = exp.Flush
 			trace.RegisterExporter(exp)
@@ -146,7 +146,7 @@ func NewServer(svc Service) *Server {
 			exp, err := observe.NewDatadogExporter(onErr)
 			if err != nil {
 				lg.Log("error", err,
-					"message", "unable to initiate Datadog opentracing exporter")
+					"message", "unable to initiate Datadog opencensus exporter")
 			}
 			trace.RegisterExporter(exp)
 			view.RegisterExporter(exp)

@@ -9,15 +9,8 @@ import (
 	"go.opencensus.io/trace"
 )
 
-// IsDatadogEnabled checks if exporitng metrics and traces to Datadog should enabled (by
-// setting DATADOG_ENABLED environemnt variable) and if the Datadog's agent address is
-// provided (by DATADOG_ADDR environsmnt variable)
-func IsDatadogEnabled() bool {
-	return os.Getenv("DATADOG_ENABLED") != "" && getDatadogAddr() != ""
-}
-
-// RegisterAndObserveDatadog will initiate and register Datadog metrics and tracing in environments
-// that pass the tests in IsDatadogEnabled function
+// RegisterAndObserveDatadog will initiate and register Datadog metrics
+// and tracing exporters
 func RegisterAndObserveDatadog(onError func(error)) error {
 	if SkipObserve() {
 		return nil
@@ -25,7 +18,7 @@ func RegisterAndObserveDatadog(onError func(error)) error {
 
 	exp, err := NewDatadogExporter(onError)
 	if err != nil {
-		return errors.Wrap(err, "unable to initiate Datadog tracing exporter")
+		return errors.Wrap(err, "unable to initiate Datadog's opencensus exporter")
 	}
 	trace.RegisterExporter(exp)
 	view.RegisterExporter(exp)
@@ -33,11 +26,15 @@ func RegisterAndObserveDatadog(onError func(error)) error {
 	return nil
 }
 
-// NewDatadogExporter will return the tracing and metrics through
-// the stack driver exporter, if exists in the underlying platform.
-// If exporter is registered, it returns the exporter so you can register
-// it and ensure to call Flush on termination.
+// NewDatadogExporter will return Datadog's opencensus exporter.
+// Exporter can be used for metrics and traces and will send them to
+// address specified with DATADOG_ADDR environment variable.
 func NewDatadogExporter(onErr func(error)) (*datadog.Exporter, error) {
+
+	if getDatadogAddr() == "" {
+		return nil, errors.New("Datadog agent's address not configured")
+	}
+
 	_, service, version := GetServiceInfo()
 
 	opts := getDatadogOpts(service, version, getDatadogAddr(), onErr)
@@ -55,11 +52,6 @@ func getDatadogAddr() string {
 // getDatadogOpts returns Datadog Options that you can pass directly
 // to the OpenCensus exporter or other libraries.
 func getDatadogOpts(service, version, datadogAddress string, onErr func(err error)) *datadog.Options {
-
-	canExport := IsDatadogEnabled()
-	if !canExport {
-		return nil
-	}
 
 	return &datadog.Options{
 		// Namespace specifies the namespaces to which metric keys are appended.

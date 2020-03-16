@@ -9,6 +9,13 @@ import (
 	"go.opencensus.io/trace"
 )
 
+// IsDatadogEnabled checks if exporitng metrics and traces to Datadog should enabled (by
+// setting DATADOG_ENABLED environemnt variable) and if the Datadog's agent address is
+// provided (by DATADOG_ADDR environsmnt variable)
+func IsDatadogEnabled() bool {
+	return os.Getenv("DATADOG_ENABLED") != "" && getDatadogAddr() != ""
+}
+
 // RegisterAndObserveDatadog will initiate and register Datadog metrics and tracing in environments
 // that pass the tests in IsDatadogEnabled function
 func RegisterAndObserveDatadog(onError func(error)) error {

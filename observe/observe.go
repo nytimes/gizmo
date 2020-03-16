@@ -6,42 +6,8 @@ package observe // import "github.com/NYTimes/gizmo/observe"
 import (
 	"os"
 
-	"cloud.google.com/go/profiler"
 	"contrib.go.opencensus.io/exporter/stackdriver/monitoredresource"
-	"github.com/pkg/errors"
-	"go.opencensus.io/stats/view"
-	"go.opencensus.io/trace"
 )
-
-// RegisterAndObserveGCP will initiate and register Stackdriver profiling and tracing and
-// metrics in environments that pass the tests in the IsGCPEnabled function. All
-// exporters will be registered using the information returned by the GetServiceInfo
-// function. Tracing and metrics are enabled via OpenCensus exporters. See the OpenCensus
-// documentation for instructions for registering additional spans and metrics.
-func RegisterAndObserveGCP(onError func(error)) error {
-	if SkipObserve() {
-		return nil
-	}
-	if !IsGCPEnabled() {
-		return errors.New("environment is not GCP enabled, no observe tools will be run")
-	}
-
-	projectID, svcName, svcVersion := GetServiceInfo()
-
-	exp, err := NewStackdriverExporter(projectID, onError)
-	if err != nil {
-		return errors.Wrap(err, "unable to initiate error tracing exporter")
-	}
-	trace.RegisterExporter(exp)
-	view.RegisterExporter(exp)
-
-	err = profiler.Start(profiler.Config{
-		ProjectID:      projectID,
-		Service:        svcName,
-		ServiceVersion: svcVersion,
-	})
-	return errors.Wrap(err, "unable to initiate profiling client")
-}
 
 // GoogleProjectID returns the GCP Project ID
 // that can be used to instantiate various
@@ -96,13 +62,6 @@ func GetServiceInfo() (projectID, service, version string) {
 // is inside GCP or has access to its products.
 func IsGCPEnabled() bool {
 	return IsGAE() || IsCloudRun() || monitoredresource.Autodetect() != nil
-}
-
-// IsDatadogEnabled checks if exporitng metrics and traces to Datadog should enabled (by
-// setting DATADOG_ENABLED environemnt variable) and if the Datadog's agent address is
-// provided (by DATADOG_ADDR environsmnt variable)
-func IsDatadogEnabled() bool {
-	return os.Getenv("DATADOG_ENABLED") != "" && getDatadogAddr() != ""
 }
 
 // SkipObserve checks if the GIZMO_SKIP_OBSERVE environment variable has been populated.

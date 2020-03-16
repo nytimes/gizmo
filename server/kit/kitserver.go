@@ -101,39 +101,59 @@ func NewServer(svc Service) *Server {
 		lg.Log("error", err, "message", "exporter client encountered an error")
 	}
 	ocFlush := func() {}
-	if !observe.SkipObserve() && observe.IsGCPEnabled() {
-		exp, err := observe.NewStackdriverExporter(projectID, onErr)
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error tracing exporter")
-		}
-		ocFlush = exp.Flush
-		trace.RegisterExporter(exp)
-		view.RegisterExporter(exp)
-
-		propr = &sdpropagation.HTTPFormat{}
-
-		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
-			ServiceName:    svcName,
-			ServiceVersion: svcVersion,
-			OnError: func(err error) {
+	if !observe.SkipObserve() {
+		// If running in GCP, enable exporting traces, metrics and errors to Stackdriver
+		if observe.IsGCPEnabled() {
+			exp, err := observe.NewStackdriverExporter(projectID, onErr)
+			if err != nil {
 				lg.Log("error", err,
-					"message", "error reporting client encountered an error")
-			},
-		})
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error reporting client")
+					"message", "unable to initiate Stackdriver opentracing exporter")
+			}
+			ocFlush = exp.Flush
+			trace.RegisterExporter(exp)
+			view.RegisterExporter(exp)
+
+			propr = &sdpropagation.HTTPFormat{}
+
+			errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+				ServiceName:    svcName,
+				ServiceVersion: svcVersion,
+				OnError: func(err error) {
+					lg.Log("error", err,
+						"message", "error reporting client encountered an error")
+				},
+			})
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate error reporting client")
+			}
+
+			err = profiler.Start(profiler.Config{
+				ProjectID:      projectID,
+				Service:        svcName,
+				ServiceVersion: svcVersion,
+			})
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate profiling client")
+			}
 		}
 
-		err = profiler.Start(profiler.Config{
-			ProjectID:      projectID,
-			Service:        svcName,
-			ServiceVersion: svcVersion,
-		})
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate profiling client")
+		// If enabled, export traces and metrics to Datadog
+		// If we're running in GCP, we're also going to GCP's trace propagation format
+		// which was defined in the GCP setup step.
+		if observe.IsDatadogEnabled() {
+			exp, err := observe.NewDatadogExporter(onErr)
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate Datadog opentracing exporter")
+			}
+			trace.RegisterExporter(exp)
+			view.RegisterExporter(exp)
+			// Datadog requires to collect traces for all the requests and sampling/data aggregation
+			// happens on the agent side. This may increase a number of traces sent to Stackdriver
+			// if both are enabled
+			trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
 		}
 	}
 

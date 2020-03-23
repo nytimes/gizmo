@@ -1,13 +1,21 @@
 package observe
 
 import (
-	"os"
-
 	datadog "github.com/DataDog/opencensus-go-exporter-datadog"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
+
+// DatadogExporterConfig provides configuration for the Datadog exporter.
+// Config can be initiated with envconfig from environment
+type DatadogExporterConfig struct {
+	DatadogExporterEnabled        bool   `default:"false" split_words:"true"`
+	DatadogExporterMetricsAddress string `split_words:"true"`
+	DatadogExporterTracesAddress  string `split_words:"true"`
+	DatadogExporterNamespace      string `default:"opencensus" split_words:"true"`
+}
 
 // RegisterAndObserveDatadog will initiate and register Datadog metrics
 // and tracing exporters
@@ -16,7 +24,10 @@ func RegisterAndObserveDatadog(onError func(error)) error {
 		return nil
 	}
 
-	exp, err := NewDatadogExporter(onError)
+	var config DatadogExporterConfig
+	envconfig.Process("", &config)
+
+	exp, err := NewDatadogExporter(config, onError)
 	if err != nil {
 		return errors.Wrap(err, "unable to initiate Datadog's opencensus exporter")
 	}
@@ -27,47 +38,44 @@ func RegisterAndObserveDatadog(onError func(error)) error {
 }
 
 // NewDatadogExporter will return Datadog's opencensus exporter.
-// Exporter can be used for metrics and traces and will send them to
-// address specified with DATADOG_ADDR environment variable.
-func NewDatadogExporter(onErr func(error)) (*datadog.Exporter, error) {
+// Exporter will send metrics and traces to Datadog's agent using
+// addresses specified through DatadogExporterConfig
+func NewDatadogExporter(config DatadogExporterConfig, onErr func(error)) (*datadog.Exporter, error) {
 
-	if getDatadogAddr() == "" {
-		return nil, errors.New("Datadog agent's address not configured")
+	if !config.DatadogExporterEnabled {
+		return nil, errors.New("Datadog exporter disabled")
+	}
+
+	if config.DatadogExporterMetricsAddress == "" && config.DatadogExporterTracesAddress == "" {
+		return nil, errors.New("Missing Datadog agent's adress for metrics and traces")
 	}
 
 	_, service, version := GetServiceInfo()
 
-	opts := getDatadogOpts(service, version, getDatadogAddr(), onErr)
-	if opts == nil {
-		return nil, nil
-	}
+	opts := getDatadogOpts(config, service, version, onErr)
 
 	return datadog.NewExporter(*opts)
 }
 
-func getDatadogAddr() string {
-	return os.Getenv("DATADOG_ADDR")
-}
-
 // getDatadogOpts returns Datadog Options that you can pass directly
 // to the OpenCensus exporter or other libraries.
-func getDatadogOpts(service, version, datadogAddress string, onErr func(err error)) *datadog.Options {
+func getDatadogOpts(config DatadogExporterConfig, service, version string, onErr func(err error)) *datadog.Options {
 
 	return &datadog.Options{
 		// Namespace specifies the namespaces to which metric keys are appended.
 		// TODO: Figure out what the namespace should be. Can be either a projectID or something else.
-		Namespace: "opencensus",
+		Namespace: config.DatadogExporterNamespace,
 
 		// Service specifies the service name used for tracing.
 		Service: service,
 
 		// TraceAddr specifies the host[:port] address of the Datadog Trace Agent.
 		// It defaults to localhost:8126.
-		TraceAddr: datadogAddress,
+		TraceAddr: config.DatadogExporterTracesAddress,
 
 		// StatsAddr specifies the host[:port] address for DogStatsD. It defaults
 		// to localhost:8125.
-		StatsAddr: datadogAddress,
+		StatsAddr: config.DatadogExporterMetricsAddress,
 
 		// OnError specifies a function that will be called if an error occurs during
 		// processing stats or metrics.

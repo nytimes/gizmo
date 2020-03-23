@@ -62,15 +62,7 @@ func GetServiceInfo() (projectID, service, version string) {
 // is inside GCP, has access to its products or Stackdriver integration was
 // not disabled.
 func IsGCPEnabled() bool {
-	return (IsGAE() || IsCloudRun() || monitoredresource.Autodetect() != nil) && os.Getenv("STACKDRIVER_DISABLED") == ""
-}
-
-// IsDatadogEnabled checks if exporitng metrics and traces to Datadog is
-// enabled (with setting DATADOG_ENABLED environment variable) and if
-// the Datadog agent's address is provided (with DATADOG_ADDR
-// environemnt variable)
-func IsDatadogEnabled() bool {
-	return os.Getenv("DATADOG_ENABLED") != ""
+	return (IsGAE() || IsCloudRun() || monitoredresource.Autodetect() != nil) && os.Getenv("STACKDRIVER_ENABLED") != "false"
 }
 
 // SkipObserve checks if the GIZMO_SKIP_OBSERVE environment variable has been populated.

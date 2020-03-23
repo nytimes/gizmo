@@ -142,18 +142,10 @@ func NewServer(svc Service) *Server {
 		// If enabled, export traces and metrics to Datadog
 		// If we're running in GCP, we're also going to GCP's trace propagation format
 		// which was defined in the GCP setup step.
-		if observe.IsDatadogEnabled() {
-			exp, err := observe.NewDatadogExporter(onErr)
-			if err != nil {
-				lg.Log("error", err,
-					"message", "unable to initiate Datadog opencensus exporter")
-			}
-			trace.RegisterExporter(exp)
-			view.RegisterExporter(exp)
-			// Datadog requires to collect traces for all the requests and sampling/data aggregation
-			// happens on the agent side. This may increase a number of traces sent to Stackdriver
-			// if both are enabled
-			trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()})
+		err := observe.RegisterAndObserveDatadog(onErr)
+		if err != nil {
+			lg.Log("error", err,
+				"message", "unable to initiate Datadog opencensus exporter")
 		}
 	}
 

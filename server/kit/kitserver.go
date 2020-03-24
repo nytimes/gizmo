@@ -102,7 +102,7 @@ func NewServer(svc Service) *Server {
 	}
 	ocFlush := func() {}
 	if !observe.SkipObserve() {
-		// If running in GCP, enable exporting traces, metrics and errors to Stackdriver
+		// If running in GCP and enabled, export traces, metrics and errors to Stackdriver
 		if observe.IsGCPEnabled() {
 			exp, err := observe.NewStackdriverExporter(projectID, onErr)
 			if err != nil {

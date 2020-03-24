@@ -18,7 +18,7 @@ type DatadogExporterConfig struct {
 }
 
 // RegisterAndObserveDatadog will initiate and register Datadog metrics
-// and tracing exporters
+// and traces exporter when enabled
 func RegisterAndObserveDatadog(onError func(error)) error {
 	if SkipObserve() {
 		return nil
@@ -31,19 +31,23 @@ func RegisterAndObserveDatadog(onError func(error)) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to initiate Datadog's opencensus exporter")
 	}
-	trace.RegisterExporter(exp)
-	view.RegisterExporter(exp)
+
+	if exp != nil {
+		trace.RegisterExporter(exp)
+		view.RegisterExporter(exp)
+	}
 
 	return nil
 }
 
-// NewDatadogExporter will return Datadog's opencensus exporter.
-// Exporter will send metrics and traces to Datadog's agent using
+// NewDatadogExporter will return Datadog's opencensus exporter if it's enabled (through
+// DATADOG_EXPORTER_ENABLED env variable). When the exporter is disabled, it will
+// return nil. Exporter will send metrics and traces to Datadog's agent using
 // addresses specified through DatadogExporterConfig
 func NewDatadogExporter(config DatadogExporterConfig, onErr func(error)) (*datadog.Exporter, error) {
 
 	if !config.DatadogExporterEnabled {
-		return nil, errors.New("Datadog exporter disabled")
+		return nil, nil
 	}
 
 	if config.DatadogExporterMetricsAddress == "" && config.DatadogExporterTracesAddress == "" {
@@ -54,14 +58,14 @@ func NewDatadogExporter(config DatadogExporterConfig, onErr func(error)) (*datad
 
 	opts := getDatadogOpts(config, service, version, onErr)
 
-	return datadog.NewExporter(*opts)
+	return datadog.NewExporter(opts)
 }
 
 // getDatadogOpts returns Datadog Options that you can pass directly
 // to the OpenCensus exporter or other libraries.
-func getDatadogOpts(config DatadogExporterConfig, service, version string, onErr func(err error)) *datadog.Options {
+func getDatadogOpts(config DatadogExporterConfig, service, version string, onErr func(err error)) datadog.Options {
 
-	return &datadog.Options{
+	return datadog.Options{
 		// Namespace specifies the namespaces to which metric keys are appended.
 		// TODO: Figure out what the namespace should be. Can be either a projectID or something else.
 		Namespace: config.DatadogExporterNamespace,

@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"cloud.google.com/go/trace"
+	trace "cloud.google.com/go/trace/apiv2"
 
 	"github.com/NYTimes/gizmo/server/kit"
 	"github.com/go-kit/kit/endpoint"

@@ -9,7 +9,7 @@ require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.1
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.1
-	github.com/aws/aws-sdk-go v1.30.2
+	github.com/aws/aws-sdk-go v1.30.4
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
 	github.com/golang/protobuf v1.3.5

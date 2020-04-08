@@ -24,9 +24,9 @@ require (
 	github.com/prometheus/client_golang v0.9.4
 	github.com/sirupsen/logrus v1.5.0
 	go.opencensus.io v0.22.3
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.20.0
-	google.golang.org/genproto v0.0.0-20200305110556-506484158171
+	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
 	google.golang.org/grpc v1.28.0
 )

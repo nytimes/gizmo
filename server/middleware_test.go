@@ -177,3 +177,73 @@ func TestNoCacheHandler(t *testing.T) {
 		t.Errorf("expected no-cache Expires header to be '%#v', got '%#v'", want, got)
 	}
 }
+
+func TestAppIDHandler(t *testing.T) {
+	r, err := http.NewRequest("GET", "", nil)
+	if err != nil {
+		t.Error("failed to create mock request", "err", err)
+	}
+	w := httptest.NewRecorder()
+
+	id := "flambe"
+	AppIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestID := GetRequestID(r.Context())
+		// write the ID to the response body so we can test it on the recorder
+		_, _ = w.Write([]byte(requestID))
+		w.WriteHeader(http.StatusOK)
+	}), &MockIDer{sendThis: id}).ServeHTTP(w, r)
+
+	headVal, ok := w.Result().Header[RequestIDHeader]
+	if !ok {
+		t.Error("header value was not found")
+	}
+	if len(headVal) != 1 {
+		t.Error("expected one value in request ID header", "got", len(headVal))
+	}
+	if headVal[0] != id {
+		t.Error("unexpected value in request ID header", "got", headVal[0], "expected", id)
+	}
+	if w.Body.String() != id {
+		t.Error("unexpected value in body", "got", w.Body.String(), "expected", id)
+	}
+}
+
+func TestPipelineIDHandler(t *testing.T) {
+	validate := func(prev, next, exp string) {
+		r, err := http.NewRequest("GET", "", nil)
+		r.Header.Set(RequestIDHeader, prev)
+		if err != nil {
+			t.Error("failed to create mock request", "err", err)
+		}
+		w := httptest.NewRecorder()
+
+		pipeIDer := &PipelineID{
+			AppIDer: &MockIDer{sendThis: next},
+		}
+
+		PipelineIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requestID := GetRequestID(r.Context())
+			// write the ID to the response body so we can test it on the recorder
+			_, _ = w.Write([]byte(requestID))
+			w.WriteHeader(http.StatusOK)
+		}), pipeIDer).ServeHTTP(w, r)
+
+		headVal, ok := w.Result().Header[RequestIDHeader]
+		if !ok {
+			t.Error("header value was not found")
+		}
+		if len(headVal) != 1 {
+			t.Error("expected one value in request ID header", "got", len(headVal))
+		}
+		if headVal[0] != exp {
+			t.Error("unexpected value in request ID header", "got", headVal[0], "expected", exp)
+		}
+		if w.Body.String() != exp {
+			t.Error("unexpected value in body", "got", w.Body.String(), "expected", exp)
+		}
+	}
+
+	validate("", "roger", "roger")
+	validate("roger", "roderick", "roger|roderick")
+	validate("roger|roderick", "brian", "roger|roderick|brian")
+}

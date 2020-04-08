@@ -234,5 +234,5 @@ func (s *server) getCatByName(ctx context.Context, _ interface{}) (interface{}, 
 }
 
 func (s *server) error(ctx context.Context, _ interface{}) (interface{}, error) {
-	return nil, errors.New("doh!")
+	return nil, errors.New("doh")
 }

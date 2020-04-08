@@ -38,8 +38,7 @@ func NewAppUUID(appname string) *AppUUID {
 	return uuider
 }
 
-// ID returns a random (v4) UUID in the format supplied to NewAppUUID(), without
-// considering any ID provided on $current$
+// ID returns a random (v4) UUID using the prefix supplied to NewAppUUID()
 func (i *AppUUID) ID() (string, error) {
 	u, err := uuid.NewV4()
 	if err != nil {

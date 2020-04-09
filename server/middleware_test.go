@@ -187,9 +187,6 @@ func TestAppIDHandler(t *testing.T) {
 
 	id := "flambe"
 	AppIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := GetRequestID(r.Context())
-		// write the ID to the response body so we can test it on the recorder
-		_, _ = w.Write([]byte(requestID))
 		w.WriteHeader(http.StatusOK)
 	}), &MockIDer{sendThis: id}).ServeHTTP(w, r)
 
@@ -202,9 +199,6 @@ func TestAppIDHandler(t *testing.T) {
 	}
 	if headVal[0] != id {
 		t.Error("unexpected value in request ID header", "got", headVal[0], "expected", id)
-	}
-	if w.Body.String() != id {
-		t.Error("unexpected value in body", "got", w.Body.String(), "expected", id)
 	}
 }
 
@@ -232,9 +226,6 @@ func TestPipelineIDHandler(t *testing.T) {
 			}
 
 			PipelineIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requestID := GetRequestID(r.Context())
-				// write the ID to the response body so we can test it on the recorder
-				_, _ = w.Write([]byte(requestID))
 				w.WriteHeader(http.StatusOK)
 			}), pipeIDer).ServeHTTP(w, r)
 
@@ -247,9 +238,6 @@ func TestPipelineIDHandler(t *testing.T) {
 			}
 			if headVal[0] != test.expected {
 				t.Error("unexpected value in request ID header", "got", headVal[0], "expected", test.expected)
-			}
-			if w.Body.String() != test.expected {
-				t.Error("unexpected value in body", "got", w.Body.String(), "expected", test.expected)
 			}
 		})
 	}

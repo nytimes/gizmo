@@ -209,16 +209,24 @@ func TestAppIDHandler(t *testing.T) {
 }
 
 func TestPipelineIDHandler(t *testing.T) {
-	validate := func(prev, next, exp string) {
+	tests := []struct {
+		prev, next, expected string
+	}{
+		{"", "roger", "roger"},
+		{"roger", "roderick", "roger|roderick"},
+		{"roger|roderick", "brian", "roger|roderick|brian"},
+	}
+
+	for _, test := range tests {
 		r, err := http.NewRequest("GET", "", nil)
-		r.Header.Set(RequestIDHeader, prev)
 		if err != nil {
 			t.Error("failed to create mock request", "err", err)
 		}
+		r.Header.Set(RequestIDHeader, test.prev)
 		w := httptest.NewRecorder()
 
 		pipeIDer := &PipelineID{
-			AppIDer: &MockIDer{sendThis: next},
+			AppIDer: &MockIDer{sendThis: test.next},
 		}
 
 		PipelineIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -235,15 +243,11 @@ func TestPipelineIDHandler(t *testing.T) {
 		if len(headVal) != 1 {
 			t.Error("expected one value in request ID header", "got", len(headVal))
 		}
-		if headVal[0] != exp {
-			t.Error("unexpected value in request ID header", "got", headVal[0], "expected", exp)
+		if headVal[0] != test.expected {
+			t.Error("unexpected value in request ID header", "got", headVal[0], "expected", test.expected)
 		}
-		if w.Body.String() != exp {
-			t.Error("unexpected value in body", "got", w.Body.String(), "expected", exp)
+		if w.Body.String() != test.expected {
+			t.Error("unexpected value in body", "got", w.Body.String(), "expected", test.expected)
 		}
 	}
-
-	validate("", "roger", "roger")
-	validate("roger", "roderick", "roger|roderick")
-	validate("roger|roderick", "brian", "roger|roderick|brian")
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
@@ -139,13 +140,21 @@ func NewServer(svc Service) *Server {
 			}
 		}
 
+		// Set up Datadog's exporter
+		var config observe.DatadogExporterConfig
+		envconfig.Process("", &config)
+
 		// If enabled, export traces and metrics to Datadog
 		// If we're running in GCP, we're also going to GCP's trace propagation format
 		// which was defined in the GCP setup step.
-		err := observe.RegisterAndObserveDatadog(onErr)
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate Datadog opencensus exporter")
+		if config.DatadogExporterEnabled {
+			exp, err := observe.NewDatadogExporter(config, onErr)
+			if err != nil {
+				lg.Log("error", err, "message", "unable to initiate Datadog's opencensus exporter")
+			}
+
+			trace.RegisterExporter(exp)
+			view.RegisterExporter(exp)
 		}
 	}
 

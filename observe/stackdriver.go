@@ -24,7 +24,7 @@ func RegisterAndObserveGCP(onError func(error)) error {
 		return nil
 	}
 	if !IsGCPEnabled() {
-		return errors.New("environment is not GCP enabled, no observe tools will be run")
+		return errors.New("Stackdriver opencensus exporter is not enabled. No observe tools will be run")
 	}
 
 	projectID, svcName, svcVersion := GetServiceInfo()

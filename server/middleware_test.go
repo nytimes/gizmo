@@ -210,44 +210,47 @@ func TestAppIDHandler(t *testing.T) {
 
 func TestPipelineIDHandler(t *testing.T) {
 	tests := []struct {
-		prev, next, expected string
+		desc, prev, next, expected string
 	}{
-		{"", "roger", "roger"},
-		{"roger", "roderick", "roger|roderick"},
-		{"roger|roderick", "brian", "roger|roderick|brian"},
+		{"EmptyPrev", "", "roger", "roger"},
+		{"FirstConcat", "roger", "roderick", "roger|roderick"},
+		{"SecondConcat", "roger|roderick", "brian", "roger|roderick|brian"},
 	}
 
 	for _, test := range tests {
-		r, err := http.NewRequest("GET", "", nil)
-		if err != nil {
-			t.Error("failed to create mock request", "err", err)
-		}
-		r.Header.Set(RequestIDHeader, test.prev)
-		w := httptest.NewRecorder()
+		t.Run(test.desc, func(t *testing.T) {
 
-		pipeIDer := &PipelineID{
-			AppIDer: &MockIDer{sendThis: test.next},
-		}
+			r, err := http.NewRequest("GET", "", nil)
+			if err != nil {
+				t.Error("failed to create mock request", "err", err)
+			}
+			r.Header.Set(RequestIDHeader, test.prev)
+			w := httptest.NewRecorder()
 
-		PipelineIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := GetRequestID(r.Context())
-			// write the ID to the response body so we can test it on the recorder
-			_, _ = w.Write([]byte(requestID))
-			w.WriteHeader(http.StatusOK)
-		}), pipeIDer).ServeHTTP(w, r)
+			pipeIDer := &PipelineID{
+				AppIDer: &MockIDer{sendThis: test.next},
+			}
 
-		headVal, ok := w.Result().Header[RequestIDHeader]
-		if !ok {
-			t.Error("header value was not found")
-		}
-		if len(headVal) != 1 {
-			t.Error("expected one value in request ID header", "got", len(headVal))
-		}
-		if headVal[0] != test.expected {
-			t.Error("unexpected value in request ID header", "got", headVal[0], "expected", test.expected)
-		}
-		if w.Body.String() != test.expected {
-			t.Error("unexpected value in body", "got", w.Body.String(), "expected", test.expected)
-		}
+			PipelineIDHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requestID := GetRequestID(r.Context())
+				// write the ID to the response body so we can test it on the recorder
+				_, _ = w.Write([]byte(requestID))
+				w.WriteHeader(http.StatusOK)
+			}), pipeIDer).ServeHTTP(w, r)
+
+			headVal, ok := w.Result().Header[RequestIDHeader]
+			if !ok {
+				t.Error("header value was not found")
+			}
+			if len(headVal) != 1 {
+				t.Error("expected one value in request ID header", "got", len(headVal))
+			}
+			if headVal[0] != test.expected {
+				t.Error("unexpected value in request ID header", "got", headVal[0], "expected", test.expected)
+			}
+			if w.Body.String() != test.expected {
+				t.Error("unexpected value in body", "got", w.Body.String(), "expected", test.expected)
+			}
+		})
 	}
 }

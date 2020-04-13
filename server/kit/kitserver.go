@@ -18,6 +18,7 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 	"go.opencensus.io/plugin/ocgrpc"
 	"go.opencensus.io/plugin/ochttp"
@@ -101,39 +102,59 @@ func NewServer(svc Service) *Server {
 		lg.Log("error", err, "message", "exporter client encountered an error")
 	}
 	ocFlush := func() {}
-	if !observe.SkipObserve() && observe.IsGCPEnabled() {
-		exp, err := observe.NewStackdriverExporter(projectID, onErr)
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error tracing exporter")
-		}
-		ocFlush = exp.Flush
-		trace.RegisterExporter(exp)
-		view.RegisterExporter(exp)
-
-		propr = &sdpropagation.HTTPFormat{}
-
-		errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
-			ServiceName:    svcName,
-			ServiceVersion: svcVersion,
-			OnError: func(err error) {
+	if !observe.SkipObserve() {
+		// If running in GCP and enabled, export traces, metrics and errors to Stackdriver
+		if observe.IsGCPEnabled() {
+			exp, err := observe.NewStackdriverExporter(projectID, onErr)
+			if err != nil {
 				lg.Log("error", err,
-					"message", "error reporting client encountered an error")
-			},
-		})
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate error reporting client")
+					"message", "unable to initiate Stackdriver opencensus exporter")
+			}
+			ocFlush = exp.Flush
+			trace.RegisterExporter(exp)
+			view.RegisterExporter(exp)
+
+			propr = &sdpropagation.HTTPFormat{}
+
+			errs, err = errorreporting.NewClient(ctx, projectID, errorreporting.Config{
+				ServiceName:    svcName,
+				ServiceVersion: svcVersion,
+				OnError: func(err error) {
+					lg.Log("error", err,
+						"message", "error reporting client encountered an error")
+				},
+			})
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate error reporting client")
+			}
+
+			err = profiler.Start(profiler.Config{
+				ProjectID:      projectID,
+				Service:        svcName,
+				ServiceVersion: svcVersion,
+			})
+			if err != nil {
+				lg.Log("error", err,
+					"message", "unable to initiate profiling client")
+			}
 		}
 
-		err = profiler.Start(profiler.Config{
-			ProjectID:      projectID,
-			Service:        svcName,
-			ServiceVersion: svcVersion,
-		})
-		if err != nil {
-			lg.Log("error", err,
-				"message", "unable to initiate profiling client")
+		// Set up Datadog's exporter
+		var config observe.DatadogExporterConfig
+		envconfig.Process("", &config)
+
+		// If enabled, export traces and metrics to Datadog
+		// If we're running in GCP, we're also going to GCP's trace propagation format
+		// which was defined in the GCP setup step.
+		if config.DatadogExporterEnabled {
+			exp, err := observe.NewDatadogExporter(config, onErr)
+			if err != nil {
+				lg.Log("error", err, "message", "unable to initiate Datadog's opencensus exporter")
+			}
+
+			trace.RegisterExporter(exp)
+			view.RegisterExporter(exp)
 		}
 	}
 

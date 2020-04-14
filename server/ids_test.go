@@ -5,40 +5,40 @@ import (
 	"testing"
 )
 
-func TestAppUUID_ID(t *testing.T) {
+const (
+	b64Regex = "\\w{10,20}"
 	// thanks to https://adamscheller.com/regular-expressions/uuid-regex/ for saving me from writing this
-	uuidRegex := "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}"
-	t.Run("NoAppName", func(t *testing.T) {
-		ider := NewAppUUID("")
-		id, err := ider.ID()
-		if err != nil {
-			t.Error("failed to get mock app ID", "err", err)
-		}
+	uuidRegex = "([a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}){1}"
+)
 
-		match, err := regexp.MatchString(uuidRegex, id)
-		if err != nil {
-			t.Error("err matching generated ID", "err", err)
-		}
-		if !match {
-			t.Error("ID did not match", "got", id)
-		}
-	})
+func TestAppIDers(t *testing.T) {
+	tests := []struct {
+		desc, regex string
+		iDFunc func() IDer
+	} {
+		{"AppUUIDNoName", uuidRegex, func() IDer {return NewAppUUID("")}},
+		{"AppUUIDWithName", "blapp-"+uuidRegex, func() IDer {return NewAppUUID("blapp")}},
+		{"RandB64NoName", b64Regex, func() IDer {return NewRandB64ID("")}},
+		{"RandB64WithName", "fungus-"+b64Regex, func() IDer {return NewRandB64ID("fungus")}},
+	}
 
-	t.Run("WithAppName", func(t *testing.T) {
-		ider := NewAppUUID("blapp")
-		id, err := ider.ID()
-		if err != nil {
-			t.Error("failed to get mock app ID", "err", err)
-		}
+	for _, test := range tests {
+		t.Run(test.desc, func(t *testing.T) {
+			ider := test.iDFunc()
+			id, err := ider.ID()
+			if err != nil {
+				t.Error("failed to get mock app ID", "err", err)
+			}
 
-		match, err := regexp.MatchString("blapp-"+uuidRegex, id)
-		if err != nil {
-			t.Error("err matching generated ID", "err", err)
-		}
-		if !match {
-			t.Error("ID did not match", "got", id)
-		}
-	})
+			match, err := regexp.MatchString(test.regex, id)
+			if err != nil {
+				t.Error("err matching generated ID", "err", err)
+			}
+			if !match {
+				t.Error("ID did not match", "got", id)
+			}
+		})
+	}
 }
 
 type MockIDer struct {

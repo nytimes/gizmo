@@ -36,6 +36,8 @@ func (i *AppUUID) ID() (string, error) {
 	return i.formatter(u.String()), nil
 }
 
+// RandB64ID is an IDer that returns a random ID based on Base64 encoded
+// bytes.
 type RandB64ID struct {
 	formatter func(string) string
 }
@@ -47,11 +49,12 @@ func NewRandB64ID(appname string) *RandB64ID {
 	}
 }
 
+// ID returns a random B64 encoded ID using the appname prefix supplied to NewRandB64ID()
 func (i *RandB64ID) ID() (string, error) {
 	var buf [12]byte
 	var b64 string
 	for len(b64) < 10 {
-		rand.Read(buf[:])
+		_, _ = rand.Read(buf[:])
 		b64 = base64.StdEncoding.EncodeToString(buf[:])
 		b64 = strings.NewReplacer("+", "", "/", "").Replace(b64)
 	}

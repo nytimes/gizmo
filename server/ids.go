@@ -1,6 +1,8 @@
 package server
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -19,23 +21,9 @@ type AppUUID struct {
 
 // NewAppUUID creates a new AppUUID generator
 func NewAppUUID(appname string) *AppUUID {
-	uuider := &AppUUID{
-		formatter: func(u string) string {
-			// default formatter does no formatting at all, simply
-			// returning the generated UUID as a string
-			return u
-		},
+	return &AppUUID{
+		formatter: formatter(appname),
 	}
-
-	if len(appname) > 0 {
-		// ...if an appname is supplied, use that instead of the default
-		format := appname + "-%s"
-		uuider.formatter = func(u string) string {
-			return fmt.Sprintf(format, u)
-		}
-	}
-
-	return uuider
 }
 
 // ID returns a random (v4) UUID using the prefix supplied to NewAppUUID()
@@ -46,6 +34,29 @@ func (i *AppUUID) ID() (string, error) {
 	}
 
 	return i.formatter(u.String()), nil
+}
+
+type RandB64ID struct {
+	formatter func(string) string
+}
+
+// NewRandB64ID creates a new RandB64ID generator
+func NewRandB64ID(appname string) *RandB64ID {
+	return &RandB64ID{
+		formatter: formatter(appname),
+	}
+}
+
+func (i *RandB64ID) ID() (string, error) {
+	var buf [12]byte
+	var b64 string
+	for len(b64) < 10 {
+		rand.Read(buf[:])
+		b64 = base64.StdEncoding.EncodeToString(buf[:])
+		b64 = strings.NewReplacer("+", "", "/", "").Replace(b64)
+	}
+
+	return i.formatter(b64), nil
 }
 
 // A PipelineID identifies requests all the way through some system by concatenating the
@@ -68,4 +79,18 @@ func (f *PipelineID) ID(current string) (string, error) {
 	}
 
 	return strings.Join([]string{current, next}, fullIDerSep), nil
+}
+
+func formatter(appname string) func(string) string {
+	if len(appname) > 0 {
+		// ...if an appname is supplied, use that instead of the default
+		format := appname + "-%s"
+		return func(u string) string {
+			return fmt.Sprintf(format, u)
+		}
+	}
+
+	return func(u string) string {
+		return u
+	}
 }

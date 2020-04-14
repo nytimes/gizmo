@@ -86,3 +86,17 @@ func TestPipelineID_ID(t *testing.T) {
 		t.Error("third ID call did not match", "got", id, "expected", exp)
 	}
 }
+
+func BenchmarkAppUUID_ID(b *testing.B) {
+	iDer := NewAppUUID("something")
+	for i := 0; i < b.N; i++ {
+		_, _ = iDer.ID()
+	}
+}
+
+func BenchmarkRandB64_ID(b *testing.B) {
+	iDer := NewRandB64ID("something")
+	for i := 0; i < b.N; i++ {
+		_, _ = iDer.ID()
+	}
+}

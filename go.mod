@@ -32,6 +32,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.21.0
 	google.golang.org/genproto v0.0.0-20200331122359-1ee6d9798940
-	google.golang.org/grpc v1.28.1
+	google.golang.org/grpc v1.29.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect
 )

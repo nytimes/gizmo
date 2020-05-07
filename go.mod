@@ -3,7 +3,7 @@ module github.com/NYTimes/gizmo
 go 1.12
 
 require (
-	cloud.google.com/go v0.56.0
+	cloud.google.com/go v0.57.0
 	cloud.google.com/go/logging v1.0.0
 	cloud.google.com/go/pubsub v1.3.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.1

@@ -3,7 +3,7 @@ module github.com/NYTimes/gizmo
 go 1.12
 
 require (
-	cloud.google.com/go v0.57.0
+	cloud.google.com/go v0.59.0
 	cloud.google.com/go/logging v1.0.0
 	cloud.google.com/go/pubsub v1.3.1
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.1
@@ -28,10 +28,10 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
 	go.opencensus.io v0.22.3
-	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
+	golang.org/x/net v0.0.0-20200520182314-0ba52f642ac2
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	google.golang.org/api v0.25.0
-	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84
+	google.golang.org/api v0.28.0
+	google.golang.org/genproto v0.0.0-20200623002339-fbb79eadd5eb
 	google.golang.org/grpc v1.29.1
 	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect
 )

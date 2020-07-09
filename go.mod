@@ -30,7 +30,7 @@ require (
 	go.opencensus.io v0.22.3
 	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	google.golang.org/api v0.25.0
+	google.golang.org/api v0.29.0
 	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84
 	google.golang.org/grpc v1.29.1
 	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect

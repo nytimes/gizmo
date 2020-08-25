@@ -34,7 +34,7 @@ type Config struct {
 	// JSONContentType can be used to override the default JSONContentType.
 	JSONContentType *string `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
 	// MaxHeaderBytes can be used to override the default MaxHeaderBytes (1<<20).
-	MaxHeaderBytes *int `envconfig:"GIZMO_JSON_CONTENT_TYPE"`
+	MaxHeaderBytes *int `envconfig:"GIZMO_MAX_HEADER_BYTES"`
 	// ReadTimeout can be used to override the default http server timeout of 10s.
 	// The string should be formatted like a time.Duration string.
 	ReadTimeout *string `envconfig:"GIZMO_READ_TIMEOUT"`

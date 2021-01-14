@@ -15,7 +15,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
 	github.com/golang/protobuf v1.4.2
-	github.com/google/go-cmp v0.4.1
+	github.com/google/go-cmp v0.5.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -31,7 +31,7 @@ require (
 	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.25.0
-	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84
-	google.golang.org/grpc v1.29.1
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+	google.golang.org/grpc v1.35.0
 	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect
 )

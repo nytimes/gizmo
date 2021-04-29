@@ -1,10 +1,7 @@
 # Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/NYTimes/gizmo?status.svg)](https://godoc.org/github.com/NYTimes/gizmo) [![Build Status](https://travis-ci.org/nytimes/gizmo.svg?branch=master)](https://travis-ci.org/nytimes/gizmo) [![Coverage Status](https://coveralls.io/repos/nytimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/nytimes/gizmo?branch=master)
 
-<p align="center" style="font-size:x-large">
-  <B><I>As of late April, 2021 Gizmo has been placed in maintenance mode. The NYT Golang Community of Practice is writing recommendations for the functionality that Gizmo used to cover.</I></B>
-</p>
-<p align="center" style="font-size:large">
-  <B><I>If you have immediate questions and work for The Times, please feel free to get in touch with the CoP in our Slack channel, #golang-nuts!</I></B>
+<p align="center" style="font-size:x-large;">
+  <B><I>As of late April, 2021 Gizmo has been placed in maintenance mode.</I></B>
 </p>
 
 <p align="center">

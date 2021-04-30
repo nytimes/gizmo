@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.57.0
 	cloud.google.com/go/logging v1.0.0
 	cloud.google.com/go/pubsub v1.3.1
-	contrib.go.opencensus.io/exporter/stackdriver v0.13.1
+	contrib.go.opencensus.io/exporter/stackdriver v0.13.5
 	github.com/DataDog/datadog-go v3.4.1+incompatible // indirect
 	github.com/DataDog/opencensus-go-exporter-datadog v0.0.0-20191210083620-6965a1cfed68
 	github.com/NYTimes/logrotate v1.0.0
@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v0.9.4
 	github.com/sirupsen/logrus v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
-	go.opencensus.io v0.22.3
+	go.opencensus.io v0.22.4
 	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.25.0

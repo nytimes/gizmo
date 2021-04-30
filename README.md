@@ -1,5 +1,9 @@
 # Gizmo Microservice Toolkit [![GoDoc](https://godoc.org/github.com/NYTimes/gizmo?status.svg)](https://godoc.org/github.com/NYTimes/gizmo) [![Build Status](https://travis-ci.org/nytimes/gizmo.svg?branch=master)](https://travis-ci.org/nytimes/gizmo) [![Coverage Status](https://coveralls.io/repos/nytimes/gizmo/badge.svg?branch=master&service=github)](https://coveralls.io/github/nytimes/gizmo?branch=master)
 
+<p align="center" style="font-size:x-large;">
+  <B><I>As of late April, 2021 Gizmo has been placed in maintenance mode.</I></B>
+</p>
+
 <p align="center">
   <img src="http://graphics8.nytimes.com/images/blogs/open/2015/gizmo.png"/>
 </p>

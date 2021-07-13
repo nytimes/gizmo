@@ -11,7 +11,7 @@ require (
 	github.com/DataDog/opencensus-go-exporter-datadog v0.0.0-20191210083620-6965a1cfed68
 	github.com/NYTimes/logrotate v1.0.0
 	github.com/Shopify/sarama v1.26.4
-	github.com/aws/aws-sdk-go v1.31.3
+	github.com/aws/aws-sdk-go v1.39.5
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
 	github.com/golang/protobuf v1.4.2
@@ -28,7 +28,7 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
 	go.opencensus.io v0.22.3
-	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
+	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.25.0
 	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84

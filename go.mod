@@ -14,8 +14,8 @@ require (
 	github.com/aws/aws-sdk-go v1.31.3
 	github.com/bradfitz/gomemcache v0.0.0-20180710155616-bc664df96737
 	github.com/go-kit/kit v0.9.0
-	github.com/golang/protobuf v1.4.2
-	github.com/google/go-cmp v0.4.1
+	github.com/golang/protobuf v1.4.3
+	github.com/google/go-cmp v0.5.5
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -24,11 +24,11 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v0.9.4
+	github.com/prometheus/client_golang v1.11.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/tinylib/msgp v1.1.2 // indirect
 	go.opencensus.io v0.22.3
-	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	google.golang.org/api v0.25.0
 	google.golang.org/genproto v0.0.0-20200430143042-b979b6f78d84

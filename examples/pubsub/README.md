@@ -23,7 +23,7 @@ We're going to set up two services to follow the pub/sub pattern using AWS SNS a
 1. Go to https://console.aws.amazon.com/sqs
 *  Click on Create New Queue 
 *  Queue Name = TestQueue (or whatever you want)
-*  Click on "TestQueue" and then click "Queue Actions" dropdown and chooose "Subscribe Queue to SNS Topic"
+*  Click on "TestQueue" and then click "Queue Actions" dropdown and choose "Subscribe Queue to SNS Topic"
 *  Choose the topic we created earlier (TestTopic) from the correct region and then hit "Subscribe"
 
 ### Set up a GCP Pubsub Project with GCP console
